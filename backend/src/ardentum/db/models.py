@@ -81,3 +81,14 @@ class Portfolio(Base):
     )
 
     owner: Mapped[User] = relationship(back_populates="portfolios")
+
+
+class ProviderCache(Base):
+    """Raw payloads from external data providers (gzip), shared by all API instances."""
+
+    __tablename__ = "provider_cache"
+
+    provider: Mapped[str] = mapped_column(String(40), primary_key=True)
+    key: Mapped[str] = mapped_column(String(200), primary_key=True)
+    fetched_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True))
+    payload: Mapped[bytes] = mapped_column(LargeBinary)

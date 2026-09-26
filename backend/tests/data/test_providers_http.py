@@ -37,7 +37,7 @@ def test_tiingo_prices_use_adjclose_and_token_header() -> None:
     assert data.prices.index[0] == dt.datetime(2024, 1, 2)
     req = route.calls.last.request
     assert req.headers["Authorization"] == "Token secret"
-    assert req.url.params["startDate"] == "2024-01-01"
+    assert req.url.params["startDate"] == "1970-01-01"  # full history is fetched once and cached
     assert not data.provenance.is_synthetic
 
 

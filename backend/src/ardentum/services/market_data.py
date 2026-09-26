@@ -2,6 +2,8 @@
 
 Dataset identifiers:
 * ``demo``    — built-in synthetic universe (always available, clearly labelled);
+* ``kf12``, ``kf49`` — real US industry portfolios from the Kenneth French Data Library
+  (free, no key; downloaded on demand and cached in PostgreSQL);
 * ``tiingo``  — live Tiingo prices (only when ``ARDENTUM_TIINGO_API_KEY`` is set);
 * ``<uuid>``  — a dataset uploaded by the signed-in user.
 """
@@ -14,7 +16,7 @@ import io
 import threading
 import uuid
 from collections import OrderedDict
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import pandas as pd
 from sqlalchemy import select
@@ -31,17 +33,21 @@ from ardentum.data.models import (
     DatasetKind,
     EsgRecord,
 )
-from ardentum.data.providers import demo
-from ardentum.data.providers.tiingo import TiingoProvider
+from ardentum.data.providers import demo, kenfrench
+from ardentum.data.providers.tiingo import TiingoProvider, parse_history
+from ardentum.data.providers.tiingo import provenance as tiingo_provenance
 from ardentum.data.validation import QualityReport, align_prices
 from ardentum.db.models import Dataset
 from ardentum.quant.errors import InsufficientDataError, InvalidInputError
 from ardentum.quant.frequency import Frequency
 from ardentum.quant.optimisation import AssetMetadata
 from ardentum.quant.returns import simple_returns
+from ardentum.services.provider_cache import CachedPayload, ProviderCache
 
 TIINGO_ID = "tiingo"
 MIN_OBSERVATIONS = 30
+KF_MAX_AGE = dt.timedelta(days=7)  # the library updates monthly
+TIINGO_MAX_AGE = dt.timedelta(hours=20)  # end-of-day data
 
 
 class NotFoundError(Exception):
@@ -96,7 +102,7 @@ class _LRU:
 
 
 _UPLOAD_CACHE = _LRU(16)
-_TIINGO_CACHE = _LRU(256)
+_PARSED_CACHE = _LRU(16)
 
 
 def encode_prices(prices: pd.DataFrame) -> bytes:
@@ -183,6 +189,21 @@ def tiingo_info() -> DatasetInfo:
     )
 
 
+def kf_info(spec: kenfrench.KFDatasetSpec) -> DatasetInfo:
+    return DatasetInfo(
+        id=spec.id,
+        name=spec.name,
+        kind=DatasetKind.PROVIDER,
+        description=(
+            f"Real daily returns of {len(spec.industries)} value-weighted US industry portfolios "
+            "(all NYSE, AMEX and NASDAQ stocks grouped by SIC code) plus the US market, from the "
+            "Kenneth R. French Data Library. Free; history from 1926."
+        ),
+        provenance=kenfrench.provenance(None),
+        assets=kenfrench.assets(spec),
+    )
+
+
 class MarketDataService:
     def __init__(self, settings: Settings, session: Session | None, principal: Principal | None):
         self.settings = settings
@@ -193,6 +214,7 @@ class MarketDataService:
 
     def list_datasets(self) -> list[tuple[DatasetInfo, bool]]:
         out: list[tuple[DatasetInfo, bool]] = [(demo.dataset_info(), False)]
+        out.extend((kf_info(spec), False) for spec in kenfrench.DATASETS.values())
         if self.settings.tiingo_api_key:
             out.append((tiingo_info(), False))
         if self.principal and self.session is not None:
@@ -219,6 +241,8 @@ class MarketDataService:
     def get_dataset(self, dataset_id: str) -> tuple[DatasetInfo, bool]:
         if dataset_id == demo.DATASET_ID:
             return demo.dataset_info(), False
+        if dataset_id in kenfrench.DATASETS:
+            return kf_info(kenfrench.DATASETS[dataset_id]), False
         if dataset_id == TIINGO_ID:
             if not self.settings.tiingo_api_key:
                 raise DataNotConfiguredError("Live market data is not configured on this server.")
@@ -233,17 +257,10 @@ class MarketDataService:
         if dataset_id == demo.DATASET_ID:
             data = demo.load_prices(tickers, start, end)
             return data.prices, data.provenance, demo.dataset_info()
+        if dataset_id in kenfrench.DATASETS:
+            return self._kf_prices(kenfrench.DATASETS[dataset_id], tickers, start, end)
         if dataset_id == TIINGO_ID:
-            info, _ = self.get_dataset(TIINGO_ID)
-            s = start or dt.date(2000, 1, 1)
-            e = end or dt.date.today()
-            key = (tuple(tickers), s, e)
-            cached = _TIINGO_CACHE.get(key)
-            if cached is None:
-                cached = TiingoProvider(self.settings.tiingo_api_key).fetch_prices(tickers, s, e)
-                _TIINGO_CACHE.put(key, cached)
-            prices = cached.prices  # type: ignore[attr-defined]
-            return prices, cached.provenance, info  # type: ignore[attr-defined]
+            return self._tiingo_prices(tickers, start, end)
         row = self._upload_row(dataset_id)
         cached_df = _UPLOAD_CACHE.get(row.id)
         if cached_df is None:
@@ -260,6 +277,95 @@ class MarketDataService:
             tickers,
         ]
         return sliced, _upload_provenance(row), upload_info(row)
+
+    # ------------------------------------------------------------------ providers
+
+    @property
+    def cache(self) -> ProviderCache:
+        return ProviderCache(self.session)
+
+    def kf_file(self, name: str) -> CachedPayload:
+        return self.cache.get_or_fetch(
+            "kenfrench", name, KF_MAX_AGE, lambda: kenfrench.download(name)
+        )
+
+    def _kf_returns(
+        self, spec: kenfrench.KFDatasetSpec
+    ) -> tuple[pd.DataFrame, CachedPayload, CachedPayload]:
+        ind = self.kf_file(spec.daily_file)
+        fac = self.kf_file(kenfrench.FACTORS_DAILY)
+        key = ("kf", spec.id, ind.fetched_at, fac.fetched_at)
+        cached = _PARSED_CACHE.get(key)
+        if cached is None:
+            industries = kenfrench.industry_returns(kenfrench.unzip_text(ind.payload))
+            factors = kenfrench.factor_returns(kenfrench.unzip_text(fac.payload))
+            cached = industries.join(factors[[kenfrench.MARKET_TICKER]], how="left")
+            _PARSED_CACHE.put(key, cached)
+        return cached, ind, fac  # type: ignore[return-value]
+
+    def _kf_prices(
+        self,
+        spec: kenfrench.KFDatasetSpec,
+        tickers: list[str],
+        start: dt.date | None,
+        end: dt.date | None,
+    ) -> tuple[pd.DataFrame, DataProvenance, DatasetInfo]:
+        returns, ind, fac = self._kf_returns(spec)
+        missing = [t for t in tickers if t not in returns.columns]
+        if missing:
+            raise InvalidInputError(
+                f"Unknown industry codes for {spec.name}: {', '.join(missing)}."
+            )
+        window = returns.loc[
+            (pd.Timestamp(start) if start else returns.index[0]) : (
+                pd.Timestamp(end) if end else returns.index[-1]
+            ),
+            tickers,
+        ]
+        prices = kenfrench.returns_to_prices(window)
+        prov = kenfrench.provenance(min(ind.fetched_at, fac.fetched_at))
+        if ind.stale or fac.stale:
+            prov = _with_note(
+                prov, "The Data Library could not be reached; showing the last cached copy."
+            )
+        return prices, prov, kf_info(spec)
+
+    def market_caps(self, dataset_id: str) -> dict[str, float] | None:
+        """Market capitalisation weights' inputs for Black-Litterman, when the source has them."""
+        if dataset_id in kenfrench.DATASETS:
+            spec = kenfrench.DATASETS[dataset_id]
+            monthly = self.kf_file(spec.monthly_file)
+            return kenfrench.market_caps(kenfrench.unzip_text(monthly.payload))
+        return None
+
+    def _tiingo_prices(
+        self, tickers: list[str], start: dt.date | None, end: dt.date | None
+    ) -> tuple[pd.DataFrame, DataProvenance, DatasetInfo]:
+        info, _ = self.get_dataset(TIINGO_ID)
+        provider = TiingoProvider(self.settings.tiingo_api_key)
+        series: dict[str, pd.Series] = {}
+        oldest: dt.datetime | None = None
+        stale = False
+        for t in tickers:
+            got = self.cache.get_or_fetch(
+                "tiingo",
+                t.upper(),
+                TIINGO_MAX_AGE,
+                lambda t=t: provider.history_payload(t),  # type: ignore[misc]
+            )
+            series[t] = parse_history(got.payload, t)
+            oldest = got.fetched_at if oldest is None else min(oldest, got.fetched_at)
+            stale = stale or got.stale
+        prices = pd.DataFrame(series).sort_index()
+        prices = prices.loc[
+            (pd.Timestamp(start) if start else prices.index[0]) : (
+                pd.Timestamp(end) if end else prices.index[-1]
+            )
+        ]
+        prov = tiingo_provenance(oldest)
+        if stale:
+            prov = _with_note(prov, "Tiingo could not be reached; showing the last cached prices.")
+        return prices, prov, info
 
     def load(
         self,
@@ -295,3 +401,7 @@ class MarketDataService:
             report=report,
             provenance=provenance,
         )
+
+
+def _with_note(p: DataProvenance, note: str) -> DataProvenance:
+    return replace(p, notes=(*p.notes, note))

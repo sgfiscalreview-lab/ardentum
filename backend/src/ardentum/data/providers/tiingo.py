@@ -13,6 +13,7 @@ and TODO.md (founder decision required before production use).
 from __future__ import annotations
 
 import datetime as dt
+import json
 from typing import Any
 
 import httpx
@@ -70,37 +71,21 @@ class TiingoProvider:
             raise DataProviderError(f"Tiingo request failed (HTTP {resp.status_code}).")
         raise DataProviderError(f"Tiingo is unreachable: {last}")
 
-    def fetch_prices(self, tickers: list[str], start: dt.date, end: dt.date) -> PriceData:
-        series: dict[str, pd.Series] = {}
-        for t in tickers:
-            rows = self._get(
-                f"/tiingo/daily/{t.lower()}/prices",
-                {"startDate": start.isoformat(), "endDate": end.isoformat(), "format": "json"},
-            )
-            if not isinstance(rows, list) or not rows:
-                raise DataProviderError(
-                    f"Tiingo returned no prices for {t} in the requested range."
-                )
-            try:
-                idx = pd.DatetimeIndex(
-                    [pd.Timestamp(r["date"]).tz_localize(None).normalize() for r in rows]
-                )
-                vals = [float(r["adjClose"]) for r in rows]
-            except (KeyError, TypeError, ValueError) as exc:
-                raise DataProviderError(f"Unexpected Tiingo response format for {t}.") from exc
-            series[t.upper()] = pd.Series(vals, index=idx, name=t.upper())
-        prices = pd.DataFrame(series).sort_index()
-        prices.index.name = "date"
-        return PriceData(
-            prices=prices,
-            provenance=DataProvenance(
-                source=SOURCE,
-                is_synthetic=False,
-                adjustment="Split- and dividend-adjusted close (total return).",
-                retrieved_at=dt.datetime.now(dt.UTC),
-                license_note="Subject to the Tiingo terms of service for the configured plan.",
-            ),
+    def history_payload(self, ticker: str) -> bytes:
+        """Full daily history for one ticker as the raw JSON payload (for caching)."""
+        rows = self._get(
+            f"/tiingo/daily/{ticker.lower()}/prices",
+            {"startDate": "1970-01-01", "format": "json"},
         )
+        if not isinstance(rows, list) or not rows:
+            raise DataProviderError(f"Tiingo returned no prices for {ticker}.")
+        return json.dumps(rows).encode("utf-8")
+
+    def fetch_prices(self, tickers: list[str], start: dt.date, end: dt.date) -> PriceData:
+        series = {t.upper(): parse_history(self.history_payload(t), t) for t in tickers}
+        prices = pd.DataFrame(series).sort_index().loc[pd.Timestamp(start) : pd.Timestamp(end)]
+        prices.index.name = "date"
+        return PriceData(prices=prices, provenance=provenance(dt.datetime.now(dt.UTC)))
 
     def fetch_metadata(self, ticker: str) -> AssetInfo:
         meta = self._get(f"/tiingo/daily/{ticker.lower()}")
@@ -111,3 +96,26 @@ class TiingoProvider:
             name=str(meta.get("name") or ticker.upper()).strip(),
             description=(str(meta["description"])[:500] if meta.get("description") else None),
         )
+
+
+def parse_history(payload: bytes, ticker: str) -> pd.Series:
+    """Adjusted closes from a Tiingo daily-prices payload."""
+    try:
+        rows = json.loads(payload)
+        idx = pd.DatetimeIndex(
+            [pd.Timestamp(r["date"]).tz_localize(None).normalize() for r in rows]
+        )
+        vals = [float(r["adjClose"]) for r in rows]
+    except (KeyError, TypeError, ValueError) as exc:
+        raise DataProviderError(f"Unexpected Tiingo response format for {ticker}.") from exc
+    return pd.Series(vals, index=idx, name=ticker.upper()).sort_index()
+
+
+def provenance(retrieved_at: dt.datetime | None) -> DataProvenance:
+    return DataProvenance(
+        source=SOURCE,
+        is_synthetic=False,
+        adjustment="Split- and dividend-adjusted close (total return).",
+        retrieved_at=retrieved_at,
+        license_note="Subject to the Tiingo terms of service for the configured plan.",
+    )
