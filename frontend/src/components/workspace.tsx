@@ -37,12 +37,12 @@ export function useDataset(datasetId: string) {
  * request is persisted in the workspace, so results survive navigation and
  * reloads (served from cache or recomputed identically).
  */
-export function useComputation<Req, Res>(page: PageKey, fn: (req: Req) => Promise<Res>) {
+export function useComputation<Req, Res>(page: PageKey, fn: (req: Req, signal?: AbortSignal) => Promise<Res>) {
   const { state, submit, hydrated } = useWorkspace();
   const request = (state.requests[page] ?? null) as Req | null;
   const query = useQuery({
     queryKey: ["compute", page, request],
-    queryFn: () => fn(request as Req),
+    queryFn: ({ signal }) => fn(request as Req, signal),
     enabled: hydrated && request !== null,
     placeholderData: keepPreviousData,
   });

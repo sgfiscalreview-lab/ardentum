@@ -16,7 +16,7 @@ import {
   useComputation,
   useDataset,
 } from "@/components/workspace";
-import { api, unwrap } from "@/lib/api/client";
+import { runJob } from "@/lib/api/client";
 import type { FrontierRequest, FrontierResponse } from "@/lib/api/types";
 import { num, pct } from "@/lib/format";
 import { useWorkspace } from "@/lib/workspace";
@@ -24,8 +24,8 @@ import { useWorkspace } from "@/lib/workspace";
 export default function FrontierPage() {
   const { state, setConstraints, setWorking } = useWorkspace();
   const ds = useDataset(state.universe.dataset_id);
-  const { data, error, running, run } = useComputation<FrontierRequest, FrontierResponse>("frontier", (req) =>
-    unwrap(api.POST("/api/v1/frontier", { body: req })),
+  const { data, error, running, run } = useComputation<FrontierRequest, FrontierResponse>("frontier", (req, signal) =>
+    runJob("frontier", req, signal),
   );
   return (
     <>

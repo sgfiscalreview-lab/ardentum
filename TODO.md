@@ -17,7 +17,7 @@ Legend: **[F]** needs a founder decision/credential · **[E]** engineering
 - [x] Risk-free rate from Fama-French RF or FRED DGS3MO, selectable in the UI (D-020).
 - [x] Contributions/withdrawals and depletion probability in Monte Carlo.
 - [x] Shared rate limiting across instances via PostgreSQL (D-024).
-- [ ] Background jobs for long backtests (currently synchronous; bounded by input limits).
+- [x] Background jobs with long-polling for long calculations (D-025).
 - [x] Black–Litterman views (D-022); minimum-CVaR optimisation (D-023).
 - [ ] Mean-CVaR efficient frontier.
 - [x] Multi-currency universes, unhedged conversion at ECB rates (D-021).

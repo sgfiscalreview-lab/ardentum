@@ -150,3 +150,14 @@ verified user id, or by IP address; `ARDENTUM_TRUSTED_PROXY_HOPS` (1 on Cloud Ru
 selects the proxy-appended X-Forwarded-For entry so clients cannot forge it. If the
 database is unavailable the limiter allows the request and logs a warning (availability
 over strictness). SQLite deployments default to the in-process limiter.
+
+## D-025 Background jobs without a queue service
+Long calculations (Monte Carlo, backtests, frontiers, ESG impact, comparisons) run as
+jobs: `POST /jobs` validates and starts the work; `GET /jobs/{id}?wait=20` long-polls.
+Cloud Run's request-based billing throttles CPU between requests, so the work runs while
+the client's poll is open, and any instance claims a queued job, or one whose heartbeat
+is older than 30 s, with a conditional UPDATE. Jobs are deterministic, so a re-run is
+safe; after two interrupted runs the job fails with a message. No Redis/Celery or paid
+queue is needed. Results (gzip JSON) expire after 24 h. Signed-in users' jobs are
+private; anonymous jobs are addressed by an unguessable UUID. The synchronous endpoints
+remain for API clients.

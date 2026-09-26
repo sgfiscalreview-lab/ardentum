@@ -365,6 +365,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Job
+         * @description Start a calculation in the background. The request is validated immediately.
+         */
+        post: operations["create_job_api_v1_jobs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Job
+         * @description Job status; with ``wait`` > 0, hold the request until the job finishes or ``wait``
+         *     seconds pass. Keep polling while the status is ``queued`` or ``running``.
+         */
+        get: operations["get_job_api_v1_jobs__job_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1061,6 +1102,61 @@ export interface components {
             status: string;
             /** Reason */
             reason: string;
+        };
+        /** JobCreate */
+        JobCreate: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "analytics" | "optimise" | "frontier" | "esg_impact" | "montecarlo" | "backtest" | "compare";
+            /**
+             * Request
+             * @description The body of the corresponding POST endpoint.
+             */
+            request: {
+                [key: string]: unknown;
+            };
+        };
+        /** JobErrorOut */
+        JobErrorOut: {
+            /** Type */
+            type: string;
+            /** Message */
+            message: string;
+            /** Status */
+            status: number;
+        };
+        /** JobOut */
+        JobOut: {
+            /** Id */
+            id: string;
+            /** Kind */
+            kind: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "queued" | "running" | "succeeded" | "failed";
+            /** Attempts */
+            attempts: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Started At */
+            started_at: string | null;
+            /** Finished At */
+            finished_at: string | null;
+            /**
+             * Result
+             * @description Response of the corresponding endpoint, once succeeded.
+             */
+            result: {
+                [key: string]: unknown;
+            } | null;
+            error: components["schemas"]["JobErrorOut"] | null;
         };
         /** MeOut */
         MeOut: {
@@ -2434,6 +2530,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_job_api_v1_jobs_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["JobCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_job_api_v1_jobs__job_id__get: {
+        parameters: {
+            query?: {
+                wait?: number;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobOut"];
                 };
             };
             /** @description Validation Error */

@@ -39,6 +39,20 @@ _QUANT_TYPES: list[tuple[type[QuantError], str, int]] = [
 ]
 
 
+def classify(exc: BaseException) -> tuple[str, str, int]:
+    """(type, user-facing message, HTTP status) for an exception, as the handlers below."""
+    if isinstance(exc, QuantError):
+        for cls, kind, status in _QUANT_TYPES:
+            if isinstance(exc, cls):
+                return kind, str(exc), status
+        return "quant_error", str(exc), 422
+    if isinstance(exc, NotFoundError):
+        return "not_found", str(exc), 404
+    if isinstance(exc, AuthError):
+        return "unauthorized", str(exc), 401
+    return "internal_error", "An unexpected error occurred while running the calculation.", 500
+
+
 def _body(kind: str, message: str, details: object = None) -> dict[str, object]:
     return {"error": {"type": kind, "message": message, "details": details}}
 

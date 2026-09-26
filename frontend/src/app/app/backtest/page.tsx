@@ -17,7 +17,7 @@ import {
   useComputation,
   useDataset,
 } from "@/components/workspace";
-import { api, unwrap } from "@/lib/api/client";
+import { runJob } from "@/lib/api/client";
 import type { BacktestRequest, BacktestResponse, PerformanceOut } from "@/lib/api/types";
 import { date as fmtDate, num, OBJECTIVE_LABELS, pct, signedPct } from "@/lib/format";
 import { useWorkspace } from "@/lib/workspace";
@@ -37,8 +37,8 @@ export default function BacktestPage() {
   const [bench, setBench] = useState<string>("equal_weight");
   const [start, setStart] = useState<string>("");
   const [end, setEnd] = useState<string>("");
-  const { data, error, running, run } = useComputation<BacktestRequest, BacktestResponse>("backtest", (req) =>
-    unwrap(api.POST("/api/v1/backtest", { body: req })),
+  const { data, error, running, run } = useComputation<BacktestRequest, BacktestResponse>("backtest", (req, signal) =>
+    runJob("backtest", req, signal),
   );
 
   const submit = () => {

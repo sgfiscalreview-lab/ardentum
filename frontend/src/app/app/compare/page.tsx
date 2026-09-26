@@ -17,7 +17,7 @@ import {
   useComputation,
   useDataset,
 } from "@/components/workspace";
-import { api, unwrap } from "@/lib/api/client";
+import { runJob } from "@/lib/api/client";
 import type { CompareRequest, CompareResponse } from "@/lib/api/types";
 import { num, pct } from "@/lib/format";
 import { useWorkspace } from "@/lib/workspace";
@@ -27,8 +27,8 @@ export default function ComparePage() {
   const ds = useDataset(state.universe.dataset_id);
   const options = useAvailablePortfolios();
   const [chosen, setChosen] = useState<string[]>(["working", "equal"]);
-  const { data, error, running, run } = useComputation<CompareRequest, CompareResponse>("compare", (req) =>
-    unwrap(api.POST("/api/v1/compare", { body: req })),
+  const { data, error, running, run } = useComputation<CompareRequest, CompareResponse>("compare", (req, signal) =>
+    runJob("compare", req, signal),
   );
   const selected = options.filter((o) => chosen.includes(o.key)).slice(0, 6);
 

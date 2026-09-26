@@ -113,3 +113,27 @@ class RateLimitCounter(Base):
     key: Mapped[str] = mapped_column(String(80), primary_key=True)
     window: Mapped[int] = mapped_column(BigInteger, primary_key=True)  # epoch // window length
     count: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class Job(Base):
+    """A long-running computation, executed by whichever API instance polls it.
+
+    Result payloads are gzip-compressed JSON of the corresponding synchronous response.
+    ``owner_id`` is set for signed-in users (only they may read the job); anonymous jobs
+    are readable by anyone holding their random id.
+    """
+
+    __tablename__ = "jobs"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    owner_id: Mapped[uuid.UUID | None] = mapped_column(index=True)
+    kind: Mapped[str] = mapped_column(String(20))
+    status: Mapped[str] = mapped_column(String(12), index=True)  # queued/running/succeeded/failed
+    request: Mapped[dict[str, Any]] = mapped_column(JsonType)
+    result: Mapped[bytes | None] = mapped_column(LargeBinary)
+    error: Mapped[dict[str, Any] | None] = mapped_column(JsonType)
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True))
+    started_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
+    heartbeat_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
+    finished_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))

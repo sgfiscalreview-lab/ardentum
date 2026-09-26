@@ -17,7 +17,7 @@ import {
   useComputation,
   useDataset,
 } from "@/components/workspace";
-import { api, unwrap } from "@/lib/api/client";
+import { runJob } from "@/lib/api/client";
 import type { MonteCarloRequest, MonteCarloResponse } from "@/lib/api/types";
 import { money, pct } from "@/lib/format";
 import { useWorkspace } from "@/lib/workspace";
@@ -43,8 +43,8 @@ export default function SimulatePage() {
   const [flowAmount, setFlowAmount] = useState(1_200);
   const [flowFreq, setFlowFreq] = useState<1 | 4 | 12>(12);
   const [flowGrowth, setFlowGrowth] = useState(0);
-  const { data, error, running, run } = useComputation<MonteCarloRequest, MonteCarloResponse>("simulate", (req) =>
-    unwrap(api.POST("/api/v1/montecarlo", { body: req })),
+  const { data, error, running, run } = useComputation<MonteCarloRequest, MonteCarloResponse>("simulate", (req, signal) =>
+    runJob("montecarlo", req, signal),
   );
   const portfolio = resolvePortfolio(options, pick);
 

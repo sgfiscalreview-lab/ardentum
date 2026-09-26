@@ -27,7 +27,7 @@ from ardentum.api.ratelimit import (
     RateLimiter,
     client_ip,
 )
-from ardentum.api.routers import analysis, auth, datasets, meta, portfolios
+from ardentum.api.routers import analysis, auth, datasets, jobs, meta, portfolios
 from ardentum.config import Environment, Settings, get_settings
 from ardentum.db.models import Base
 from ardentum.db.session import make_engine
@@ -143,7 +143,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.sessionmaker = factory
 
     errors.install(app)
-    for r in (meta.router, auth.router, datasets.router, analysis.router, portfolios.router):
+    for r in (
+        meta.router,
+        auth.router,
+        datasets.router,
+        analysis.router,
+        portfolios.router,
+        jobs.router,
+    ):
         app.include_router(r, prefix=API_PREFIX)
 
     if settings.env is not Environment.PRODUCTION and settings.database_url.startswith("sqlite"):

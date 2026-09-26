@@ -771,3 +771,35 @@ class ErrorBody(ResponseModel):
 
 class ErrorOut(ResponseModel):
     error: ErrorBody
+
+
+# ----------------------------------------------------------------------------- jobs
+
+JobKind = Literal[
+    "analytics", "optimise", "frontier", "esg_impact", "montecarlo", "backtest", "compare"
+]
+
+
+class JobCreate(RequestModel):
+    kind: JobKind
+    request: dict[str, Any] = Field(description="The body of the corresponding POST endpoint.")
+
+
+class JobErrorOut(ResponseModel):
+    type: str
+    message: str
+    status: int
+
+
+class JobOut(ResponseModel):
+    id: str
+    kind: str
+    status: Literal["queued", "running", "succeeded", "failed"]
+    attempts: int
+    created_at: dt.datetime
+    started_at: dt.datetime | None
+    finished_at: dt.datetime | None
+    result: dict[str, Any] | None = Field(
+        None, description="Response of the corresponding endpoint, once succeeded."
+    )
+    error: JobErrorOut | None = None

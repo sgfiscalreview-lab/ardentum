@@ -15,7 +15,7 @@ import {
   useComputation,
   useDataset,
 } from "@/components/workspace";
-import { api, unwrap } from "@/lib/api/client";
+import { runJob } from "@/lib/api/client";
 import type { EsgImpactRequest, EsgImpactResponse, PortfolioResultOut } from "@/lib/api/types";
 import { num, pct, signedNum, signedPct } from "@/lib/format";
 import { useWorkspace } from "@/lib/workspace";
@@ -25,8 +25,8 @@ export default function EsgPage() {
   const ds = useDataset(state.universe.dataset_id);
   const c = state.constraints;
   const hasEsg = c.min_esg_score != null || (c.esg_tilt ?? 0) > 0 || (c.excluded_sectors ?? []).length > 0 || !!c.exclude_unscored_assets;
-  const { data, error, running, run } = useComputation<EsgImpactRequest, EsgImpactResponse>("esg", (req) =>
-    unwrap(api.POST("/api/v1/esg/impact", { body: req })),
+  const { data, error, running, run } = useComputation<EsgImpactRequest, EsgImpactResponse>("esg", (req, signal) =>
+    runJob("esg_impact", req, signal),
   );
   return (
     <>

@@ -1,6 +1,6 @@
 import createClient, { type Middleware } from "openapi-fetch";
 
-import type { paths } from "./schema";
+import type { components, paths } from "./schema";
 
 /** Error returned by the Ardentum API, carrying the server's user-facing message. */
 export class ApiError extends Error {
@@ -67,4 +67,31 @@ export async function unwrap<T>(
     env.error?.type ?? "http_error",
     env.error?.details,
   );
+}
+
+export type JobKind = components["schemas"]["JobCreate"]["kind"];
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Run a calculation as a background job and wait for its result.
+ * The server holds each poll open for up to 20 s, which also keeps serverless CPU
+ * allocated while the job runs. Brief network failures are retried.
+ */
+export async function runJob<T>(kind: JobKind, request: unknown, signal?: AbortSignal): Promise<T> {
+  let job = await unwrap(api.POST("/api/v1/jobs", { body: { kind, request: request as Record<string, never> }, signal }));
+  let failures = 0;
+  while (job.status === "queued" || job.status === "running") {
+    try {
+      job = await unwrap(api.GET("/api/v1/jobs/{job_id}", { params: { path: { job_id: job.id }, query: { wait: 20 } }, signal }));
+      failures = 0;
+    } catch (e) {
+      if (signal?.aborted || !(e instanceof ApiError) || e.type !== "network_error" || ++failures > 3) throw e;
+      await sleep(1000 * failures);
+    }
+  }
+  if (job.status === "failed") {
+    throw new ApiError(job.error?.message ?? "The calculation failed.", job.error?.status ?? 500, job.error?.type ?? "job_failed");
+  }
+  return job.result as T;
 }
