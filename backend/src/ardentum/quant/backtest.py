@@ -69,7 +69,8 @@ class StrategyContext:
 
 
 class Strategy(Protocol):
-    name: str
+    @property
+    def name(self) -> str: ...
 
     def target_weights(self, window: pd.DataFrame, context: StrategyContext) -> np.ndarray: ...
 
