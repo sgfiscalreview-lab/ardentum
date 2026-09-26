@@ -60,6 +60,8 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      - name: Static export (Cloudflare Pages / Netlify)
+        run: NEXT_OUTPUT=export NEXT_PUBLIC_API_BASE=https://api.example.invalid npm run build && test -f out/index.html
 
   e2e:
     runs-on: ubuntu-latest

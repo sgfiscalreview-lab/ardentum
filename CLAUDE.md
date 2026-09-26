@@ -13,7 +13,8 @@ Read this first, then `ARCHITECTURE.md`, `DECISIONS.md`, `PROGRESS.md`, `TODO.md
 3. **No look-ahead.** Backtest strategies receive only the trailing window; keep the
    invariance test green.
 4. **No invented data.** Demo data is synthetic, `.SYN`-suffixed and labelled. ESG scores
-   require a named source. Missing ESG scores are never imputed.
+   require a named source. Missing ESG scores are never imputed. Open-data matches are
+   by exact identifier (ISIN) or user confirmation, never silent fuzzy matching.
 5. **No financial maths in the UI or services.** Frontend formats numbers only; services
    orchestrate only.
 6. **Reproducibility.** Simulations take explicit seeds and echo them.
@@ -39,7 +40,8 @@ NEXT_OUTPUT=export NEXT_PUBLIC_API_BASE=https://<api> npm run build   # static s
 npm run gen:api        # regenerate src/lib/api/schema.d.ts from the running backend
 npm run lint && npm run typecheck && npm test
 npm run build
-npm run e2e            # Playwright (starts backend + frontend)
+npm run e2e            # Playwright (starts backend, frontend and a WikiRate stand-in)
+# in the dev container: PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm run e2e
 ```
 
 Local PostgreSQL (dev container): `initdb` + `pg_ctl -o '-p 5433'` (see PROGRESS.md notes).

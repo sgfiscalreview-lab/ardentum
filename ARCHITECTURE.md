@@ -21,11 +21,14 @@ behind every result.
 │  Supabase Auth           │  JWKS / secret            │               │
 │  (identity provider)     │ ◀──────────────────────── │               │ HTTPS
 └──────────────────────────┘                           ▼               ▼
-                                          ┌──────────────────┐  ┌────────────────────────┐
-                                          │ PostgreSQL       │  │ Market data providers  │
-                                          │ (Supabase)       │  │ Tiingo (prices), FRED  │
-                                          │ users, datasets, │  │ (risk-free rate)       │
-                                          │ portfolios       │  └────────────────────────┘
+                                          ┌──────────────────┐  ┌────────────────────────────┐
+                                          │ PostgreSQL       │  │ External data (cached)     │
+                                          │ (Supabase)       │  │ Ken French (returns, RF),  │
+                                          │ users, datasets, │  │ Frankfurter/ECB (FX),      │
+                                          │ portfolios, jobs,│  │ WikiRate (open ESG), FRED, │
+                                          │ ESG overlays,    │  │ Tiingo (optional)          │
+                                          │ provider cache,  │  └────────────────────────────┘
+                                          │ rate limits      │
                                           └──────────────────┘
 ```
 
@@ -51,11 +54,13 @@ by tests. The frontend never re-derives a metric.
 | `returns.py` | simple/log returns, wealth index, annualisation (arithmetic vs geometric/CAGR) |
 | `metrics.py` | volatility, covariance, correlation, beta, Sharpe, Sortino, drawdown, Calmar, VaR/CVaR, tracking error, information ratio, `performance_summary` |
 | `portfolio.py` | portfolio return/volatility, Euler risk decomposition, diversification ratio, effective N, constant-mix/buy-and-hold returns |
-| `estimation.py` | expected returns (historical, Bayes–Stein) and covariance (sample, Ledoit–Wolf identity, Ledoit–Wolf constant-correlation); `MarketEstimates` with provenance |
-| `optimisation.py` | CVXPY mean–variance engine: min-vol, max-Sharpe (homogenised), target return, target volatility, max utility; bounds, exclusions, sector limits, min ESG, ESG tilt, gross exposure, tracking error; post-solve verification and diagnostics (binding constraints, shadow prices) |
+| `estimation.py` | expected returns (historical, Bayes–Stein, Black–Litterman) and covariance (sample, Ledoit–Wolf identity, Ledoit–Wolf constant-correlation); `MarketEstimates` with provenance |
+| `black_litterman.py` | equilibrium prior, He–Litterman/Idzorek view uncertainty, posterior returns and covariance |
+| `optimisation.py` | CVXPY engine: min-vol, max-Sharpe (homogenised), target return, target volatility, max utility, min-CVaR (Rockafellar–Uryasev LP); bounds, exclusions, sector limits, min ESG, ESG tilt, gross exposure, tracking error; post-solve verification and diagnostics (binding constraints, shadow prices) |
 | `frontier.py` | constrained efficient frontier; ESG-efficient (Sharpe vs min-ESG) frontier |
-| `esg.py` | ESG score alignment/validation, standardisation, tilt, portfolio score |
-| `montecarlo.py` | seeded parametric (lognormal), i.i.d. bootstrap and stationary block-bootstrap simulation |
+| `esg.py` | ESG score alignment/validation, standardisation, tilt, portfolio score; raw open-data metrics → 0–100 (linear scale, percentile rank) |
+| `currency.py` | FX alignment and unhedged conversion of prices to a base currency |
+| `montecarlo.py` | seeded parametric (lognormal), i.i.d. bootstrap and stationary block-bootstrap simulation; contributions/withdrawals and depletion |
 | `backtest.py` | walk-forward backtest (no look-ahead), rebalancing schedules, costs, strategy protocol |
 | `attribution.py` | contributions, Carino linking, Brinson–Fachler |
 | `explain.py` | KKT-based explanations, assumptions, bootstrap weight stability |
@@ -65,14 +70,22 @@ by tests. The frontend never re-derives a metric.
 * `providers/demo.py` — deterministic **synthetic** universe (fictional `.SYN` tickers,
   illustrative ESG scores), labelled synthetic everywhere.
 * `providers/csv_upload.py` — strict parsing of user CSVs (wide or long), metadata with ESG provenance.
-* `providers/tiingo.py`, `providers/fred.py` — live adapters (need API keys; see DECISIONS D-004).
+* `providers/kenfrench.py` — Kenneth French Data Library: industry portfolios (kf12, kf49), market and risk-free returns, market caps (D-018).
+* `providers/fx.py` — ECB reference rates via Frankfurter (D-021).
+* `providers/wikirate.py` — WikiRate open ESG data: metrics, companies (ISINs), answers (D-026).
+* `providers/tiingo.py`, `providers/fred.py` — keyed adapters (Tiingo needs a licence for commercial use, D-004).
 * `validation.py` — alignment of histories, gap handling, data-quality warnings.
 
 ### `services/`
 
-* `market_data.py` — dataset resolution (`demo`, `tiingo`, uploaded UUIDs) and loading of
-  aligned return windows at daily/weekly/monthly frequency.
-* `analysis.py` — maps API requests → quant calls → API responses.
+* `market_data.py` — dataset resolution (`demo`, `kf12`, `kf49`, `tiingo`, uploaded UUIDs),
+  currency conversion and loading of aligned return windows at daily/weekly/monthly frequency.
+* `provider_cache.py` — PostgreSQL cache (gzip payloads) for external data with an in-process
+  LRU and stale fallback (D-019).
+* `risk_free.py` — risk-free rate from Fama-French RF or FRED DGS3MO (D-020).
+* `open_esg.py` — WikiRate matching, scoring and saved ESG overlays.
+* `jobs.py` — background jobs claimed by long-polls, heartbeat and recovery (D-025).
+* `analysis.py` — maps API requests → quant calls → API responses (applies ESG overlays).
 
 ### `api/`
 
@@ -92,11 +105,20 @@ consistent error envelope `{"error": {"type", "message", "details"}}`.
 | `POST /backtest` | walk-forward backtest + attribution |
 | `POST /compare` | side-by-side comparison of fixed-weight portfolios |
 | `CRUD /portfolios`, `GET /portfolios/{id}/export` | saved portfolios; CSV/JSON export |
+| `GET /risk-free/sources`, `POST /risk-free` | public risk-free sources; window-average rate |
+| `POST /jobs`, `GET /jobs/{id}?wait=` | run any compute request in the background; long-poll |
+| `GET /esg/open/metrics`, `GET /esg/open/companies`, `POST /esg/open/preview` | browse WikiRate; preview scores |
+| `CRUD /esg/overlays` | saved open-data ESG overlays (used via `universe.esg_overlay_id`) |
+| `GET /health/db` | database check (daily keep-alive) |
+
+Compute endpoints are rate limited per verified user or client IP with a counter shared
+through PostgreSQL (D-024).
 
 ### `db/`
 
 Tables: `users` (id = identity-provider subject), `datasets` (gzip CSV blob + asset
-metadata JSON), `portfolios` (weights + generating spec + summary). Alembic migrations in
+metadata JSON incl. currency, ISIN, market cap), `portfolios` (weights + generating spec +
+summary), `provider_cache`, `rate_limit_counters`, `jobs`, `esg_overlays`. Alembic migrations in
 `backend/migrations`. Row ownership is enforced in the API (the backend is the only
 database client; Supabase RLS is not relied upon).
 
@@ -104,8 +126,11 @@ database client; Supabase RLS is not relied upon).
 
 Next.js (App Router) + TypeScript (strict) + Tailwind. API types are generated from the
 backend OpenAPI schema (`npm run gen:api`). Pages: landing, workspace (universe →
-analytics → optimise → frontier → ESG → Monte Carlo → backtest → compare), saved
-portfolios, research/methodology, sign-in.
+analytics → optimise → frontier → ESG data → ESG impact → Monte Carlo → backtest →
+compare), saved portfolios, research/methodology, sign-in (Google/GitHub OAuth). Long
+calculations go through background jobs (`runJob`). The app builds either as a static
+export (`NEXT_OUTPUT=export`, calling the API directly) or as a Node server that proxies
+`/api/v1`.
 
 ## Authentication
 
@@ -114,9 +139,11 @@ ES256/RS256, or the legacy HS256 secret), `exp`, `aud=authenticated`,
 `iss=<SUPABASE_URL>/auth/v1`. Development/tests: a dev-only login issues HS256 tokens;
 settings validation forbids it in production.
 
-## Deployment (target)
+## Deployment (free tier, D-017; see DEPLOYMENT.md)
 
-* Frontend: Vercel (or any Node host) — `frontend/`.
-* Backend: container (`backend/Dockerfile`) on Render/Fly.io/Cloud Run.
-* Database + auth: Supabase (managed PostgreSQL + Auth).
-* CI: GitHub Actions — lint, type-check, unit/integration tests (SQLite + PostgreSQL), frontend build, Playwright E2E.
+* Frontend: static export on Cloudflare Pages (Netlify fallback).
+* Backend: container (`backend/Dockerfile`) on Google Cloud Run, max 2 instances (Render fallback).
+* Database + auth: Supabase (managed PostgreSQL + Auth), kept awake by a daily GitHub Actions ping.
+* CI: GitHub Actions — lint, type-check, unit/integration tests (SQLite + PostgreSQL),
+  migrations, frontend build + static export, Playwright E2E (with a local WikiRate
+  stand-in), Docker builds.

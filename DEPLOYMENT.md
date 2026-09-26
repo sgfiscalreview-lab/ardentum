@@ -1,68 +1,157 @@
-# Deployment
+# Deployment (free tier)
 
-Target topology (see DECISIONS D-013 and TODO for the founder decisions involved):
+Approved topology (DECISIONS D-017). Every component has a free tier; the only possible
+cost is an optional domain name.
 
-| Component | Recommended host | Artifact |
+| Component | Host | Free-tier notes (check current terms) |
 |---|---|---|
-| Database + authentication | Supabase (managed PostgreSQL + Auth) | — |
-| API | Any container host: Render, Fly.io, Google Cloud Run | `backend/Dockerfile` |
-| Web | Vercel (or any Node host / container) | `frontend/` or `frontend/Dockerfile` |
+| Web app (static) | **Cloudflare Pages** (fallback: Netlify) | Static files, unlimited bandwidth, 500 builds/month |
+| API (container) | **Google Cloud Run** (fallback: Render free web service) | ~2M requests, 180k vCPU-s, 360k GiB-s per month; card required, budget alert recommended |
+| PostgreSQL + sign-in | **Supabase** | 500 MB database; pauses after 7 idle days (prevented by the daily keep-alive) |
+| Keep-alive | GitHub Actions (`.github/workflows/keepalive.yml`) | Daily `GET /api/v1/health/db` |
+| Data | Built in, no keys | Ken French industries and risk-free rate, ECB FX (Frankfurter), WikiRate open ESG data |
+| Optional keys | FRED (free), WikiRate (free account) | Only needed for FRED's T-bill series, or if WikiRate requires a key |
+| Optional domain | Cloudflare Registrar | About $10/year for a `.com` |
 
-## 1. Supabase
+Order: Supabase → API → web app → OAuth redirect URLs → keep-alive → verify.
 
-1. Create a project. Note the **project URL** and the **anon (public) key**.
-2. Authentication → Providers → enable **Email** (password). Configure the site URL to the web app's URL.
-3. The API verifies Supabase access tokens via the project's JWKS endpoint
-   (`<URL>/auth/v1/.well-known/jwks.json`). Legacy projects that still sign with HS256
-   must also set `ARDENTUM_SUPABASE_JWT_SECRET`.
-4. Database → connection string (use the pooled connection for the API):
-   `postgresql://postgres.<ref>:<password>@<host>:6543/postgres`.
+## 1. Supabase (database and sign-in)
 
-## 2. API container
+1. Create a free project at supabase.com; choose the region closest to your users and
+   note the database password.
+2. **Project Settings → API**: copy the **Project URL** (`https://<ref>.supabase.co`) and
+   the **anon public key**.
+3. **Connect → Transaction pooler**: copy the connection string (port **6543**):
+   `postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:6543/postgres`.
+   The API disables server-side prepared statements, so the transaction pooler is safe.
+4. **Authentication → Providers**:
+   - **Google**: in Google Cloud Console → APIs & Services → Credentials, create an
+     *OAuth client ID* (Web application) with authorised redirect URI
+     `https://<ref>.supabase.co/auth/v1/callback`; paste the client ID and secret into
+     Supabase.
+   - **GitHub**: GitHub → Settings → Developer settings → OAuth Apps → New, with callback
+     URL `https://<ref>.supabase.co/auth/v1/callback`; paste the ID and secret.
+   - Email/password is optional (set `NEXT_PUBLIC_AUTH_EMAIL_ENABLED=true` on the web app
+     to show it). OAuth avoids handling password resets and email delivery.
+5. **Authentication → URL Configuration**: set *Site URL* to the web app URL (step 3) and
+   add it to *Redirect URLs* (also `http://localhost:3000/**` for local testing).
 
-Environment variables (production):
+The API verifies Supabase tokens with the project's JWKS
+(`<URL>/auth/v1/.well-known/jwks.json`); legacy HS256 projects also need
+`ARDENTUM_SUPABASE_JWT_SECRET`.
+
+## 2. API on Google Cloud Run
+
+One-time setup (Google Cloud Console or `gcloud`):
+
+1. Create a project and link billing (Cloud Run's free tier still needs an account).
+   **Billing → Budgets & alerts → Create budget**: $1, alerts at 50/90/100%.
+2. Enable **Cloud Run**, **Cloud Build** and **Artifact Registry**.
+3. Create `cloudrun.env.yaml` (not committed; it holds no secrets, but keep it local):
+
+```yaml
+ARDENTUM_ENV: production
+ARDENTUM_AUTH_MODE: supabase
+ARDENTUM_SUPABASE_URL: https://<ref>.supabase.co
+ARDENTUM_CORS_ORIGINS: '["https://<project>.pages.dev"]'
+ARDENTUM_TRUSTED_PROXY_HOPS: "1"
+ARDENTUM_RATE_LIMIT_STORE: database
+WEB_CONCURRENCY: "1"
+```
+
+4. Deploy from source (the `backend/Dockerfile` is used):
+
+```bash
+gcloud run deploy ardentum-api --source backend --region europe-west1 \
+  --allow-unauthenticated --min-instances 0 --max-instances 2 \
+  --cpu 1 --memory 1Gi --concurrency 20 --timeout 60 \
+  --env-vars-file cloudrun.env.yaml \
+  --set-secrets "ARDENTUM_DATABASE_URL=ardentum-db-url:latest"
+```
+
+Create the secret first: **Secret Manager → Create secret** `ardentum-db-url` with the
+pooler URL from step 1.3, and grant the Cloud Run service account *Secret Accessor*.
 
 | Variable | Value |
 |---|---|
-| `ARDENTUM_ENV` | `production` |
-| `ARDENTUM_DATABASE_URL` | Supabase PostgreSQL URL |
-| `ARDENTUM_AUTH_MODE` | `supabase` (required; the app refuses to start otherwise) |
-| `ARDENTUM_SUPABASE_URL` | `https://<ref>.supabase.co` |
-| `ARDENTUM_CORS_ORIGINS` | `["https://<web-domain>"]` (only needed for direct browser calls) |
-| `ARDENTUM_TIINGO_API_KEY` | optional — requires an appropriate licence |
-| `WEB_CONCURRENCY` | worker processes (default 2) |
+| `ARDENTUM_ENV` | `production` (enforces Supabase auth, PostgreSQL and explicit CORS) |
+| `ARDENTUM_DATABASE_URL` | Supabase transaction-pooler URL (secret) |
+| `ARDENTUM_AUTH_MODE` / `ARDENTUM_SUPABASE_URL` | `supabase` / project URL |
+| `ARDENTUM_CORS_ORIGINS` | `["https://<project>.pages.dev"]` plus any custom domain |
+| `ARDENTUM_CORS_ORIGIN_REGEX` | optional, for preview deployments, e.g. `^https://[a-z0-9-]+\.<project>\.pages\.dev$` |
+| `ARDENTUM_TRUSTED_PROXY_HOPS` | `1` on Cloud Run and Render (client IP for rate limits); `2` behind an extra load balancer |
+| `ARDENTUM_RATE_LIMIT_STORE` | `database`: limits shared by all instances |
+| `WEB_CONCURRENCY` | `1` per vCPU |
+| `ARDENTUM_FRED_API_KEY` | optional (free at fred.stlouisfed.org) |
+| `ARDENTUM_WIKIRATE_API_KEY` | optional (free WikiRate account) |
+| `ARDENTUM_TIINGO_API_KEY` | optional; commercial use needs a paid licence (D-004) |
 
-The entrypoint runs `alembic upgrade head` before starting (set
-`ARDENTUM_SKIP_MIGRATIONS=1` to disable). Health check: `GET /api/v1/health`.
+The container runs `alembic upgrade head` on start (`ARDENTUM_SKIP_MIGRATIONS=1` disables
+it). Health checks: `/api/v1/health` (process) and `/api/v1/health/db` (database).
 
-Example (Render): New → Web Service → Docker, root directory `backend`, add the
-variables above, health-check path `/api/v1/health`.
+Long calculations run as background jobs that are long-polled by the browser (D-025).
+Cloud Run's request-based billing only allocates CPU while a request is open, and the
+polls keep one open, so no "CPU always allocated" setting (which costs money) is needed.
+Keep `--timeout` above 25 s.
 
-## 3. Web app
+**Fallback without a card: Render.** New → Web Service → Docker, root directory
+`backend`, instance type *Free*, the same variables, health check `/api/v1/health`.
+Free instances sleep after 15 idle minutes; the first request then takes about a minute.
 
-The web app proxies `/api/v1/*` to the API, so the browser only talks to one origin.
+## 3. Web app on Cloudflare Pages
 
-| Variable (build time) | Value |
+Workers & Pages → Create → Pages → Connect to Git → this repository:
+
+| Setting | Value |
 |---|---|
-| `API_URL` | public URL of the API, e.g. `https://ardentum-api.onrender.com` |
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key |
+| Root directory | `frontend` |
+| Build command | `npm ci && npm run build` |
+| Output directory | `out` |
+| `NEXT_OUTPUT` | `export` (static export) |
+| `NEXT_PUBLIC_API_BASE` | Cloud Run URL, e.g. `https://ardentum-api-xxxxx.a.run.app` |
+| `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` | from step 1.2 |
+| `NODE_VERSION` | `22` |
 
-Vercel: import the repository, set the root directory to `frontend`, keep "Include
-files outside the root directory" enabled (the build reads `docs/methodology`), and add
-the variables. Container alternative:
-`docker build -f frontend/Dockerfile --build-arg API_URL=... -t ardentum-web .`
+The build reads `../docs/methodology` for the Research section (the whole repository is
+checked out). Security headers are in `frontend/public/_headers`. Add the Pages URL to
+`ARDENTUM_CORS_ORIGINS` and to Supabase's Site URL and Redirect URLs.
 
-## 4. Verify
+**Netlify fallback:** base directory `frontend`, build `npm run build`, publish `out`,
+with the same variables (copy `public/_headers` rules to Netlify headers if needed).
 
-1. `GET https://<api>/api/v1/meta` → `auth_mode: supabase`, `environment: production`.
-2. Open the web app, create an account, run an optimisation, save it, reload, and
-   confirm it appears under **Portfolios**.
-3. Run the Playwright suite against staging if desired (`baseURL` override).
+A Node-server deployment (for example `frontend/Dockerfile`, which proxies `/api/v1`)
+remains possible but is not needed for the free stack.
+
+## 4. Keep-alive
+
+GitHub → repository → Settings → Secrets and variables → Actions → **Variables** → add
+`API_URL` = the Cloud Run URL. The `keepalive` workflow pings `/api/v1/health/db` daily,
+which keeps the Supabase project from pausing.
+
+## 5. Optional custom domain
+
+Cloudflare → Domain Registration → register a domain (at-cost). Then Pages → Custom
+domains → add it; update `ARDENTUM_CORS_ORIGINS` and Supabase URL configuration.
+
+## 6. Verify
+
+1. `GET <api>/api/v1/meta` → `environment: production`, `auth_mode: supabase`.
+2. `GET <api>/api/v1/health/db` → `{"status": "ok", "database": "ok"}`.
+3. Open the web app, sign in with Google or GitHub, select **US industries — 12
+   portfolios** (the first load downloads and caches the Ken French files), optimise,
+   save the portfolio, reload and find it under **Portfolios**.
+4. Run a Monte Carlo simulation (a background job) and a backtest.
+5. On the Universe page, fetch a risk-free rate (Fama-French RF). With an uploaded
+   dataset that has ISINs, build an ESG overlay on **ESG data**.
+6. Optionally run the Playwright suite against the deployment (`baseURL` override).
 
 ## Security checklist
 
-- Production refuses dev sign-in, SQLite, wildcard CORS and missing Supabase config (enforced in settings).
-- Secrets only in the host's secret store; `.env*` files are git-ignored.
-- The API is stateless apart from PostgreSQL; ownership is enforced on every portfolio/dataset query.
-- Uploads are limited to 5 MB, parsed strictly, and stored per user.
+- Production refuses dev sign-in, SQLite, wildcard CORS and missing Supabase settings.
+- Secrets live only in the host's secret store; `.env*` files are git-ignored.
+- Ownership is enforced on every portfolio, dataset, job and ESG overlay query.
+- Compute endpoints are rate limited per verified user or client IP across instances;
+  forwarded headers are trusted only for the configured number of proxy hops.
+- Uploads are limited to 5 MB, parsed strictly and stored per user.
+- External data is cached in PostgreSQL; if a source is down, the last good copy is
+  served and labelled as stale.

@@ -3,14 +3,16 @@
 Legend: **[F]** needs a founder decision/credential · **[E]** engineering
 
 ## Founder decisions (blocking production launch)
-- [ ] **[F]** Market-data licence: Tiingo commercial plan vs. alternative vendor (DECISIONS D-004).
+- [x] **[F]** Market data: free Ken French industry data built in (D-018). Tiingo/other licensed vendors remain optional for individual securities (D-004).
+- [ ] **[F]** Confirm Ken French Data Library terms with Prof. French before commercial launch (D-018).
 - [x] **[F]** ESG data source: user-supplied plus open WikiRate data (CC BY 4.0, D-026). A licensed provider remains optional.
-- [ ] **[F]** Supabase project (URL, JWT keys) and hosting accounts (Vercel + Render/Fly/Cloud Run).
-- [ ] **[F]** Domain name, privacy policy and terms of use (financial-information disclaimer).
+- [ ] **[F]** Create free accounts and follow DEPLOYMENT.md: Supabase (+ Google/GitHub OAuth apps), Google Cloud (Cloud Run, $1 budget alert), Cloudflare Pages; set the `API_URL` Actions variable.
+- [ ] **[F]** Optional free keys: FRED API key; WikiRate account (only if its API requires a key).
+- [ ] **[F]** Optional domain (~$10/yr, Cloudflare Registrar); privacy policy and terms of use (financial-information disclaimer, CC BY 4.0 attribution for WikiRate data).
 
 ## Engineering — next
 - [ ] **[E]** Deploy to staging once accounts exist; run E2E against staging; manual acceptance pass.
-- [ ] **[E]** Verify Docker builds in CI (first run) and live Tiingo/FRED calls with real keys.
+- [ ] **[E]** Verify Docker builds in CI (first run) and live calls to Ken French, Frankfurter, WikiRate and FRED from the deployed API.
 
 ## Engineering — backlog
 - [x] Persist provider payloads (Ken French, Tiingo, FRED, FX) in PostgreSQL (D-019).
