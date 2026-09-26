@@ -6,7 +6,18 @@ import datetime as dt
 import uuid
 from typing import Any
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Index, LargeBinary, String, Text, func
+from sqlalchemy import (
+    JSON,
+    BigInteger,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    LargeBinary,
+    String,
+    Text,
+    func,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -92,3 +103,13 @@ class ProviderCache(Base):
     key: Mapped[str] = mapped_column(String(200), primary_key=True)
     fetched_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True))
     payload: Mapped[bytes] = mapped_column(LargeBinary)
+
+
+class RateLimitCounter(Base):
+    """Requests per client per fixed window, shared by every API instance."""
+
+    __tablename__ = "rate_limit_counters"
+
+    key: Mapped[str] = mapped_column(String(80), primary_key=True)
+    window: Mapped[int] = mapped_column(BigInteger, primary_key=True)  # epoch // window length
+    count: Mapped[int] = mapped_column(Integer, default=0)

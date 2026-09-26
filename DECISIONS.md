@@ -141,3 +141,12 @@ Rockafellar-Uryasev LP over the estimation window, solved by the same verified C
 as other objectives. It uses no expected-return estimate unless a minimum return is set.
 Historical scenarios only (no parametric CVaR): it keeps real fat tails, at the cost of
 not extrapolating beyond the sample. A CVaR frontier is not offered yet.
+
+## D-024 Shared rate limiting in PostgreSQL
+Free hosting runs several short-lived instances, so an in-process limiter under-counts.
+A sliding-window counter per client lives in `rate_limit_counters` (one atomic upsert per
+compute request; old windows purged opportunistically). Clients are identified by the
+verified user id, or by IP address; `ARDENTUM_TRUSTED_PROXY_HOPS` (1 on Cloud Run/Render)
+selects the proxy-appended X-Forwarded-For entry so clients cannot forge it. If the
+database is unavailable the limiter allows the request and logs a warning (availability
+over strictness). SQLite deployments default to the in-process limiter.

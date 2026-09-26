@@ -16,7 +16,7 @@ Legend: **[F]** needs a founder decision/credential · **[E]** engineering
 - [x] Persist provider payloads (Ken French, Tiingo, FRED, FX) in PostgreSQL (D-019).
 - [x] Risk-free rate from Fama-French RF or FRED DGS3MO, selectable in the UI (D-020).
 - [x] Contributions/withdrawals and depletion probability in Monte Carlo.
-- [ ] Shared (edge/Redis) rate limiting for multi-instance deployments (in-process limiter exists).
+- [x] Shared rate limiting across instances via PostgreSQL (D-024).
 - [ ] Background jobs for long backtests (currently synchronous; bounded by input limits).
 - [x] Black–Litterman views (D-022); minimum-CVaR optimisation (D-023).
 - [ ] Mean-CVaR efficient frontier.

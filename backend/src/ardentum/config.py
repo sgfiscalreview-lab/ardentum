@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from enum import StrEnum
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -40,6 +41,11 @@ class Settings(BaseSettings):
 
     max_upload_bytes: int = 5 * 1024 * 1024
     compute_rate_limit: int = 60  # compute requests per client per minute (0 disables)
+    # "database" shares limits across instances (PostgreSQL); "auto" = database unless SQLite.
+    rate_limit_store: Literal["auto", "memory", "database"] = "auto"
+    # Proxies in front of the API that append to X-Forwarded-For (Cloud Run / Render: 1).
+    # 0 uses the socket address and ignores the header, which clients can forge.
+    trusted_proxy_hops: int = Field(0, ge=0, le=5)
     log_level: str = "INFO"
 
     @model_validator(mode="after")
