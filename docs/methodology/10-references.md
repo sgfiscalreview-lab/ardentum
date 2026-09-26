@@ -30,3 +30,10 @@ Primary sources for the methods used in Ardentum.
 - Sharpe, W. F. (1966). Mutual fund performance. *Journal of Business*, 39(1), 119–138.
 - Sharpe, W. F. (1994). The Sharpe ratio. *Journal of Portfolio Management*, 21(1), 49–58.
 - Sortino, F. A., & Price, L. N. (1994). Performance measurement in a downside risk framework. *Journal of Investing*, 3(3), 59–64.
+
+## Data sources
+
+- Board of Governors of the Federal Reserve System. Market Yield on U.S. Treasury Securities at 3-Month Constant Maturity, Quoted on an Investment Basis (DGS3MO). Retrieved from FRED, Federal Reserve Bank of St. Louis.
+- European Central Bank. Euro foreign exchange reference rates. Served by Frankfurter (frankfurter.dev).
+- Fama, E. F., & French, K. R. (1993). Common risk factors in the returns on stocks and bonds. *Journal of Financial Economics*, 33(1), 3–56.
+- French, K. R. Data Library: industry portfolios and Fama/French factors. Tuck School of Business, Dartmouth College. https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/data_library.html

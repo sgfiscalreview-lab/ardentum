@@ -139,3 +139,30 @@ def annual_rate_to_periodic(annual_rate: float, periods_per_year: int) -> float:
     if annual_rate <= -1.0:
         raise InvalidInputError("Annual rate must exceed -100%.")
     return float((1.0 + annual_rate) ** (1.0 / periods_per_year) - 1.0)
+
+
+def annualise_periodic_rates(rates: pd.Series | np.ndarray, periods_per_year: int) -> float:
+    """Effective annual rate equivalent to a sequence of per-period simple rates.
+
+    ``(prod(1 + r_t))^(P / n) - 1`` — e.g. the 1-month T-bill return quoted as a
+    simple daily rate in the Fama-French factors file.
+    """
+    r = np.asarray(rates, dtype=float)
+    validate_returns(r, min_obs=1, name="rates")
+    return float(np.prod(1.0 + r) ** (periods_per_year / r.shape[0]) - 1.0)
+
+
+def bill_yield_to_effective(yield_: float | np.ndarray, days: int = 91) -> float | np.ndarray:
+    """Effective annual rate from a Treasury-bill investment (bond-equivalent) yield.
+
+    The investment yield is a simple annual rate on a 365-day basis for a bill of
+    ``days`` to maturity; rolling such bills compounds it ``365 / days`` times a year:
+    ``(1 + y * days / 365)^(365 / days) - 1``.
+    """
+    if days <= 0:
+        raise InvalidInputError("Bill maturity must be a positive number of days.")
+    y = np.asarray(yield_, dtype=float)
+    if (y * days / 365.0 <= -1.0).any():
+        raise InvalidInputError("Bill yield implies a loss of 100% or more.")
+    out = (1.0 + y * days / 365.0) ** (365.0 / days) - 1.0
+    return float(out) if out.ndim == 0 else out

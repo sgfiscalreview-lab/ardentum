@@ -18,7 +18,10 @@ should be total-return adjusted closes; the uploader asserts this and the
 provenance records it. Nothing is inferred silently: malformed input is rejected
 with the offending rows/columns named.
 
-Metadata CSV (optional): ``ticker,name,sector,asset_class,esg_score,esg_source,esg_as_of``.
+Metadata CSV (optional): ``ticker,name,sector,asset_class,currency,isin,market_cap,
+esg_score,esg_source,esg_as_of``. ``currency`` (ISO 4217, default USD) is the currency
+the prices are quoted in; ``isin`` lets open ESG data be matched to the asset;
+``market_cap`` (in ``currency``) feeds Black-Litterman equilibrium priors.
 """
 
 from __future__ import annotations
@@ -37,6 +40,25 @@ MAX_BYTES = 5 * 1024 * 1024
 MAX_TICKERS = 200
 MAX_ROWS = 60_000
 TICKER_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9.\-_^=]{0,19}$")
+CURRENCY_RE = re.compile(r"^[A-Z]{3}$")
+ISIN_RE = re.compile(r"^[A-Z]{2}[A-Z0-9]{9}[0-9]$")
+
+
+def isin_is_valid(isin: str) -> bool:
+    """ISO 6166 check: letters become 10..35, then the Luhn check over the digit string."""
+    if not ISIN_RE.match(isin):
+        return False
+    digits = "".join(str(int(c, 36)) for c in isin)
+    total = 0
+    for i, ch in enumerate(reversed(digits)):
+        d = int(ch)
+        if i % 2 == 1:
+            d *= 2
+            d = d - 9 if d > 9 else d
+        total += d
+    return total % 10 == 0
+
+
 _PRICE_COLUMNS = ("adj_close", "adjclose", "adjusted_close", "close", "price")
 
 
@@ -182,13 +204,39 @@ def parse_metadata_csv(content: bytes) -> list[AssetInfo]:
             raise InvalidInputError(
                 f"Line {line}: asset_class must be one of {', '.join(a.value for a in AssetClass)}."
             ) from exc
+        currency = (get("currency") or "USD").upper()
+        if not CURRENCY_RE.match(currency):
+            raise InvalidInputError(
+                f"Line {line}: currency must be a three-letter ISO 4217 code such as USD or EUR."
+            )
+        isin = get("isin")
+        if isin is not None:
+            isin = isin.upper()
+            if not isin_is_valid(isin):
+                raise InvalidInputError(
+                    f"Line {line}: {isin!r} is not a valid ISIN (12 characters with a check digit)."
+                )
+        cap_s = get("market_cap")
+        market_cap: float | None = None
+        if cap_s is not None:
+            try:
+                market_cap = float(cap_s)
+            except ValueError as exc:
+                raise InvalidInputError(
+                    f"Line {line}: market_cap {cap_s!r} is not a number."
+                ) from exc
+            if not np.isfinite(market_cap) or market_cap <= 0:
+                raise InvalidInputError(f"Line {line}: market_cap must be positive.")
         out.append(
             AssetInfo(
                 ticker=ticker,
                 name=get("name") or ticker,
                 asset_class=asset_class,
                 sector=get("sector"),
+                currency=currency,
                 esg=esg,
+                isin=isin,
+                market_cap=market_cap,
             )
         )
     tickers = [a.ticker for a in out]

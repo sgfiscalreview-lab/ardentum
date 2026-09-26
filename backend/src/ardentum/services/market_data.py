@@ -33,11 +33,12 @@ from ardentum.data.models import (
     DatasetKind,
     EsgRecord,
 )
-from ardentum.data.providers import demo, kenfrench
+from ardentum.data.providers import demo, fx, kenfrench
 from ardentum.data.providers.tiingo import TiingoProvider, parse_history
 from ardentum.data.providers.tiingo import provenance as tiingo_provenance
 from ardentum.data.validation import QualityReport, align_prices
 from ardentum.db.models import Dataset
+from ardentum.quant.currency import convert_prices
 from ardentum.quant.errors import InsufficientDataError, InvalidInputError
 from ardentum.quant.frequency import Frequency
 from ardentum.quant.optimisation import AssetMetadata
@@ -48,6 +49,7 @@ TIINGO_ID = "tiingo"
 MIN_OBSERVATIONS = 30
 KF_MAX_AGE = dt.timedelta(days=7)  # the library updates monthly
 TIINGO_MAX_AGE = dt.timedelta(hours=20)  # end-of-day data
+FX_MAX_AGE = dt.timedelta(hours=20)  # ECB publishes once per business day
 
 
 class NotFoundError(Exception):
@@ -63,6 +65,7 @@ class LoadedData:
     frequency: Frequency
     report: QualityReport
     provenance: DataProvenance
+    currency: str = "USD"  # currency every price series is expressed in
 
     @property
     def periods_per_year(self) -> int:
@@ -131,7 +134,10 @@ def asset_from_json(d: dict[str, object]) -> AssetInfo:
         name=str(d.get("name") or d["ticker"]),
         asset_class=AssetClass(str(d.get("asset_class") or "equity")),
         sector=str(d["sector"]) if d.get("sector") else None,
+        currency=str(d.get("currency") or "USD"),
         esg=esg,
+        isin=str(d["isin"]) if d.get("isin") else None,
+        market_cap=float(d["market_cap"]) if d.get("market_cap") is not None else None,  # type: ignore[arg-type]
     )
 
 
@@ -141,6 +147,9 @@ def asset_to_json(a: AssetInfo) -> dict[str, object]:
         "name": a.name,
         "asset_class": a.asset_class.value,
         "sector": a.sector,
+        "currency": a.currency,
+        "isin": a.isin,
+        "market_cap": a.market_cap,
         "esg_score": a.esg.score if a.esg else None,
         "esg_source": a.esg.source if a.esg else None,
         "esg_as_of": a.esg.as_of.isoformat() if a.esg and a.esg.as_of else None,
@@ -367,6 +376,70 @@ class MarketDataService:
             prov = _with_note(prov, "Tiingo could not be reached; showing the last cached prices.")
         return prices, prov, info
 
+    # ------------------------------------------------------------------ currency
+
+    def fx_rates(self, local: str, base: str) -> tuple[pd.Series, CachedPayload]:
+        """Daily units of ``base`` per unit of ``local`` (ECB reference rates, cached)."""
+        local, base = fx.check_currency(local), fx.check_currency(base)
+        got = self.cache.get_or_fetch(
+            "frankfurter",
+            f"{local}->{base}",
+            FX_MAX_AGE,
+            lambda: fx.timeseries_payload(local, base),
+        )
+        key = ("fx", local, base, got.fetched_at)
+        rates = _PARSED_CACHE.get(key)
+        if rates is None:
+            rates = fx.parse_timeseries(got.payload, base)
+            _PARSED_CACHE.put(key, rates)
+        return rates, got  # type: ignore[return-value]
+
+    def _to_base_currency(
+        self,
+        raw: pd.DataFrame,
+        provenance: DataProvenance,
+        info: DatasetInfo,
+        tickers: list[str],
+        base: str | None,
+    ) -> tuple[pd.DataFrame, DataProvenance, str]:
+        currency = {t: (a.currency if (a := info.asset(t)) else "USD").upper() for t in tickers}
+        if base is None:
+            distinct = sorted(set(currency.values()))
+            if len(distinct) > 1:
+                raise InvalidInputError(
+                    f"The selected assets are priced in {', '.join(distinct)}; choose a base "
+                    "currency so their returns are comparable."
+                )
+            return raw, provenance, distinct[0]
+        base = base.upper()
+        by_local: dict[str, list[str]] = {}
+        for t in tickers:
+            if currency[t] != base:
+                by_local.setdefault(currency[t], []).append(t)
+        if not by_local:
+            return raw, provenance, base
+        out = raw.copy()
+        stale = False
+        oldest: dt.datetime | None = None
+        for local, members in by_local.items():
+            rates, got = self.fx_rates(local, base)
+            stale = stale or got.stale
+            oldest = got.fetched_at if oldest is None else min(oldest, got.fetched_at)
+            for t in members:
+                out[t] = convert_prices(raw[t], rates)
+        assert oldest is not None
+        prov = _with_note(
+            provenance,
+            f"Prices quoted in {', '.join(sorted(by_local))} were converted to {base} at "
+            f"{fx.SOURCE}, retrieved {oldest.date().isoformat()}. Returns are unhedged: "
+            "they include exchange-rate moves.",
+        )
+        if stale:
+            prov = _with_note(prov, "The FX source could not be reached; using cached rates.")
+        return out, prov, base
+
+    # ------------------------------------------------------------------ load
+
     def load(
         self,
         dataset_id: str,
@@ -374,10 +447,14 @@ class MarketDataService:
         start: dt.date | None = None,
         end: dt.date | None = None,
         frequency: str = "daily",
+        base_currency: str | None = None,
     ) -> LoadedData:
         raw, provenance, info = self._raw_prices(dataset_id, list(tickers), start, end)
         if raw.empty:
             raise InsufficientDataError("No prices in the selected date range.")
+        raw, provenance, currency = self._to_base_currency(
+            raw, provenance, info, list(tickers), base_currency
+        )
         aligned, report = align_prices(raw)
         freq = Frequency(frequency)
         if freq is Frequency.WEEKLY:
@@ -400,6 +477,7 @@ class MarketDataService:
             frequency=freq,
             report=report,
             provenance=provenance,
+            currency=currency,
         )
 
 

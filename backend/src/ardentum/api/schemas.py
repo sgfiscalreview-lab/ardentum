@@ -45,6 +45,11 @@ class UniverseSelection(RequestModel):
     start: dt.date | None = None
     end: dt.date | None = None
     frequency: Literal["daily", "weekly", "monthly"] = "daily"
+    base_currency: str | None = Field(
+        None,
+        pattern=r"^[A-Z]{3}$",
+        description="Express all prices in this ISO 4217 currency (unhedged, ECB rates).",
+    )
 
     @field_validator("tickers")
     @classmethod
@@ -64,6 +69,21 @@ class EstimationSettings(RequestModel):
     mean_estimator: MeanEstimator = MeanEstimator.HISTORICAL
     covariance_estimator: CovarianceEstimator = CovarianceEstimator.LEDOIT_WOLF
     risk_free_rate: float = Field(0.0, ge=-0.05, le=0.25, description="Effective annual rate.")
+    risk_free_source: str | None = Field(
+        None, max_length=200, description="Where the rate came from; echoed in results."
+    )
+
+
+class RiskFreeRequest(RequestModel):
+    source: Literal["fred_dgs3mo", "kenfrench_rf"] = "kenfrench_rf"
+    start: dt.date | None = None
+    end: dt.date | None = None
+
+    @model_validator(mode="after")
+    def _dates(self) -> RiskFreeRequest:
+        if self.start and self.end and self.start >= self.end:
+            raise ValueError("start must be before end.")
+        return self
 
 
 class SectorLimitIn(RequestModel):
@@ -269,9 +289,29 @@ class DataWindowOut(ResponseModel):
     observations: int
     frequency: str
     periods_per_year: int
+    currency: str
     provenance: ProvenanceOut
     quality_notes: list[str] = Field(default_factory=list)
     quality_warnings: list[str] = Field(default_factory=list)
+
+
+class RiskFreeSourceOut(ResponseModel):
+    id: str
+    name: str
+    description: str
+    citation: str
+    available: bool
+
+
+class RiskFreeOut(ResponseModel):
+    source: RiskFreeSourceOut
+    rate: float = Field(description="Effective annual rate (decimal).")
+    label: str
+    start: dt.date
+    end: dt.date
+    observations: int
+    retrieved_at: dt.datetime
+    stale: bool
 
 
 class AssetOut(ResponseModel):
@@ -280,6 +320,8 @@ class AssetOut(ResponseModel):
     asset_class: str
     sector: str | None
     currency: str
+    isin: str | None
+    market_cap: float | None
     esg_score: float | None
     esg_source: str | None
     esg_as_of: dt.date | None
@@ -314,6 +356,8 @@ class DatasetSummaryOut(ResponseModel):
 
 
 class EstimationOut(ResponseModel):
+    risk_free_rate: float
+    risk_free_source: str
     mean_estimator: str
     covariance_estimator: str
     mean_shrinkage: float | None

@@ -90,3 +90,39 @@ not generated text — so every statement is a checkable fact about the solution
 ## D-016 Comparison page replays fixed weights in-sample, with warning
 Comparing portfolios on the estimation window is in-sample; the response always carries an
 explicit warning and points to the walk-forward backtest for out-of-sample evaluation.
+
+## D-017 Free hosting stack (founder-approved)
+Frontend as a static export on Cloudflare Pages (Netlify fallback) calling the API directly
+with CORS; backend on Google Cloud Run (max 2 instances, budget alert; Render free as the
+no-card fallback); Supabase free tier for Postgres and OAuth sign-in (Google/GitHub), kept
+awake by a daily `/health/db` ping from GitHub Actions. See DEPLOYMENT.md.
+
+## D-018 Real market data: Kenneth French Data Library **(founder: confirm terms before commercial launch)**
+The library is free, needs no key and has daily value-weighted US industry returns since
+1926, which makes it the only free *real* dataset suitable for portfolio analysis. It has
+no explicit licence; it is published by Prof. French for public use with citation. We cite
+it in every result's provenance and flag that commercial redistribution should be confirmed
+with the author. These are industry portfolios, not individual securities, so company ESG
+data does not apply to them.
+
+## D-019 Provider payloads cached in PostgreSQL
+External payloads (Ken French zips, Tiingo histories, FRED series, FX rates) are stored
+gzip-compressed in `provider_cache` with an in-process LRU in front. Free-tier instances
+restart often and sources rate-limit, so a shared cache avoids re-downloading. When a
+refresh fails the last good copy is served and the result says it is stale.
+
+## D-020 Risk-free rate: user input, optionally fetched from a public source
+The rate stays an explicit input so results are reproducible from the request alone. The
+UI can fill it from (a) Fama-French RF (1-month T-bill; no key), compounded over the window
+and annualised geometrically, or (b) FRED DGS3MO (needs a free key), whose daily investment
+yields are converted to effective annual rates, $(1+y\cdot 91/365)^{365/91}-1$, and
+averaged. The chosen source is echoed (`estimation.risk_free_source`) in every result.
+
+## D-021 Multi-currency: unhedged conversion at ECB reference rates
+Assets carry a quote currency (uploads: `currency` column; built-in data: USD). A universe
+mixing currencies must name a base currency — we never silently mix. Prices are converted
+as $P_B = P_L\cdot X$ with daily ECB reference rates from Frankfurter (free, keyless,
+commercial use allowed), so $1+r_B=(1+r_L)(1+r_X)$: returns include currency moves
+(unhedged). Rates are carried forward over at most 5 missing days (ECB holidays); prices
+before 1999 or beyond a longer gap are errors. Hedged returns would need forward points or
+interest differentials, which have no free daily source.

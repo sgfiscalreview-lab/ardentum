@@ -7,10 +7,17 @@ import { useMemo, useState } from "react";
 import { Badge, Button, Callout, Card, Field, Input, NumberInput, Select, Table, Td, Th } from "@/components/ui";
 import { ErrorCallout, PageHeader, SyntheticBanner, useDataset } from "@/components/workspace";
 import { api, ApiError, unwrap } from "@/lib/api/client";
-import type { AssetOut, EstimationSettings } from "@/lib/api/types";
+import type { AssetOut, EstimationSettings, RiskFreeOut, UniverseSelection } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth";
-import { date as fmtDate, ESTIMATOR_LABELS } from "@/lib/format";
+import { date as fmtDate, ESTIMATOR_LABELS, pct } from "@/lib/format";
 import { useWorkspace } from "@/lib/workspace";
+
+/** Currencies with ECB reference rates (conversion source: Frankfurter). */
+const ECB_CURRENCIES = [
+  "USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD", "SEK", "NOK", "DKK", "HKD", "SGD", "CNY",
+  "INR", "KRW", "BRL", "MXN", "ZAR", "PLN", "CZK", "HUF", "RON", "BGN", "ISK", "ILS", "TRY", "IDR",
+  "MYR", "PHP", "THB",
+];
 
 export default function UniversePage() {
   const { state, setUniverse, setEstimation } = useWorkspace();
@@ -119,7 +126,8 @@ export default function UniversePage() {
               </Field>
             </div>
           </Card>
-          <EstimationCard value={state.estimation} onChange={setEstimation} />
+          <CurrencyCard universe={u} assets={assets} onChange={(c) => setUniverse({ base_currency: c })} />
+          <EstimationCard value={state.estimation} universe={u} onChange={setEstimation} />
           <UploadCard />
         </div>
       </div>
@@ -139,6 +147,7 @@ function AssetTable({ assets, selected, onToggle }: { assets: AssetOut[]; select
           <Th>Name</Th>
           <Th>Sector</Th>
           <Th>Class</Th>
+          <Th>Ccy</Th>
           <Th align="right">ESG</Th>
         </tr>
       </thead>
@@ -159,6 +168,7 @@ function AssetTable({ assets, selected, onToggle }: { assets: AssetOut[]; select
             <Td className="text-ink-2">{a.name}</Td>
             <Td className="text-ink-2 whitespace-nowrap">{a.sector ?? "—"}</Td>
             <Td className="text-ink-2">{a.asset_class.replace("_", " ")}</Td>
+            <Td className="text-ink-2">{a.currency}</Td>
             <Td align="right" title={a.esg_source ?? "No ESG score available"}>
               {a.esg_score != null ? a.esg_score.toFixed(0) : <span className="text-muted">n/a</span>}
             </Td>
@@ -181,7 +191,79 @@ function TickerEntry({ tickers, onChange }: { tickers: string[]; onChange: (t: s
   );
 }
 
-function EstimationCard({ value, onChange }: { value: EstimationSettings; onChange: (v: Partial<EstimationSettings>) => void }) {
+function CurrencyCard({ universe, assets, onChange }: { universe: UniverseSelection; assets: AssetOut[]; onChange: (c: string | null) => void }) {
+  const chosen = new Set(universe.tickers);
+  const currencies = Array.from(new Set(assets.filter((a) => chosen.has(a.ticker)).map((a) => a.currency))).sort();
+  const mixed = currencies.length > 1;
+  return (
+    <Card title="Currency" subtitle="Currency in which returns, risk and values are expressed.">
+      <Field
+        label="Base currency"
+        htmlFor="ccy"
+        hint="Prices in other currencies are converted at daily ECB reference rates (via Frankfurter). Returns are unhedged: they include exchange-rate moves."
+      >
+        <Select id="ccy" value={universe.base_currency ?? ""} onChange={(e) => onChange(e.target.value || null)}>
+          <option value="">{mixed ? "Choose a currency…" : `As quoted${currencies[0] ? ` (${currencies[0]})` : ""}`}</option>
+          {ECB_CURRENCIES.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </Select>
+      </Field>
+      {mixed && !universe.base_currency && (
+        <p className="mt-2 text-xs text-warn" role="status">
+          The selected assets are priced in {currencies.join(", ")}; choose a base currency to compare them.
+        </p>
+      )}
+    </Card>
+  );
+}
+
+function RiskFreeFetch({ universe, onChange }: { universe: UniverseSelection; onChange: (v: Partial<EstimationSettings>) => void }) {
+  const sources = useQuery({ queryKey: ["risk-free", "sources"], queryFn: () => unwrap(api.GET("/api/v1/risk-free/sources")), staleTime: 3_600_000 });
+  const [source, setSource] = useState<"kenfrench_rf" | "fred_dgs3mo">("kenfrench_rf");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const [last, setLast] = useState<RiskFreeOut | null>(null);
+  const fetchRate = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await unwrap(api.POST("/api/v1/risk-free", { body: { source, start: universe.start ?? null, end: universe.end ?? null } }));
+      setLast(res);
+      onChange({ risk_free_rate: res.rate, risk_free_source: res.label });
+    } catch (e) {
+      setError(e instanceof Error ? e : new Error(String(e)));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="space-y-2 rounded-md border border-line p-2.5">
+      <div className="flex gap-2">
+        <Select aria-label="Risk-free source" value={source} onChange={(e) => setSource(e.target.value as typeof source)} className="h-8 text-xs">
+          {(sources.data ?? []).map((s) => (
+            <option key={s.id} value={s.id} disabled={!s.available}>
+              {s.name}
+              {s.available ? "" : " — not configured"}
+            </option>
+          ))}
+        </Select>
+        <Button size="sm" variant="secondary" onClick={fetchRate} disabled={busy}>
+          {busy ? "Fetching…" : "Use"}
+        </Button>
+      </div>
+      <p className="text-[11px] text-muted">
+        Average over the estimation window (last 5 years if none is set), as an effective annual rate.
+        {last && ` Retrieved ${fmtDate(last.retrieved_at.slice(0, 10))}${last.stale ? " (cached copy; source unreachable)" : ""}. Source: ${last.source.citation}`}
+      </p>
+      <ErrorCallout error={error} />
+    </div>
+  );
+}
+
+function EstimationCard({ value, universe, onChange }: { value: EstimationSettings; universe: UniverseSelection; onChange: (v: Partial<EstimationSettings>) => void }) {
   return (
     <Card title="Estimation" subtitle="How expected returns and risk are estimated from the window.">
       <div className="space-y-3">
@@ -203,9 +285,14 @@ function EstimationCard({ value, onChange }: { value: EstimationSettings; onChan
             ))}
           </Select>
         </Field>
-        <Field label="Risk-free rate (annual)" htmlFor="rf" hint="Used for Sharpe and Sortino ratios. This is an assumption you set.">
-          <NumberInput id="rf" value={value.risk_free_rate} onChange={(v) => onChange({ risk_free_rate: v ?? 0 })} scale={100} suffix="%" min={-5} max={25} />
+        <Field
+          label="Risk-free rate (annual)"
+          htmlFor="rf"
+          hint={value.risk_free_source ? `${pct(value.risk_free_rate ?? 0)} from ${value.risk_free_source}.` : "Used for Sharpe and Sortino ratios. Enter an assumption or fetch a historical average."}
+        >
+          <NumberInput id="rf" value={value.risk_free_rate} onChange={(v) => onChange({ risk_free_rate: v ?? 0, risk_free_source: null })} scale={100} suffix="%" min={-5} max={25} />
         </Field>
+        <RiskFreeFetch universe={universe} onChange={onChange} />
       </div>
     </Card>
   );
@@ -269,7 +356,7 @@ function UploadCard() {
         <Field label="Prices CSV" htmlFor="ds-prices">
           <input id="ds-prices" type="file" accept=".csv,text/csv" onChange={(e) => setPrices(e.target.files?.[0] ?? null)} className="text-xs text-ink-2" />
         </Field>
-        <Field label="Metadata CSV (optional)" htmlFor="ds-meta" hint="Columns: ticker, name, sector, asset_class, esg_score, esg_source, esg_as_of. ESG scores require a source.">
+        <Field label="Metadata CSV (optional)" htmlFor="ds-meta" hint="Columns: ticker, name, sector, asset_class, currency (ISO code, default USD), isin, market_cap, esg_score, esg_source, esg_as_of. ESG scores require a source.">
           <input id="ds-meta" type="file" accept=".csv,text/csv" onChange={(e) => setMeta(e.target.files?.[0] ?? null)} className="text-xs text-ink-2" />
         </Field>
         {error && <Callout tone="error" title="Upload rejected">{error.message}</Callout>}

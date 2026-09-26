@@ -36,4 +36,6 @@ export type CompareResponse = S["CompareResponse"];
 export type PortfolioIn = S["PortfolioIn"];
 export type PortfolioOut = S["PortfolioOut"];
 export type MetaOut = S["MetaOut"];
+export type RiskFreeOut = S["RiskFreeOut"];
+export type RiskFreeSourceOut = S["RiskFreeSourceOut"];
 export type TokenOut = S["TokenOut"];

@@ -43,6 +43,8 @@ class AssetInfo:
     esg: EsgRecord | None = None
     is_benchmark: bool = False
     description: str | None = None
+    isin: str | None = None  # ISO 6166 identifier, used to match open ESG data
+    market_cap: float | None = None  # in ``currency``; used for Black-Litterman priors
 
 
 @dataclass(frozen=True)

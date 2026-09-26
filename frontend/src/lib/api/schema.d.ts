@@ -21,6 +21,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/health/db": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Health Db
+         * @description Touches the database; a daily ping keeps free-tier databases from pausing.
+         */
+        get: operations["health_db_api_v1_health_db_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/meta": {
         parameters: {
             query?: never;
@@ -251,6 +271,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/risk-free/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Risk Free Sources
+         * @description Free public sources for the risk-free rate and whether this server can use them.
+         */
+        get: operations["risk_free_sources_api_v1_risk_free_sources_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/risk-free": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Risk Free Rate
+         * @description Effective annual risk-free rate over a window from a public source.
+         */
+        post: operations["risk_free_rate_api_v1_risk_free_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/portfolios": {
         parameters: {
             query?: never;
@@ -349,6 +409,10 @@ export interface components {
             sector: string | null;
             /** Currency */
             currency: string;
+            /** Isin */
+            isin: string | null;
+            /** Market Cap */
+            market_cap: number | null;
             /** Esg Score */
             esg_score: number | null;
             /** Esg Source */
@@ -636,6 +700,8 @@ export interface components {
             frequency: string;
             /** Periods Per Year */
             periods_per_year: number;
+            /** Currency */
+            currency: string;
             provenance: components["schemas"]["ProvenanceOut"];
             /** Quality Notes */
             quality_notes: string[];
@@ -767,6 +833,10 @@ export interface components {
         };
         /** EstimationOut */
         EstimationOut: {
+            /** Risk Free Rate */
+            risk_free_rate: number;
+            /** Risk Free Source */
+            risk_free_source: string;
             /** Mean Estimator */
             mean_estimator: string;
             /** Covariance Estimator */
@@ -794,6 +864,11 @@ export interface components {
              * @default 0
              */
             risk_free_rate: number;
+            /**
+             * Risk Free Source
+             * @description Where the rate came from; echoed in results.
+             */
+            risk_free_source?: string | null;
         };
         /** ExplanationOut */
         ExplanationOut: {
@@ -1285,6 +1360,62 @@ export interface components {
          * @enum {string}
          */
         RebalanceFrequency: "monthly" | "quarterly" | "semiannual" | "annual";
+        /** RiskFreeOut */
+        RiskFreeOut: {
+            source: components["schemas"]["RiskFreeSourceOut"];
+            /**
+             * Rate
+             * @description Effective annual rate (decimal).
+             */
+            rate: number;
+            /** Label */
+            label: string;
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /** Observations */
+            observations: number;
+            /**
+             * Retrieved At
+             * Format: date-time
+             */
+            retrieved_at: string;
+            /** Stale */
+            stale: boolean;
+        };
+        /** RiskFreeRequest */
+        RiskFreeRequest: {
+            /**
+             * Source
+             * @default kenfrench_rf
+             * @enum {string}
+             */
+            source: "fred_dgs3mo" | "kenfrench_rf";
+            /** Start */
+            start?: string | null;
+            /** End */
+            end?: string | null;
+        };
+        /** RiskFreeSourceOut */
+        RiskFreeSourceOut: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Citation */
+            citation: string;
+            /** Available */
+            available: boolean;
+        };
         /** SectorExposureOut */
         SectorExposureOut: {
             /** Sector */
@@ -1379,6 +1510,11 @@ export interface components {
              * @enum {string}
              */
             frequency: "daily" | "weekly" | "monthly";
+            /**
+             * Base Currency
+             * @description Express all prices in this ISO 4217 currency (unhedged, ECB rates).
+             */
+            base_currency?: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -1420,6 +1556,28 @@ export interface components {
 export type $defs = Record<string, never>;
 export interface operations {
     health_api_v1_health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+        };
+    };
+    health_db_api_v1_health_db_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -1887,6 +2045,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CompareResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    risk_free_sources_api_v1_risk_free_sources_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RiskFreeSourceOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    risk_free_rate_api_v1_risk_free_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RiskFreeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RiskFreeOut"];
                 };
             };
             /** @description Validation Error */

@@ -148,8 +148,16 @@ export function UniverseSummary() {
         </div>
         <div className="flex justify-between gap-2">
           <dt>Risk-free</dt>
-          <dd className="text-ink tabular">{pct(state.estimation.risk_free_rate)}</dd>
+          <dd className="text-ink tabular" title={state.estimation.risk_free_source ?? "Entered by the user"}>
+            {pct(state.estimation.risk_free_rate)}
+          </dd>
         </div>
+        {u.base_currency && (
+          <div className="flex justify-between gap-2">
+            <dt>Currency</dt>
+            <dd className="text-ink">{u.base_currency}</dd>
+          </div>
+        )}
       </dl>
       {ds.data?.is_synthetic && (
         <div className="mt-2">
@@ -270,6 +278,7 @@ export function DataNotes({ data, extra }: { data: DataWindowOut; extra?: string
         <Row k="Adjustment" v={p.adjustment} />
         <Row k="Window" v={`${fmtDate(data.start)} – ${fmtDate(data.end)}`} />
         <Row k="Observations" v={`${data.observations.toLocaleString()} ${data.frequency} returns (${data.periods_per_year}/year)`} />
+        <Row k="Currency" v={data.currency} />
         {p.license_note && <Row k="Licence" v={p.license_note} />}
       </dl>
       {[...p.notes, ...data.quality_notes, ...(extra ?? [])].length > 0 && (

@@ -94,14 +94,17 @@ def data_window(data: LoadedData) -> s.DataWindowOut:
         observations=len(data.returns),
         frequency=data.frequency.value,
         periods_per_year=data.periods_per_year,
+        currency=data.currency,
         provenance=provenance_out(data.provenance),
         quality_notes=list(data.report.notes),
         quality_warnings=list(data.report.warnings),
     )
 
 
-def estimation_out(est: MarketEstimates) -> s.EstimationOut:
+def estimation_out(est: MarketEstimates, settings: s.EstimationSettings) -> s.EstimationOut:
     return s.EstimationOut(
+        risk_free_rate=settings.risk_free_rate,
+        risk_free_source=settings.risk_free_source or "Entered by the user",
         mean_estimator=est.mean_estimator.value,
         covariance_estimator=est.covariance_estimator.value,
         mean_shrinkage=est.mean_shrinkage,
@@ -144,7 +147,7 @@ def load(
     service: MarketDataService, u: s.UniverseSelection, extra: Sequence[str] = ()
 ) -> LoadedData:
     tickers = list(u.tickers) + [t for t in extra if t not in u.tickers]
-    return service.load(u.dataset_id, tickers, u.start, u.end, u.frequency)
+    return service.load(u.dataset_id, tickers, u.start, u.end, u.frequency, u.base_currency)
 
 
 def estimates_for(
@@ -340,7 +343,7 @@ def asset_analytics(service: MarketDataService, req: s.AnalyticsRequest) -> s.An
     norm = prices / prices.iloc[0] * 100.0
     return s.AnalyticsResponse(
         data=data_window(data),
-        estimation=estimation_out(est),
+        estimation=estimation_out(est, req.estimation),
         benchmark=bench,
         assets=assets,
         tickers=tickers,
@@ -393,7 +396,7 @@ def run_optimise(service: MarketDataService, req: s.OptimiseRequest) -> s.Optimi
     return s.OptimiseResponse(
         result=result,
         explanation=explanation,
-        estimation=estimation_out(est),
+        estimation=estimation_out(est, req.estimation),
         data=data_window(data),
         excluded_unscored=unscored,
         stability=stability,
@@ -452,7 +455,7 @@ def run_frontier(service: MarketDataService, req: s.FrontierRequest) -> s.Fronti
         risk_free_rate=rf,
         risk_free_rate_arithmetic=est.risk_free_arithmetic(rf),
         warnings=list(ef.warnings),
-        estimation=estimation_out(est),
+        estimation=estimation_out(est, req.estimation),
         data=data_window(data),
         excluded_unscored=unscored,
     )
@@ -588,7 +591,7 @@ def run_esg_impact(service: MarketDataService, req: s.EsgImpactRequest) -> s.Esg
         sector_changes=sector_changes,
         esg_frontier=frontier,
         esg_data_notes=notes,
-        estimation=estimation_out(est),
+        estimation=estimation_out(est, req.estimation),
         data=data_window(data),
         excluded_unscored=unscored,
     )
@@ -889,6 +892,6 @@ def run_compare(service: MarketDataService, req: s.CompareRequest) -> s.CompareR
             "historical performance is in-sample and overstates what could have been achieved; "
             "use the walk-forward backtest for an out-of-sample evaluation."
         ),
-        estimation=estimation_out(est),
+        estimation=estimation_out(est, req.estimation),
         data=data_window(data),
     )

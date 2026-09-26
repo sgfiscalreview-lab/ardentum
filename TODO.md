@@ -13,10 +13,11 @@ Legend: **[F]** needs a founder decision/credential · **[E]** engineering
 - [ ] **[E]** Verify Docker builds in CI (first run) and live Tiingo/FRED calls with real keys.
 
 ## Engineering — backlog
-- [ ] Persist Tiingo prices in PostgreSQL (currently in-process LRU cache).
-- [ ] FRED risk-free rate selector in the UI (backend client exists).
+- [x] Persist provider payloads (Ken French, Tiingo, FRED, FX) in PostgreSQL (D-019).
+- [x] Risk-free rate from Fama-French RF or FRED DGS3MO, selectable in the UI (D-020).
 - [ ] Contributions/withdrawals in Monte Carlo.
 - [ ] Shared (edge/Redis) rate limiting for multi-instance deployments (in-process limiter exists).
 - [ ] Background jobs for long backtests (currently synchronous; bounded by input limits).
 - [ ] Black–Litterman views; CVaR optimisation.
-- [ ] Multi-currency support (all data assumed single currency).
+- [x] Multi-currency universes, unhedged conversion at ECB rates (D-021).
+- [ ] Currency-hedged returns (needs a free source of forward points or daily interest differentials).

@@ -32,6 +32,8 @@ def _asset_out(a: AssetInfo) -> s.AssetOut:
         asset_class=a.asset_class.value,
         sector=a.sector,
         currency=a.currency,
+        isin=a.isin,
+        market_cap=a.market_cap,
         esg_score=a.esg.score if a.esg else None,
         esg_source=a.esg.source if a.esg else None,
         esg_as_of=a.esg.as_of if a.esg else None,
