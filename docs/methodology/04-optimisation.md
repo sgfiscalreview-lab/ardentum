@@ -70,7 +70,7 @@ which Ardentum reproduces to within $10^{-5}$ relative error (automated test). T
 Problems are solved with CVXPY (Diamond & Boyd, 2016) using the Clarabel interior-point solver (Goulart & Chen, 2024), with SCS as a fallback. After solving, Ardentum:
 
 1. removes round-off below $10^{-8}$, clips to bounds and renormalises;
-2. **re-checks every constraint** (tolerance $10^{-6}$) — a violating solution raises an error instead of being shown;
+2. **re-checks every constraint** (tolerance $10^{-6}$); a violating solution raises an error and is never shown;
 3. computes diagnostics: which constraints bind, and their shadow prices (dual values) where they are interpretable.
 
 Pre-checks catch common infeasibilities with a specific message (e.g. maximum weights that sum to less than 100%, a minimum ESG score above the best-scoring asset, a target return above the attainable maximum).
@@ -81,15 +81,15 @@ The optimiser is tested against independent answers: closed-form global minimum-
 
 ## Explanations
 
-Explanations are derived from optimality conditions, not generated text, so each is a checkable fact:
+Explanations are derived from the optimality conditions, so each one is a checkable fact:
 
-- **Minimum volatility.** Every held, unconstrained asset has the same marginal variance $(\Sigma w)_i$; an asset left out has a marginal variance at least as high — adding it would raise risk.
+- **Minimum volatility.** Every held, unconstrained asset has the same marginal variance $(\Sigma w)_i$; an asset left out has a marginal variance at least as high, so adding it would raise risk.
 - **Maximum Sharpe.** Held, unconstrained assets satisfy $\mu_i - r_f = \beta_i(\mu_p - r_f)$ with $\beta_i = (\Sigma w)_i/(w^\top\Sigma w)$. An asset left out has an expected return below this *required return*: its return does not compensate for the risk it would add.
 - Assets at their maximum weight would be held in larger size without the limit; binding constraints are listed with their shadow prices.
 
 ## Weight stability
 
-Optional: the return history is resampled with replacement (bootstrap), inputs are re-estimated and the problem re-solved many times with a fixed seed. The 5th–95th percentile range of each weight shows how much the portfolio depends on estimation noise (in the spirit of Michaud, 1998). Wide ranges are a warning, not a failure.
+Optional: the return history is resampled with replacement (bootstrap), inputs are re-estimated and the problem re-solved many times with a fixed seed. The 5th–95th percentile range of each weight shows how much the portfolio depends on estimation noise (in the spirit of Michaud, 1998). Wide ranges are a warning sign about the inputs.
 
 ## Limitations
 

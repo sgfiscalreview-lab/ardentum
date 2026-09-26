@@ -70,8 +70,8 @@ export default async function ResearchDoc({ params }: { params: Promise<{ slug: 
           {doc.body}
         </ReactMarkdown>
         <div className="mt-12 flex justify-between border-t border-line pt-4 text-sm">
-          {prev ? <Link href={`/research/${prev.slug}`}>← {prev.title}</Link> : <span />}
-          {next ? <Link href={`/research/${next.slug}`}>{next.title} →</Link> : <span />}
+          {prev ? <Link href={`/research/${prev.slug}`}>Previous: {prev.title}</Link> : <span />}
+          {next ? <Link href={`/research/${next.slug}`}>Next: {next.title}</Link> : <span />}
         </div>
       </article>
     </main>

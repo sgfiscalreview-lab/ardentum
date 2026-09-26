@@ -7,7 +7,7 @@ How strategies are replayed through history without look-ahead bias, and how the
 Row $t$ of the return history is the return from the close of day $t-1$ to the close of day $t$.
 
 1. **Rebalance dates** are the last trading day of each month, quarter, half-year or year.
-2. At a rebalance date $t$, the strategy receives **only** the trailing estimation window $\{r_{t-L+1},\dots,r_t\}$ — information available at the close of $t$ — as a copy, so it cannot reach later data.
+2. At a rebalance date $t$, the strategy receives **only** the trailing estimation window $\{r_{t-L+1},\dots,r_t\}$ (information available at the close of $t$) as a copy, so it cannot reach later data.
 3. It re-estimates $\mu$ and $\Sigma$ on that window and re-solves the optimisation problem.
 4. New weights are traded at the close of $t$ and earn returns from $t+1$.
 5. Between rebalances, weights drift with realised returns.

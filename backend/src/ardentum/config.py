@@ -35,6 +35,8 @@ class Settings(BaseSettings):
     supabase_url: str | None = None
     supabase_jwt_secret: str | None = None  # legacy HS256 projects
     supabase_jwt_audience: str = "authenticated"
+    # Optional: lets account deletion also remove the Supabase sign-in record.
+    supabase_service_key: str | None = None
 
     tiingo_api_key: str | None = None
     fred_api_key: str | None = None

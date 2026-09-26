@@ -757,6 +757,24 @@ class MeOut(ResponseModel):
     email: str | None
 
 
+class AccountDeletedOut(ResponseModel):
+    portfolios: int
+    datasets: int
+    esg_overlays: int
+    jobs: int
+    identity_deleted: bool
+    message: str
+
+
+class AccountExportOut(ResponseModel):
+    exported_at: dt.datetime
+    user_id: str
+    email: str | None
+    portfolios: list[dict[str, Any]]
+    datasets: list[dict[str, Any]]
+    esg_overlays: list[dict[str, Any]]
+
+
 class MetaOut(ResponseModel):
     version: str
     environment: str

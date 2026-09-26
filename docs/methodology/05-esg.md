@@ -4,7 +4,7 @@ How ESG scores enter portfolio construction, how their effect is measured, and t
 
 ## ESG data: provenance and limitations
 
-An ESG score is a rating agency's **opinion**, not an observed quantity. Ratings from different providers are only weakly correlated — Berg, Kölbel & Rigobon (2022) report correlations between major raters of roughly 0.38 to 0.71, driven by differences in scope, measurement and weighting. Conclusions about the "ESG quality" of a portfolio therefore depend on the rating source.
+An ESG score is a rating agency's **opinion**, built from that agency's own choice of scope, measures and weights. Ratings from different providers are only weakly correlated: Berg, Kölbel & Rigobon (2022) report correlations between major raters of roughly 0.38 to 0.71, driven by differences in scope, measurement and weighting. Conclusions about the "ESG quality" of a portfolio therefore depend on the rating source.
 
 Ardentum's rules:
 
@@ -30,11 +30,11 @@ An *ESG overlay* is built in three steps:
 
 Assets without a match, an answer or a numeric value get **no score**: nothing is imputed, and the existing rules apply (ESG constraints fail until unscored assets are excluded explicitly). A saved overlay replaces the dataset's own ESG scores for its assets, so scores from different sources are never mixed in one portfolio score. Every score records the metric, its designer, the year, the company, the transformation and a link to the WikiRate answer; results carry the CC BY 4.0 attribution.
 
-A single metric is a narrow view of "ESG". Choose one that is material for the assets in question, and read the scores as that metric's ranking, not an overall sustainability rating. Demo (synthetic) assets and industry portfolios cannot be matched to companies, so overlays require your own dataset.
+A single metric is a narrow view of "ESG". Choose one that is material for the assets in question, and read the scores as that metric's ranking only. Demo (synthetic) assets and industry portfolios cannot be matched to companies, so overlays require your own dataset.
 
 ## How ESG changes the optimisation
 
-ESG settings are part of the optimisation problem, not a label added afterwards.
+ESG settings enter the optimisation problem itself.
 
 | Setting | Formulation | Effect |
 |---|---|---|
@@ -54,7 +54,7 @@ Following the ESG-adjusted-return formulation of Pedersen, Fitzgibbons & Pomorsk
 
 ## Measuring the cost of ESG
 
-The ESG impact analysis solves the **same** problem twice — same data, estimators, objective and non-ESG constraints — once without and once with the ESG settings, and reports:
+The ESG impact analysis solves the **same** problem twice (same data, estimators, objective and non-ESG constraints), once without and once with the ESG settings, and reports:
 
 - change in expected return, volatility and Sharpe ratio (for a maximum-Sharpe objective the Sharpe change is $\le 0$ by construction: a constraint cannot improve the objective);
 - change in ESG score;

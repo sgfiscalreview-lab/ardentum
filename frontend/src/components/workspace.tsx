@@ -10,7 +10,7 @@ import type { DataWindowOut, DatasetOut } from "@/lib/api/types";
 import { date as fmtDate, ESTIMATOR_LABELS, pct } from "@/lib/format";
 import { useWorkspace, type PageKey } from "@/lib/workspace";
 
-import { Badge, Button, Callout, cx, Disclosure, Spinner } from "./ui";
+import { Badge, Button, Callout, cx, Disclosure, Spinner, Skeleton } from "./ui";
 
 export const STEPS: { href: string; label: string; hint: string }[] = [
   { href: "/app", label: "Universe", hint: "Data, assets, window" },
@@ -72,16 +72,11 @@ export function StepNav() {
                 href={s.href}
                 aria-current={active ? "page" : undefined}
                 className={cx(
-                  "flex items-start gap-2.5 rounded-md px-2 py-1.5",
-                  active ? "bg-surface-2" : "hover:bg-surface-2/60",
+                  "flex items-start gap-2.5 rounded-sm border px-2 py-1.5",
+                  active ? "border-line bg-surface-2" : "border-transparent hover:bg-surface-2/60",
                 )}
               >
-                <span
-                  className={cx(
-                    "mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold",
-                    active ? "bg-accent text-white" : "bg-surface-3 text-ink-2",
-                  )}
-                >
+                <span className={cx("mt-px w-4 shrink-0 text-right text-xs tabular", active ? "font-semibold text-accent-ink" : "text-muted")}>
                   {i + 1}
                 </span>
                 <span className="min-w-0">
@@ -259,9 +254,34 @@ export function ErrorCallout({ error }: { error: Error | null }) {
   );
 }
 
+/** Shown while a page's first result is being computed: the shape of the results. */
+export function ResultsSkeleton() {
+  return (
+    <div role="status" aria-label="Computing results" className="space-y-4">
+      <div className="rounded-sm border border-line bg-surface p-4">
+        <Skeleton className="h-3 w-40" />
+        <Skeleton className="mt-3 h-5 w-2/3" />
+        <div className="mt-5 grid grid-cols-2 gap-2 md:grid-cols-3 2xl:grid-cols-6">
+          {Array.from({ length: 6 }, (_, i) => (
+            <div key={i} className="rounded-sm border border-line p-3">
+              <Skeleton className="h-2.5 w-16" />
+              <Skeleton className="mt-2 h-5 w-20" />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="rounded-sm border border-line bg-surface p-4">
+        <Skeleton className="h-3 w-48" />
+        <Skeleton className="mt-4 h-56 w-full" />
+      </div>
+      <p className="text-xs text-muted">Computing. Long calculations run in the background; this page updates when they finish.</p>
+    </div>
+  );
+}
+
 export function Running({ running, children }: { running: boolean; children: ReactNode }) {
   return (
-    <div className={cx("relative transition-opacity", running && "pointer-events-none opacity-60")} aria-busy={running}>
+    <div className={cx("relative", running && "pointer-events-none opacity-60")} aria-busy={running}>
       {running && (
         <div className="absolute right-3 top-3 z-10 flex items-center gap-2 rounded-md border border-line bg-surface px-2 py-1 text-xs text-ink-2">
           <Spinner className="size-3" /> Computing…

@@ -5,7 +5,7 @@ import { useState } from "react";
 import type { AssetOut, ConstraintsIn, ObjectiveIn } from "@/lib/api/types";
 import { OBJECTIVE_LABELS } from "@/lib/format";
 
-import { Button, Checkbox, cx, Field, NumberInput, Select } from "./ui";
+import { Button, Checkbox, cx, DisclosureHint, Field, NumberInput, Select } from "./ui";
 
 const OBJECTIVE_HELP: Record<ObjectiveIn["objective"], string> = {
   min_volatility: "Lowest expected volatility. Ignores expected returns, which are the noisiest input.",
@@ -13,7 +13,7 @@ const OBJECTIVE_HELP: Record<ObjectiveIn["objective"], string> = {
   target_return: "Lowest volatility that still reaches a chosen expected return.",
   target_volatility: "Highest expected return without exceeding a chosen volatility.",
   max_utility: "Maximises return − (γ/2)·variance; higher γ means more risk-averse.",
-  min_cvar: "Smallest average loss in the worst periods of the history (historical CVaR). Uses the actual return distribution, including fat tails, rather than volatility.",
+  min_cvar: "Smallest average loss in the worst periods of the history (historical CVaR). Uses the actual return distribution, including fat tails.",
 };
 
 export function ObjectivePanel({ value, onChange }: { value: ObjectiveIn; onChange: (v: ObjectiveIn) => void }) {
@@ -131,9 +131,7 @@ function Section({ title, children, defaultOpen = true }: { title: string; child
     <details open={defaultOpen} className="group border-t border-line pt-3">
       <summary className="mb-2 flex cursor-pointer list-none items-center justify-between text-xs font-semibold uppercase tracking-wide text-ink-2">
         {title}
-        <span aria-hidden className="text-muted transition-transform group-open:rotate-90">
-          ›
-        </span>
+        <DisclosureHint />
       </summary>
       <div className="space-y-3">{children}</div>
     </details>

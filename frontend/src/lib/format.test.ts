@@ -3,8 +3,8 @@ import { date, humanise, money, num, pct, signedPct } from "./format";
 describe("format", () => {
   it("formats percentages and handles missing values", () => {
     expect(pct(0.1234)).toBe("12.34%");
-    expect(pct(null)).toBe("—");
-    expect(pct(Number.NaN)).toBe("—");
+    expect(pct(null)).toBe("n/a");
+    expect(pct(Number.NaN)).toBe("n/a");
     expect(signedPct(0.015)).toBe("+1.50%");
     expect(signedPct(-0.015)).toBe("−1.50%");
     expect(signedPct(0)).toBe("0.00%");

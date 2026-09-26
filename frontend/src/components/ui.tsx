@@ -19,7 +19,7 @@ export function cx(...parts: unknown[]): string {
 type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 
 const BUTTON: Record<ButtonVariant, string> = {
-  primary: "bg-accent text-white hover:bg-accent-hover disabled:opacity-50",
+  primary: "bg-accent text-on-accent hover:bg-accent-hover disabled:opacity-50",
   secondary: "bg-surface text-ink border border-line-strong hover:bg-surface-2 disabled:opacity-50",
   ghost: "text-ink-2 hover:bg-surface-2 hover:text-ink disabled:opacity-50",
   danger: "bg-surface text-critical border border-line-strong hover:bg-critical-wash disabled:opacity-50",
@@ -33,7 +33,7 @@ export const Button = forwardRef<
     <button
       ref={ref}
       className={cx(
-        "inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors whitespace-nowrap",
+        "inline-flex items-center justify-center gap-2 rounded-sm font-medium whitespace-nowrap",
         size === "sm" ? "h-8 px-3 text-[13px]" : "h-9 px-4 text-sm",
         BUTTON[variant],
         className,
@@ -257,12 +257,12 @@ export function Checkbox({
 
 type Tone = "info" | "warning" | "error" | "success" | "synthetic";
 
-const TONE: Record<Tone, { box: string; icon: string; glyph: string }> = {
-  info: { box: "bg-accent-wash border-accent/30", icon: "text-accent-ink", glyph: "i" },
-  warning: { box: "bg-warn-wash border-warn/30", icon: "text-warn", glyph: "!" },
-  error: { box: "bg-critical-wash border-critical/30", icon: "text-critical", glyph: "×" },
-  success: { box: "bg-good-wash border-good/30", icon: "text-good", glyph: "✓" },
-  synthetic: { box: "bg-synthetic-wash border-synthetic/30", icon: "text-synthetic", glyph: "S" },
+const TONE: Record<Tone, string> = {
+  info: "bg-accent-wash border-accent/30",
+  warning: "bg-warn-wash border-warn/40",
+  error: "bg-critical-wash border-critical/40",
+  success: "bg-good-wash border-good/40",
+  synthetic: "bg-synthetic-wash border-synthetic/40",
 };
 
 export function Callout({
@@ -276,21 +276,8 @@ export function Callout({
   children?: ReactNode;
   className?: string;
 }) {
-  const t = TONE[tone];
   return (
-    <div
-      role={tone === "error" ? "alert" : "status"}
-      className={cx("flex gap-3 rounded-md border px-3 py-2.5 text-sm", t.box, className)}
-    >
-      <span
-        aria-hidden
-        className={cx(
-          "mt-0.5 inline-flex size-4 shrink-0 items-center justify-center rounded-full border border-current text-[10px] font-bold",
-          t.icon,
-        )}
-      >
-        {t.glyph}
-      </span>
+    <div role={tone === "error" ? "alert" : "status"} className={cx("rounded-sm border px-3 py-2.5 text-sm", TONE[tone], className)}>
       <div className="min-w-0 text-ink">
         {title && <p className="font-medium">{title}</p>}
         {children && <div className={cx("text-ink-2", title && "mt-0.5")}>{children}</div>}
@@ -378,7 +365,7 @@ export function Tabs<T extends string>({
   label: string;
 }) {
   return (
-    <div role="tablist" aria-label={label} className="inline-flex rounded-md border border-line bg-surface-2 p-0.5">
+    <div role="tablist" aria-label={label} className="inline-flex rounded-sm border border-line bg-surface-2 p-0.5">
       {items.map((it) => (
         <button
           key={it.value}
@@ -387,8 +374,8 @@ export function Tabs<T extends string>({
           aria-selected={value === it.value}
           onClick={() => onChange(it.value)}
           className={cx(
-            "rounded px-2.5 py-1 text-xs font-medium transition-colors",
-            value === it.value ? "bg-surface text-ink shadow-sm" : "text-ink-2 hover:text-ink",
+            "rounded-sm border px-2.5 py-1 text-xs font-medium",
+            value === it.value ? "border-line-strong bg-surface text-ink" : "border-transparent text-ink-2 hover:text-ink",
           )}
         >
           {it.label}
@@ -437,16 +424,46 @@ export function Td({ children, align = "left", className, title }: { children?: 
 
 // --------------------------------------------------------------------------- Disclosure
 
+/** "Show" / "Hide" label for a <details> summary (parent needs the `group` class). */
+export function DisclosureHint() {
+  return (
+    <span aria-hidden className="shrink-0 text-xs font-normal text-muted">
+      <span className="group-open:hidden">Show</span>
+      <span className="hidden group-open:inline">Hide</span>
+    </span>
+  );
+}
+
 export function Disclosure({ summary, children, defaultOpen }: { summary: ReactNode; children: ReactNode; defaultOpen?: boolean }) {
   return (
-    <details className="group rounded-md border border-line bg-surface" open={defaultOpen}>
-      <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-2 text-sm font-medium text-ink">
+    <details className="group rounded-sm border border-line bg-surface" open={defaultOpen}>
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-medium text-ink">
         {summary}
-        <span aria-hidden className="text-muted transition-transform group-open:rotate-90">
-          ›
-        </span>
+        <DisclosureHint />
       </summary>
       <div className="border-t border-line px-3 py-3">{children}</div>
     </details>
+  );
+}
+
+// --------------------------------------------------------------------------- Skeleton
+
+/** Static placeholder blocks shaped like the content that is loading. */
+export function Skeleton({ className }: { className?: string }) {
+  return <span aria-hidden className={cx("skeleton block", className ?? "h-4 w-full")} />;
+}
+
+export function SkeletonRows({ rows = 6, label = "Loading" }: { rows?: number; label?: string }) {
+  return (
+    <div role="status" aria-label={label} className="space-y-2">
+      {Array.from({ length: rows }, (_, i) => (
+        <div key={i} className="flex items-center gap-3">
+          <Skeleton className="h-4 w-4" />
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-4 flex-1" />
+          <Skeleton className="h-4 w-16" />
+        </div>
+      ))}
+    </div>
   );
 }

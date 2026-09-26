@@ -10,6 +10,7 @@ import {
   ErrorCallout,
   ExportMenu,
   PageHeader,
+  ResultsSkeleton,
   RunBar,
   Running,
   SyntheticBanner,
@@ -133,7 +134,9 @@ export default function BacktestPage() {
         </aside>
         <div className="min-w-0">
           <ErrorCallout error={error} />
-          {!data ? (
+          {!data && running ? (
+            <ResultsSkeleton />
+          ) : !data ? (
             <EmptyState title="No backtest yet">Choose a strategy and run it through history.</EmptyState>
           ) : (
             <Running running={running}>
@@ -182,12 +185,12 @@ function PerfRows({ p, b }: { p: PerformanceOut; b: PerformanceOut | null }) {
             <tr>
               <Td>Tracking error</Td>
               <Td align="right">{pct(p.tracking_error)}</Td>
-              {b && <Td align="right">—</Td>}
+              {b && <Td align="right">n/a</Td>}
             </tr>
             <tr>
               <Td>Information ratio</Td>
               <Td align="right">{num(p.information_ratio?.value)}</Td>
-              {b && <Td align="right">—</Td>}
+              {b && <Td align="right">n/a</Td>}
             </tr>
             <tr>
               <Td>Beta to benchmark</Td>

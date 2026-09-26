@@ -20,8 +20,8 @@ Every result shows its data source, adjustment basis, licence note, window and n
 
 Price panels are checked before use:
 
-- duplicate dates or tickers, non-numeric, infinite or non-positive prices → **rejected**;
-- the common window starts at the **latest first available date** across the selected assets — earlier history is never back-filled; the loss of history is reported;
+- duplicate dates or tickers, non-numeric, infinite or non-positive prices are **rejected**;
+- the common window starts at the **latest first available date** across the selected assets; earlier history is never back-filled, and the loss of history is reported;
 - gaps of up to 3 consecutive missing prices inside the window (typically holiday-calendar mismatches) are carried forward and **reported** (this yields zero returns on those dates); longer gaps are **rejected**, because filling them would understate volatility;
 - daily moves above 50% and runs of 10+ identical prices are **flagged** as possible bad ticks, unadjusted splits or stale quotes.
 
@@ -29,8 +29,8 @@ Price panels are checked before use:
 
 The risk-free rate is an input you set; the Universe page can fill it with a historical average over the estimation window (last five years if no window is set):
 
-- **Fama-French RF** — realised daily 1-month T-bill returns $r_t$, compounded and annualised: $R_f = \left(\prod_t (1+r_t)\right)^{252/n} - 1$.
-- **FRED DGS3MO** — each daily 3-month bill yield $y_t$ is quoted on an investment (bond-equivalent) basis, i.e. a simple rate on a 365-day year; rolling 91-day bills gives the effective annual rate $(1+y_t\cdot 91/365)^{365/91}-1$. The window average of these is used.
+- **Fama-French RF**: realised daily 1-month T-bill returns $r_t$, compounded and annualised: $R_f = \left(\prod_t (1+r_t)\right)^{252/n} - 1$.
+- **FRED DGS3MO**: each daily 3-month bill yield $y_t$ is quoted on an investment (bond-equivalent) basis, i.e. a simple rate on a 365-day year; rolling 91-day bills gives the effective annual rate $(1+y_t\cdot 91/365)^{365/91}-1$. The window average of these is used.
 
 The source and window are echoed with every result.
 
@@ -51,7 +51,7 @@ This is the **unhedged** return: a base-currency investor bears both the asset's
 
 ## The synthetic demo universe
 
-The demo dataset contains 16 fictional equities across 11 sectors, a government-bond index, a corporate-bond index, gold and a market index — all with a `.SYN` ticker suffix — from 2011 to 2025. It is generated deterministically (fixed seed, versioned generator) by a factor model designed to reproduce the stylised facts that matter for testing portfolio tools (Cont, 2001):
+The demo dataset contains 16 fictional equities across 11 sectors, a government-bond index, a corporate-bond index, gold and a market index, all with a `.SYN` ticker suffix, from 2011 to 2025. It is generated deterministically (fixed seed, versioned generator) by a factor model designed to reproduce the stylised facts that matter for testing portfolio tools (Cont, 2001):
 
 - a **market factor** with GARCH(1,1) volatility clustering (Bollerslev, 1986; $\alpha=0.08$, $\beta=0.90$, unconditional volatility 16% p.a., drift 8% p.a.) and Student-t(6) shocks;
 - **sector factors** (10% p.a. volatility), so correlations are higher within sectors;

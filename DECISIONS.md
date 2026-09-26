@@ -171,3 +171,14 @@ or user confirmation only; missing or non-numeric answers stay unscored. Overlay
 recomputed server-side on save, stored per user and dataset, and replace (never mix with)
 the dataset's scores. Responses are cached for a day in `provider_cache`. A free WikiRate
 API key can be set in `ARDENTUM_WIKIRATE_API_KEY` if WikiRate requires one.
+
+## D-027 Visual design and legal pages
+The founder asked that the UI avoid a list of patterns typical of generated sites (see
+CLAUDE.md "UI rules"). The design is deliberately plain: restrained warm neutrals, a navy
+accent, flat 2px surfaces, system fonts with a serif for titles, static skeletons, no
+decorative motion. The landing page shows real screenshots of the app (on the labelled
+synthetic data) instead of feature cards. Terms of Service and a Privacy Policy describe
+exactly what the system does; operator name, contact and governing law are build-time
+settings **(founder: fill in and have the texts reviewed)**. Users can export and delete
+all their data (`GET /auth/me/export`, `DELETE /auth/me`); with
+`ARDENTUM_SUPABASE_SERVICE_KEY` set, deletion also removes the Supabase sign-in record.

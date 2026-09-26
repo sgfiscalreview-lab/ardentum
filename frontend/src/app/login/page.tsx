@@ -80,7 +80,7 @@ function LoginForm() {
           Continue with GitHub
         </Button>
         {error && <Callout tone="error">{error}</Callout>}
-        <p className="text-center text-[11px] text-muted">We only receive your email address and name from the provider.</p>
+        <p className="text-center text-[11px] text-muted">Ardentum stores only your email address and an account identifier.</p>
       </div>
     );
   }
@@ -136,6 +136,17 @@ export default function LoginPage() {
           <LoginForm />
         </Suspense>
       </Card>
+      <p className="mt-4 text-center text-xs leading-relaxed text-muted">
+        By signing in you agree to the{" "}
+        <Link href="/terms" className="underline underline-offset-2">
+          Terms of Service
+        </Link>{" "}
+        and acknowledge the{" "}
+        <Link href="/privacy" className="underline underline-offset-2">
+          Privacy Policy
+        </Link>
+        .
+      </p>
     </main>
   );
 }

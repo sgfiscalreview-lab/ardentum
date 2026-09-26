@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useState } from "react";
 
-import { Badge, Button, Callout, Card, EmptyState, Field, Input, NumberInput, Select, Table, Td, Th } from "@/components/ui";
+import { Badge, Button, Callout, Card, EmptyState, Field, Input, NumberInput, Select, SkeletonRows, Table, Td, Th } from "@/components/ui";
 import { ErrorCallout, PageHeader, useDataset } from "@/components/workspace";
 import { api, ApiError, unwrap } from "@/lib/api/client";
 import type { EsgTransformIn, OpenCompanyOut, OpenMetricOut, OverlayEntryOut, OverlayPreviewOut } from "@/lib/api/types";
@@ -157,11 +157,11 @@ export default function EsgDataPage() {
                         setTransform((t) => ({ ...t, lower: null, upper: null }));
                       }}
                       aria-pressed={metric?.id === m.id}
-                      className={`w-full rounded-md border p-2 text-left text-xs transition-colors disabled:opacity-60 ${metric?.id === m.id ? "border-accent bg-accent-wash" : "border-line hover:bg-surface-2"}`}
+                      className={`w-full rounded-md border p-2 text-left text-xs disabled:opacity-60 ${metric?.id === m.id ? "border-accent bg-accent-wash" : "border-line hover:bg-surface-2"}`}
                     >
                       <span className="block font-medium text-ink">{m.title}</span>
                       <span className="block text-muted">
-                        {m.designer} · {m.value_type ?? "—"}
+                        {m.designer} · {m.value_type ?? "n/a"}
                         {m.unit ? ` (${m.unit})` : ""}
                         {m.answers != null ? ` · ${m.answers.toLocaleString()} answers` : ""}
                       </span>
@@ -186,7 +186,7 @@ export default function EsgDataPage() {
                 htmlFor="method"
                 hint={
                   transform.method === "percentile"
-                    ? "Rank among your matched companies: best 100, worst 0. Relative only — it changes if the group changes."
+                    ? "Rank among your matched companies: best 100, worst 0. Relative only: it changes if the group changes."
                     : "Fixed scale: the raw value mapped to 0 and to 100 (clipped outside). Comparable across groups."
                 }
               >
@@ -197,10 +197,10 @@ export default function EsgDataPage() {
               </Field>
               {transform.method === "linear" && (
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Value → 0" htmlFor="lo">
+                  <Field label="Value scored 0" htmlFor="lo">
                     <NumberInput id="lo" value={transform.lower ?? null} onChange={(v) => setTransform({ ...transform, lower: v })} allowEmpty placeholder={metric?.range ?? "min"} />
                   </Field>
-                  <Field label="Value → 100" htmlFor="hi">
+                  <Field label="Value scored 100" htmlFor="hi">
                     <NumberInput id="hi" value={transform.upper ?? null} onChange={(v) => setTransform({ ...transform, upper: v })} allowEmpty placeholder={metric?.range ?? "max"} />
                   </Field>
                 </div>
@@ -217,6 +217,7 @@ export default function EsgDataPage() {
           <SavedOverlays
             signedIn={status === "signed_in"}
             items={overlays.data ?? []}
+            loading={overlays.isPending && status === "signed_in"}
             activeId={u.esg_overlay_id ?? null}
             datasetId={u.dataset_id}
             onUse={(id) => setUniverse({ esg_overlay_id: id })}
@@ -283,9 +284,9 @@ export default function EsgDataPage() {
                             />
                           )}
                         </Td>
-                        <Td align="right">{e.year ?? "—"}</Td>
+                        <Td align="right">{e.year ?? "n/a"}</Td>
                         <Td align="right">
-                          {e.raw_value != null ? num(e.raw_value, 2) : "—"}
+                          {e.raw_value != null ? num(e.raw_value, 2) : "n/a"}
                           {e.answer_url && (
                             <a href={e.answer_url} target="_blank" rel="noreferrer" className="ml-1 text-accent-ink underline underline-offset-2">
                               source
@@ -293,7 +294,7 @@ export default function EsgDataPage() {
                           )}
                         </Td>
                         <Td align="right" className="font-medium">
-                          {e.score != null ? e.score.toFixed(0) : "—"}
+                          {e.score != null ? e.score.toFixed(0) : "n/a"}
                         </Td>
                         <Td>
                           <Badge tone={STATUS[e.status].tone}>{STATUS[e.status].label}</Badge>
@@ -381,6 +382,7 @@ function CompanyPicker({ ticker, initial, onPick }: { ticker: string; initial: s
 
 function SavedOverlays({
   signedIn,
+  loading,
   items,
   activeId,
   datasetId,
@@ -388,6 +390,7 @@ function SavedOverlays({
   onDelete,
 }: {
   signedIn: boolean;
+  loading: boolean;
   items: { id: string; name: string; dataset_id: string; metric_title: string; scored: number; total: number }[];
   activeId: string | null;
   datasetId: string;
@@ -395,6 +398,13 @@ function SavedOverlays({
   onDelete: (id: string) => void;
 }) {
   if (!signedIn) return null;
+  if (loading) {
+    return (
+      <Card title="Saved ESG overlays">
+        <SkeletonRows rows={3} label="Loading saved overlays" />
+      </Card>
+    );
+  }
   return (
     <Card title="Saved ESG overlays">
       {items.length === 0 ? (

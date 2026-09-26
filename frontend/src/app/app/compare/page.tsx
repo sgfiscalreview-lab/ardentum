@@ -10,6 +10,7 @@ import {
   ErrorCallout,
   ExportMenu,
   PageHeader,
+  ResultsSkeleton,
   RunBar,
   Running,
   SyntheticBanner,
@@ -71,7 +72,9 @@ export default function ComparePage() {
         </aside>
         <div className="min-w-0">
           <ErrorCallout error={error} />
-          {!data ? (
+          {!data && running ? (
+            <ResultsSkeleton />
+          ) : !data ? (
             <EmptyState title="Nothing to compare yet">Select at least two portfolios. The working portfolio comes from the optimiser or frontier pages.</EmptyState>
           ) : (
             <Running running={running}>
@@ -91,9 +94,9 @@ function Results({ data }: { data: CompareResponse }) {
     ["Expected return (estimate)", (p) => pct(p.expected_return)],
     ["Expected volatility (estimate)", (p) => pct(p.volatility)],
     ["Expected Sharpe (estimate)", (p) => num(p.sharpe_ratio)],
-    ["ESG score", (p) => (p.esg_score == null ? "—" : num(p.esg_score, 1))],
+    ["ESG score", (p) => (p.esg_score == null ? "n/a" : num(p.esg_score, 1))],
     ["Effective no. of assets", (p) => num(p.effective_number_of_assets, 1)],
-    ["Top risk contributor", (p) => (p.top_risk_contributors[0] ? `${p.top_risk_contributors[0].name} (${pct(p.top_risk_contributors[0].contribution, 0)})` : "—")],
+    ["Top risk contributor", (p) => (p.top_risk_contributors[0] ? `${p.top_risk_contributors[0].name} (${pct(p.top_risk_contributors[0].contribution, 0)})` : "n/a")],
     ["Historical CAGR", (p) => pct(p.historical.cagr)],
     ["Historical volatility", (p) => pct(p.historical.annualised_volatility)],
     ["Historical Sharpe", (p) => num(p.historical.sharpe_ratio.value)],

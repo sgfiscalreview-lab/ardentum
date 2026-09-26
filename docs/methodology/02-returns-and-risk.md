@@ -11,7 +11,7 @@ r_t = \frac{P_t}{P_{t-1}} - 1 \qquad\text{(simple, arithmetic)}\qquad
 x_t = \ln\frac{P_t}{P_{t-1}} = \ln(1+r_t) \qquad\text{(logarithmic)}
 $$
 
-The first date has no return and is dropped — it is never filled with zero, because a fabricated zero would bias means and volatilities downwards. Log returns add over time; simple returns aggregate across assets ($r_{p,t} = \sum_i w_i r_{i,t}$), which is why portfolio calculations use simple returns.
+The first date has no return and is dropped. It is never filled with zero, because a fabricated zero would bias means and volatilities downwards. Log returns add over time; simple returns aggregate across assets ($r_{p,t} = \sum_i w_i r_{i,t}$), which is why portfolio calculations use simple returns.
 
 ## Annualisation
 

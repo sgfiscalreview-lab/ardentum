@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import { SiteFooter } from "@/components/legal";
 import { SiteHeader } from "@/components/site-header";
 
 import "./globals.css";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: { default: "Ardentum — Quantitative portfolio analysis", template: "%s · Ardentum" },
+  title: { default: "Ardentum: quantitative portfolio analysis", template: "%s · Ardentum" },
   description:
     "Construct, optimise, simulate, backtest and compare investment portfolios, with the mathematics behind every result.",
 };
@@ -28,6 +29,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <Providers>
           <SiteHeader />
           <div id="main">{children}</div>
+          <SiteFooter />
         </Providers>
       </body>
     </html>
