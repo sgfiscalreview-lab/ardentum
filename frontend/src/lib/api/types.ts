@@ -4,6 +4,9 @@ type S = components["schemas"];
 
 export type UniverseSelection = S["UniverseSelection"];
 export type EstimationSettings = S["EstimationSettings"];
+export type BlackLittermanIn = S["BlackLittermanIn"];
+export type ViewIn = S["ViewIn"];
+export type BlackLittermanOut = S["BlackLittermanOut"];
 export type ConstraintsIn = S["ConstraintsIn"];
 export type ObjectiveIn = S["ObjectiveIn"];
 export type Objective = ObjectiveIn["objective"];

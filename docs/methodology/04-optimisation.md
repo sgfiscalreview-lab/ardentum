@@ -13,6 +13,7 @@ Let $w$ be portfolio weights, $\mu$ annualised expected returns, $\Sigma$ the an
 | Target return | $\min_w\ w^\top\Sigma w\ \text{ s.t. }\ \mu^\top w \ge m$ |
 | Target volatility | $\max_w\ \mu^\top w\ \text{ s.t. }\ \sqrt{w^\top\Sigma w} \le \sigma^*$ |
 | Maximum utility | $\max_w\ \mu^\top w - \tfrac{\gamma}{2}w^\top\Sigma w$ |
+| Minimum CVaR | $\min_w\ \mathrm{CVaR}_\beta(-R w)$, optionally s.t. $\mu^\top w \ge m$ (see below) |
 
 All share the constraint set $\mathcal C$ below. Variance is written $\lVert F w\rVert_2^2$ with $F = \Lambda^{1/2}V^\top$ from the eigendecomposition $\Sigma = V\Lambda V^\top$, which is exact and numerically robust even for singular (positive semi-definite) matrices.
 
@@ -41,6 +42,18 @@ $$
 a convex quadratic programme whose solution gives $w^\star = y^\star/\kappa^\star$. Every linear constraint is homogenised the same way; the tracking-error cone becomes $\lVert F(y - b\kappa)\rVert \le TE_{\max}\kappa$.
 
 The reformulation requires a feasible portfolio with expected return above $r_f$. Ardentum first solves $\max \mu^\top w - r_f$ over $\mathcal C$; if that is not positive, the maximum-Sharpe portfolio is **undefined** and reported as such rather than approximated.
+
+## Minimum CVaR: a linear programme over history
+
+Volatility treats gains and losses alike and assumes nothing about tails. **Conditional value at risk** (CVaR, expected shortfall) at level $\beta$ is the average loss in the worst $1-\beta$ of outcomes. Using the $T$ historical per-period return vectors $r_t$ of the estimation window as equally likely scenarios, Rockafellar and Uryasev (2000) show
+
+$$\mathrm{CVaR}_\beta(w) = \min_{\alpha}\ \alpha + \frac{1}{(1-\beta)T}\sum_{t=1}^{T}\big(-r_t^\top w - \alpha\big)^+ ,$$
+
+with the minimising $\alpha$ equal to the value at risk. Introducing $u_t \ge 0$, $u_t \ge -r_t^\top w - \alpha$ turns minimum CVaR into a linear programme (plus any second-order-cone constraints such as tracking error), solved jointly over $(w,\alpha,u)$. The result keeps the empirical distribution's fat tails and asymmetry.
+
+CVaR here is **per data period** (e.g. one-day CVaR for daily data) and is **historical**: it cannot anticipate losses worse than the window contains. At least $1/(1-\beta)$ observations are required. Every optimisation result also reports the historical one-period VaR and CVaR of its weights at the chosen level.
+
+Validation: the optimum equals an independent solution of the same programme by SciPy's HiGHS solver, is no worse than a brute-force grid over the simplex, and the reported CVaR equals the closed form (mean of the $k$ worst losses when $(1-\beta)T=k$).
 
 ## Efficient frontier
 

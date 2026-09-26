@@ -28,6 +28,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
+from ardentum.quant.black_litterman import BlackLittermanSpec
 from ardentum.quant.errors import QuantError
 from ardentum.quant.estimation import (
     CovarianceEstimator,
@@ -83,6 +84,7 @@ _OBJECTIVE_TEXT = {
     Objective.TARGET_RETURN: "Minimise volatility while achieving at least the target expected return.",
     Objective.TARGET_VOLATILITY: "Maximise expected return without exceeding the target volatility.",
     Objective.MAX_UTILITY: "Maximise mean-variance utility: expected return minus a risk-aversion penalty on variance.",
+    Objective.MIN_CVAR: "Minimise historical conditional value at risk: the average loss in the worst periods of the window.",
 }
 
 
@@ -238,6 +240,11 @@ def _headline(objective: Objective, r: OptimisationResult) -> str:
         return f"Lowest-risk way to reach {r.expected_return:.2%} expected return: {r.volatility:.2%} volatility."
     if objective is Objective.TARGET_VOLATILITY:
         return f"Highest expected return ({r.expected_return:.2%}) within {r.volatility:.2%} volatility."
+    if objective is Objective.MIN_CVAR and r.cvar is not None and r.cvar_confidence is not None:
+        return (
+            f"Smallest average loss in the worst {1 - r.cvar_confidence:.0%} of periods: "
+            f"one-period CVaR {r.cvar:.2%} ({r.volatility:.2%} expected volatility)."
+        )
     return f"Best risk-return trade-off for the chosen risk aversion: {r.expected_return:.2%} return, {r.volatility:.2%} volatility."
 
 
@@ -280,12 +287,29 @@ def _zero_reason(
 _MEAN_NAMES = {
     MeanEstimator.HISTORICAL: "historical sample mean",
     MeanEstimator.BAYES_STEIN: "Bayes-Stein shrinkage estimator (Jorion 1986)",
+    MeanEstimator.BLACK_LITTERMAN: "Black-Litterman posterior (He & Litterman 1999)",
 }
 _COV_NAMES = {
     CovarianceEstimator.SAMPLE: "sample covariance",
     CovarianceEstimator.LEDOIT_WOLF: "Ledoit-Wolf shrinkage toward a scaled identity",
     CovarianceEstimator.LEDOIT_WOLF_CONSTANT_CORRELATION: "Ledoit-Wolf shrinkage toward constant correlation",
 }
+
+
+def _mean_assumption(estimates: MarketEstimates) -> str:
+    bl = estimates.black_litterman
+    if bl is None:
+        return (
+            f"Expected returns: {_MEAN_NAMES[estimates.mean_estimator]} of arithmetic mean "
+            "returns, annualised linearly."
+        )
+    views = f"{len(bl.spec.views)} view(s)" if bl.spec.views else "no views (pure equilibrium)"
+    return (
+        f"Expected returns: {_MEAN_NAMES[estimates.mean_estimator]}: equilibrium returns implied "
+        f"by {bl.spec.prior_label} prior weights with risk aversion {bl.spec.risk_aversion:g}, "
+        f"combined with {views} (tau {bl.spec.tau:g}); covariance includes the "
+        "uncertainty of the mean. Historical average returns are not used."
+    )
 
 
 def assumptions_for(estimates: MarketEstimates, request: OptimisationRequest) -> tuple[str, ...]:
@@ -298,8 +322,7 @@ def assumptions_for(estimates: MarketEstimates, request: OptimisationRequest) ->
     out = [
         f"Estimation window: {window} ({estimates.observations} observations, {years:.1f} years, "
         f"{estimates.periods_per_year} periods per year).",
-        f"Expected returns: {_MEAN_NAMES[estimates.mean_estimator]} of arithmetic mean "
-        "returns, annualised linearly.",
+        _mean_assumption(estimates),
         f"Covariance: {_COV_NAMES[estimates.covariance_estimator]}"
         + (
             f" (shrinkage intensity {estimates.covariance_shrinkage:.2f})."
@@ -338,6 +361,7 @@ def resampled_weight_intervals(
     seed: int = 0,
     mean_estimator: MeanEstimator = MeanEstimator.HISTORICAL,
     covariance_estimator: CovarianceEstimator = CovarianceEstimator.LEDOIT_WOLF,
+    black_litterman_spec: BlackLittermanSpec | None = None,
 ) -> tuple[tuple[WeightInterval, ...], int]:
     """Weight percentiles across bootstrap resamples of the estimation window.
 
@@ -357,6 +381,7 @@ def resampled_weight_intervals(
                 periods_per_year,
                 mean_estimator=mean_estimator,
                 covariance_estimator=covariance_estimator,
+                black_litterman_spec=black_litterman_spec,
             )
             samples.append(optimise(est, request, metadata).weights)
         except QuantError:

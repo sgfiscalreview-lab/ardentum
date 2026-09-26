@@ -64,11 +64,13 @@ export const OBJECTIVE_LABELS: Record<string, string> = {
   target_return: "Target return",
   target_volatility: "Target volatility",
   max_utility: "Maximum utility",
+  min_cvar: "Minimum CVaR (tail loss)",
 };
 
 export const ESTIMATOR_LABELS: Record<string, string> = {
   historical: "Historical mean",
   bayes_stein: "Bayes–Stein shrinkage",
+  black_litterman: "Black–Litterman (equilibrium + views)",
   sample: "Sample covariance",
   ledoit_wolf: "Ledoit–Wolf (identity target)",
   ledoit_wolf_constant_correlation: "Ledoit–Wolf (constant correlation)",

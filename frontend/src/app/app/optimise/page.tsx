@@ -21,10 +21,12 @@ import {
   useDataset,
 } from "@/components/workspace";
 import { api, ApiError, unwrap } from "@/lib/api/client";
-import type { OptimiseRequest, OptimiseResponse } from "@/lib/api/types";
+import type { BlackLittermanOut, OptimiseRequest, OptimiseResponse } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth";
 import { num, OBJECTIVE_LABELS, pct } from "@/lib/format";
 import { useWorkspace } from "@/lib/workspace";
+
+const PERIOD_NAME: Record<string, string> = { daily: "day", weekly: "week", monthly: "month" };
 
 export default function OptimisePage() {
   const { state, setObjective, setConstraints, setWorking } = useWorkspace();
@@ -140,6 +142,14 @@ function Results({
           <Stat label="Expected return" value={pct(r.expected_return)} sub="annual, arithmetic (estimate)" />
           <Stat label="Expected volatility" value={pct(r.volatility)} sub="annual (estimate)" />
           <Stat label="Sharpe ratio" value={r.sharpe_ratio == null ? "—" : num(r.sharpe_ratio)} sub={`rf ${pct(r.risk_free_rate)}`} />
+          {r.cvar != null && r.cvar_confidence != null && (
+            <Stat
+              label={`CVaR ${num(r.cvar_confidence * 100, r.cvar_confidence * 100 % 1 ? 1 : 0)}%`}
+              value={pct(r.cvar)}
+              sub={`per ${PERIOD_NAME[data.data.frequency] ?? "period"} · VaR ${pct(r.var)}`}
+              help="Historical: the average loss in the worst periods of the estimation window with these weights."
+            />
+          )}
           <Stat label="ESG score" value={r.esg_score == null ? "—" : num(r.esg_score, 1)} sub={r.esg_score == null ? "not available" : "value-weighted, 0–100"} />
           <Stat label="Effective no. of assets" value={num(r.effective_number_of_assets, 1)} sub={`${held.length} held`} help="Inverse Herfindahl index: 1/Σw²" />
           <Stat label="Diversification ratio" value={r.diversification_ratio == null ? "—" : num(r.diversification_ratio)} sub="Σwσ / σp" />
@@ -160,6 +170,7 @@ function Results({
           </ul>
         </Callout>
       )}
+      {data.estimation.black_litterman && <BlackLittermanCard bl={data.estimation.black_litterman} />}
       {data.excluded_unscored.length > 0 && (
         <Callout tone="info">Excluded for lacking an ESG score: {data.excluded_unscored.join(", ")}.</Callout>
       )}
@@ -396,5 +407,45 @@ function SaveButton({ data, request }: { data: OptimiseResponse; request: Optimi
         </div>
       )}
     </div>
+  );
+}
+
+function BlackLittermanCard({ bl }: { bl: BlackLittermanOut }) {
+  return (
+    <Card
+      title="Black–Litterman expected returns"
+      subtitle={`Equilibrium returns implied by ${bl.prior} prior weights (δ = ${bl.risk_aversion}, τ = ${bl.tau}), moved by ${bl.views.length} view(s).`}
+      bodyClassName="p-0"
+    >
+      {bl.views.length > 0 && (
+        <ul className="list-disc space-y-0.5 px-4 pt-3 pl-8 text-xs text-ink-2">
+          {bl.views.map((v) => (
+            <li key={v}>{v}</li>
+          ))}
+        </ul>
+      )}
+      <Table>
+        <thead>
+          <tr>
+            <Th>Asset</Th>
+            <Th align="right">Prior weight</Th>
+            <Th align="right">Equilibrium return</Th>
+            <Th align="right">Posterior return</Th>
+            <Th align="right">Change</Th>
+          </tr>
+        </thead>
+        <tbody>
+          {bl.assets.map((a) => (
+            <tr key={a.ticker}>
+              <Td className="font-medium">{a.ticker}</Td>
+              <Td align="right">{pct(a.prior_weight, 1)}</Td>
+              <Td align="right">{pct(a.prior_return)}</Td>
+              <Td align="right">{pct(a.posterior_return)}</Td>
+              <Td align="right">{pct(a.posterior_return - a.prior_return)}</Td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+    </Card>
   );
 }

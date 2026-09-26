@@ -47,7 +47,7 @@ export const DEFAULT_STATE: WorkspaceState = {
     covariance_estimator: "ledoit_wolf",
     risk_free_rate: 0.02,
   },
-  objective: { objective: "max_sharpe" },
+  objective: { objective: "max_sharpe", cvar_confidence: 0.95 },
   constraints: {
     min_weight: 0,
     max_weight: 0.3,

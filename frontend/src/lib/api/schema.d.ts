@@ -518,6 +518,55 @@ export interface components {
             /** Ticker */
             ticker?: string | null;
         };
+        /** BlackLittermanAssetOut */
+        BlackLittermanAssetOut: {
+            /** Ticker */
+            ticker: string;
+            /** Prior Weight */
+            prior_weight: number;
+            /** Prior Return */
+            prior_return: number;
+            /** Posterior Return */
+            posterior_return: number;
+        };
+        /** BlackLittermanIn */
+        BlackLittermanIn: {
+            /**
+             * Prior
+             * @default market_cap
+             * @enum {string}
+             */
+            prior: "market_cap" | "equal_weight" | "custom";
+            /** Prior Weights */
+            prior_weights?: {
+                [key: string]: number;
+            } | null;
+            /**
+             * Risk Aversion
+             * @default 2.5
+             */
+            risk_aversion: number;
+            /**
+             * Tau
+             * @default 0.05
+             */
+            tau: number;
+            /** Views */
+            views?: components["schemas"]["ViewIn"][];
+        };
+        /** BlackLittermanOut */
+        BlackLittermanOut: {
+            /** Prior */
+            prior: string;
+            /** Risk Aversion */
+            risk_aversion: number;
+            /** Tau */
+            tau: number;
+            /** Assets */
+            assets: components["schemas"]["BlackLittermanAssetOut"][];
+            /** Views */
+            views: string[];
+        };
         /** Body_upload_dataset_api_v1_datasets_post */
         Body_upload_dataset_api_v1_datasets_post: {
             /** Name */
@@ -734,6 +783,12 @@ export interface components {
              * @default false
              */
             owned: boolean;
+            /**
+             * Has Market Caps
+             * @description Market capitalisations are available for Black-Litterman priors.
+             * @default false
+             */
+            has_market_caps: boolean;
         };
         /** DatasetSummaryOut */
         DatasetSummaryOut: {
@@ -837,6 +892,7 @@ export interface components {
             risk_free_rate: number;
             /** Risk Free Source */
             risk_free_source: string;
+            black_litterman: components["schemas"]["BlackLittermanOut"] | null;
             /** Mean Estimator */
             mean_estimator: string;
             /** Covariance Estimator */
@@ -869,6 +925,7 @@ export interface components {
              * @description Where the rate came from; echoed in results.
              */
             risk_free_source?: string | null;
+            black_litterman?: components["schemas"]["BlackLittermanIn"] | null;
         };
         /** ExplanationOut */
         ExplanationOut: {
@@ -1016,7 +1073,7 @@ export interface components {
          * MeanEstimator
          * @enum {string}
          */
-        MeanEstimator: "historical" | "bayes_stein";
+        MeanEstimator: "historical" | "bayes_stein" | "black_litterman";
         /** MetaOut */
         MetaOut: {
             /** Version */
@@ -1157,7 +1214,7 @@ export interface components {
          * Objective
          * @enum {string}
          */
-        Objective: "min_volatility" | "max_sharpe" | "target_return" | "target_volatility" | "max_utility";
+        Objective: "min_volatility" | "max_sharpe" | "target_return" | "target_volatility" | "max_utility" | "min_cvar";
         /** ObjectiveIn */
         ObjectiveIn: {
             /** @default max_sharpe */
@@ -1168,6 +1225,12 @@ export interface components {
             target_volatility?: number | null;
             /** Risk Aversion */
             risk_aversion?: number | null;
+            /**
+             * Cvar Confidence
+             * @description Tail probability level for CVaR (min_cvar).
+             * @default 0.95
+             */
+            cvar_confidence: number;
         };
         /** OptimiseRequest */
         OptimiseRequest: {
@@ -1326,6 +1389,18 @@ export interface components {
             solver: string;
             /** Warnings */
             warnings: string[];
+            /**
+             * Var
+             * @description Historical one-period VaR (loss) on the window.
+             */
+            var: number | null;
+            /**
+             * Cvar
+             * @description Historical one-period CVaR (loss).
+             */
+            cvar: number | null;
+            /** Cvar Confidence */
+            cvar_confidence: number | null;
         };
         /** PortfolioSpecIn */
         PortfolioSpecIn: {
@@ -1554,6 +1629,26 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /** ViewIn */
+        ViewIn: {
+            /**
+             * Weights
+             * @description View portfolio: {ticker: 1} (absolute) or {A: 1, B: -1} (relative).
+             */
+            weights: {
+                [key: string]: number;
+            };
+            /**
+             * Expected Return
+             * @description Annual, decimal.
+             */
+            expected_return: number;
+            /**
+             * Confidence
+             * @description Idzorek confidence; omit for He-Litterman default.
+             */
+            confidence?: number | null;
         };
         /** WeightChangeOut */
         WeightChangeOut: {

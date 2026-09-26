@@ -65,6 +65,32 @@ class UniverseSelection(RequestModel):
         return self
 
 
+class ViewIn(RequestModel):
+    weights: dict[Ticker, Annotated[float, Field(ge=-10.0, le=10.0)]] = Field(
+        min_length=1,
+        max_length=20,
+        description="View portfolio: {ticker: 1} (absolute) or {A: 1, B: -1} (relative).",
+    )
+    expected_return: float = Field(ge=-1.0, le=2.0, description="Annual, decimal.")
+    confidence: float | None = Field(
+        None, gt=0.0, le=1.0, description="Idzorek confidence; omit for He-Litterman default."
+    )
+
+
+class BlackLittermanIn(RequestModel):
+    prior: Literal["market_cap", "equal_weight", "custom"] = "market_cap"
+    prior_weights: dict[Ticker, Annotated[float, Field(ge=0.0)]] | None = None
+    risk_aversion: float = Field(2.5, gt=0.0, le=20.0)
+    tau: float = Field(0.05, gt=0.0, le=1.0)
+    views: list[ViewIn] = Field(default_factory=list, max_length=20)
+
+    @model_validator(mode="after")
+    def _custom(self) -> BlackLittermanIn:
+        if self.prior == "custom" and not self.prior_weights:
+            raise ValueError("prior_weights are required when prior is 'custom'.")
+        return self
+
+
 class EstimationSettings(RequestModel):
     mean_estimator: MeanEstimator = MeanEstimator.HISTORICAL
     covariance_estimator: CovarianceEstimator = CovarianceEstimator.LEDOIT_WOLF
@@ -72,6 +98,7 @@ class EstimationSettings(RequestModel):
     risk_free_source: str | None = Field(
         None, max_length=200, description="Where the rate came from; echoed in results."
     )
+    black_litterman: BlackLittermanIn | None = None
 
 
 class RiskFreeRequest(RequestModel):
@@ -134,6 +161,9 @@ class ObjectiveIn(RequestModel):
     target_return: float | None = Field(None, ge=-0.5, le=2.0)
     target_volatility: float | None = Field(None, gt=0.0, le=2.0)
     risk_aversion: float | None = Field(None, gt=0.0, le=100.0)
+    cvar_confidence: float = Field(
+        0.95, ge=0.5, le=0.995, description="Tail probability level for CVaR (min_cvar)."
+    )
 
     @model_validator(mode="after")
     def _params(self) -> ObjectiveIn:
@@ -346,6 +376,9 @@ class DatasetOut(ResponseModel):
     assets: list[AssetOut]
     sectors: list[str]
     owned: bool = False
+    has_market_caps: bool = Field(
+        False, description="Market capitalisations are available for Black-Litterman priors."
+    )
 
 
 class DatasetSummaryOut(ResponseModel):
@@ -360,9 +393,25 @@ class DatasetSummaryOut(ResponseModel):
     owned: bool = False
 
 
+class BlackLittermanAssetOut(ResponseModel):
+    ticker: str
+    prior_weight: float
+    prior_return: float
+    posterior_return: float
+
+
+class BlackLittermanOut(ResponseModel):
+    prior: str
+    risk_aversion: float
+    tau: float
+    assets: list[BlackLittermanAssetOut]
+    views: list[str]
+
+
 class EstimationOut(ResponseModel):
     risk_free_rate: float
     risk_free_source: str
+    black_litterman: BlackLittermanOut | None = None
     mean_estimator: str
     covariance_estimator: str
     mean_shrinkage: float | None
@@ -481,6 +530,9 @@ class PortfolioResultOut(ResponseModel):
     diagnostics: list[ConstraintDiagnosticOut]
     solver: str
     warnings: list[str]
+    var: float | None = Field(None, description="Historical one-period VaR (loss) on the window.")
+    cvar: float | None = Field(None, description="Historical one-period CVaR (loss).")
+    cvar_confidence: float | None = None
 
 
 class OptimiseResponse(ResponseModel):

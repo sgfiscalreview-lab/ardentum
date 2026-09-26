@@ -52,6 +52,8 @@ def test_listed_without_network(client: TestClient) -> None:
     assert d["is_synthetic"] is False
     assert len(d["assets"]) == 13
     assert any(a["ticker"] == "MKT" and a["is_benchmark"] for a in d["assets"])
+    assert d["has_market_caps"] is True
+    assert client.get("/api/v1/datasets/demo").json()["has_market_caps"] is False
 
 
 @respx.mock

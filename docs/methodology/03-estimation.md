@@ -22,6 +22,21 @@ $$
 
 with $\tilde\Sigma = \frac{T-1}{T-N-2}S$. The intensity $\phi\in(0,1]$ is data-driven: when sample means barely differ relative to their noise, $\phi\to1$. Requires $T > N+2$.
 
+### Black–Litterman
+
+Historical means are so noisy that mean-variance portfolios built on them are extreme and unstable. Black and Litterman (1992) start instead from **equilibrium returns**: those under which an investor with risk aversion $\delta$ would choose the prior weights $w_{eq}$ (market capitalisation weights by default, or equal/custom weights),
+
+$$\pi = \delta\,\Sigma\,w_{eq} + r_f .$$
+
+Investor **views** are linear statements $P\mu = Q + \varepsilon$, $\varepsilon \sim N(0,\Omega)$ — absolute ("A returns 8%") or relative ("A outperforms B by 2%"). Following He and Litterman (1999), $\Omega_{kk} = \tau\,p_k^\top\Sigma p_k$; with a stated confidence $c\in(0,1]$ Idzorek's (2005) closed form $\Omega_{kk} = \tau\frac{1-c}{c}\,p_k^\top\Sigma p_k$ is used ($c=1$: the view holds exactly). The posterior is
+
+$$\mu_{BL} = \pi + \tau\Sigma P^\top(\tau P\Sigma P^\top + \Omega)^{-1}(Q - P\pi),$$
+$$\Sigma_{BL} = \Sigma + \tau\Sigma - \tau\Sigma P^\top(\tau P\Sigma P^\top + \Omega)^{-1}P\tau\Sigma ,$$
+
+the predictive covariance including uncertainty about the mean. $\Sigma$ comes from the selected covariance estimator. Historical average returns are not used at all. Results list the prior weights, equilibrium and posterior returns and each view in words. The implementation agrees with PyPortfolioOpt to $10^{-10}$ and satisfies reverse optimisation ($(\delta\Sigma)^{-1}(\pi-r_f) = w_{eq}$).
+
+Market capitalisations come from the data source: the Ken French industry files (number of firms × average firm size, latest month) or a `market_cap` column in uploaded metadata. Datasets without them (such as the synthetic demo) use equal or custom prior weights. In backtests the same prior weights and views are applied in every window.
+
 ## Covariance
 
 **Sample covariance** (unbiased, $T-1$). Singular when $T\le N$ and noisy when $T/N$ is small; Ardentum refuses to use it when it is singular.

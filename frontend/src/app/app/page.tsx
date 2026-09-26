@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import { BlackLittermanEditor, DEFAULT_BLACK_LITTERMAN } from "@/components/black-litterman";
 import { Badge, Button, Callout, Card, Field, Input, NumberInput, Select, Table, Td, Th } from "@/components/ui";
 import { ErrorCallout, PageHeader, SyntheticBanner, useDataset } from "@/components/workspace";
 import { api, ApiError, unwrap } from "@/lib/api/client";
@@ -127,7 +128,7 @@ export default function UniversePage() {
             </div>
           </Card>
           <CurrencyCard universe={u} assets={assets} onChange={(c) => setUniverse({ base_currency: c })} />
-          <EstimationCard value={state.estimation} universe={u} onChange={setEstimation} />
+          <EstimationCard value={state.estimation} universe={u} capsAvailable={ds.data?.has_market_caps ?? false} onChange={setEstimation} />
           <UploadCard />
         </div>
       </div>
@@ -263,19 +264,39 @@ function RiskFreeFetch({ universe, onChange }: { universe: UniverseSelection; on
   );
 }
 
-function EstimationCard({ value, universe, onChange }: { value: EstimationSettings; universe: UniverseSelection; onChange: (v: Partial<EstimationSettings>) => void }) {
+function EstimationCard({
+  value,
+  universe,
+  capsAvailable,
+  onChange,
+}: {
+  value: EstimationSettings;
+  universe: UniverseSelection;
+  capsAvailable: boolean;
+  onChange: (v: Partial<EstimationSettings>) => void;
+}) {
   return (
     <Card title="Estimation" subtitle="How expected returns and risk are estimated from the window.">
       <div className="space-y-3">
-        <Field label="Expected returns" htmlFor="mean" hint="Bayes–Stein shrinks noisy sample means toward a common value (Jorion 1986).">
-          <Select id="mean" value={value.mean_estimator} onChange={(e) => onChange({ mean_estimator: e.target.value as EstimationSettings["mean_estimator"] })}>
-            {(["historical", "bayes_stein"] as const).map((k) => (
+        <Field label="Expected returns" htmlFor="mean" hint="Bayes–Stein shrinks noisy sample means toward a common value (Jorion 1986). Black–Litterman starts from market-implied returns and adds your views.">
+          <Select
+            id="mean"
+            value={value.mean_estimator}
+            onChange={(e) => {
+              const m = e.target.value as EstimationSettings["mean_estimator"];
+              onChange(m === "black_litterman" && !value.black_litterman ? { mean_estimator: m, black_litterman: DEFAULT_BLACK_LITTERMAN } : { mean_estimator: m });
+            }}
+          >
+            {(["historical", "bayes_stein", "black_litterman"] as const).map((k) => (
               <option key={k} value={k}>
                 {ESTIMATOR_LABELS[k]}
               </option>
             ))}
           </Select>
         </Field>
+        {value.mean_estimator === "black_litterman" && (
+          <BlackLittermanEditor value={value.black_litterman} tickers={universe.tickers} capsAvailable={capsAvailable} onChange={(bl) => onChange({ black_litterman: bl })} />
+        )}
         <Field label="Covariance" htmlFor="cov" hint="Ledoit–Wolf shrinkage reduces estimation error and keeps the matrix well-conditioned.">
           <Select id="cov" value={value.covariance_estimator} onChange={(e) => onChange({ covariance_estimator: e.target.value as EstimationSettings["covariance_estimator"] })}>
             {(["ledoit_wolf", "ledoit_wolf_constant_correlation", "sample"] as const).map((k) => (

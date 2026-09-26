@@ -34,6 +34,7 @@ from typing import Protocol
 import numpy as np
 import pandas as pd
 
+from ardentum.quant.black_litterman import BlackLittermanSpec
 from ardentum.quant.errors import InsufficientDataError, InvalidInputError, QuantError
 from ardentum.quant.estimation import (
     CovarianceEstimator,
@@ -102,6 +103,8 @@ class OptimisedStrategy:
     mean_estimator: MeanEstimator = MeanEstimator.HISTORICAL
     covariance_estimator: CovarianceEstimator = CovarianceEstimator.LEDOIT_WOLF
     name: str = "Optimised"
+    # Black-Litterman prior weights and views are fixed inputs applied to every window.
+    black_litterman_spec: BlackLittermanSpec | None = None
 
     def target_weights(self, window: pd.DataFrame, context: StrategyContext) -> np.ndarray:
         est = estimate(
@@ -109,6 +112,7 @@ class OptimisedStrategy:
             context.periods_per_year,
             mean_estimator=self.mean_estimator,
             covariance_estimator=self.covariance_estimator,
+            black_litterman_spec=self.black_litterman_spec,
         )
         return optimise(est, self.request, self.metadata).weights
 

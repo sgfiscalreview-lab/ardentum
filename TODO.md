@@ -15,9 +15,10 @@ Legend: **[F]** needs a founder decision/credential · **[E]** engineering
 ## Engineering — backlog
 - [x] Persist provider payloads (Ken French, Tiingo, FRED, FX) in PostgreSQL (D-019).
 - [x] Risk-free rate from Fama-French RF or FRED DGS3MO, selectable in the UI (D-020).
-- [ ] Contributions/withdrawals in Monte Carlo.
+- [x] Contributions/withdrawals and depletion probability in Monte Carlo.
 - [ ] Shared (edge/Redis) rate limiting for multi-instance deployments (in-process limiter exists).
 - [ ] Background jobs for long backtests (currently synchronous; bounded by input limits).
-- [ ] Black–Litterman views; CVaR optimisation.
+- [x] Black–Litterman views (D-022); minimum-CVaR optimisation (D-023).
+- [ ] Mean-CVaR efficient frontier.
 - [x] Multi-currency universes, unhedged conversion at ECB rates (D-021).
 - [ ] Currency-hedged returns (needs a free source of forward points or daily interest differentials).

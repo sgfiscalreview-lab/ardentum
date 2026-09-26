@@ -31,6 +31,11 @@ Primary sources for the methods used in Ardentum.
 - Sharpe, W. F. (1994). The Sharpe ratio. *Journal of Portfolio Management*, 21(1), 49–58.
 - Sortino, F. A., & Price, L. N. (1994). Performance measurement in a downside risk framework. *Journal of Investing*, 3(3), 59–64.
 
+- Black, F., & Litterman, R. (1992). Global portfolio optimization. *Financial Analysts Journal*, 48(5), 28–43.
+- He, G., & Litterman, R. (1999). The intuition behind Black-Litterman model portfolios. Goldman Sachs Investment Management Research.
+- Idzorek, T. M. (2005). A step-by-step guide to the Black-Litterman model. Zephyr Associates working paper.
+- Rockafellar, R. T., & Uryasev, S. (2000). Optimization of conditional value-at-risk. *Journal of Risk*, 2(3), 21–41.
+
 ## Data sources
 
 - Board of Governors of the Federal Reserve System. Market Yield on U.S. Treasury Securities at 3-Month Constant Maturity, Quoted on an Investment Basis (DGS3MO). Retrieved from FRED, Federal Reserve Bank of St. Louis.

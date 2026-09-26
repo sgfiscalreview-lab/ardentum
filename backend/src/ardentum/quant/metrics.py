@@ -306,3 +306,21 @@ def performance_summary(
         tracking_error=tracking_error(r, b, periods_per_year),
         information_ratio=_safe(information_ratio, r, b, periods_per_year),
     )
+
+
+def historical_var_cvar(losses: np.ndarray, confidence: float) -> tuple[float, float]:
+    """Value at risk and conditional value at risk of equally likely scenario losses.
+
+    Rockafellar & Uryasev (2000): ``CVaR = min_a a + E[(L - a)+] / (1 - beta)``, attained
+    at ``a = VaR``, the ``ceil(beta * T)``-th smallest loss. When ``(1 - beta) T`` is an
+    integer ``k`` this is the mean of the ``k`` largest losses. Losses are positive.
+    """
+    x = np.sort(np.asarray(losses, dtype=float))
+    if x.size == 0 or not np.isfinite(x).all():
+        raise InvalidInputError("Losses must be a non-empty array of finite numbers.")
+    if not 0.0 < confidence < 1.0:
+        raise InvalidInputError("Confidence level must be strictly between 0 and 1.")
+    t = x.size
+    var = float(x[max(0, int(np.ceil(confidence * t - 1e-9)) - 1)])
+    cvar = var + float(np.maximum(x - var, 0.0).sum()) / ((1.0 - confidence) * t)
+    return var, cvar

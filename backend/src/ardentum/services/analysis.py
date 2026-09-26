@@ -27,8 +27,9 @@ from ardentum.quant.backtest import (
     Strategy,
     run_backtest,
 )
+from ardentum.quant.black_litterman import BlackLittermanSpec, View
 from ardentum.quant.errors import InvalidInputError
-from ardentum.quant.estimation import MarketEstimates, estimate
+from ardentum.quant.estimation import MarketEstimates, MeanEstimator, estimate, risk_free_arithmetic
 from ardentum.quant.explain import explain, resampled_weight_intervals
 from ardentum.quant.frontier import FrontierPoint, efficient_frontier, esg_sharpe_frontier
 from ardentum.quant.metrics import (
@@ -101,8 +102,30 @@ def data_window(data: LoadedData) -> s.DataWindowOut:
     )
 
 
+def black_litterman_out(est: MarketEstimates) -> s.BlackLittermanOut | None:
+    bl = est.black_litterman
+    if bl is None:
+        return None
+    return s.BlackLittermanOut(
+        prior=bl.spec.prior_label,
+        risk_aversion=bl.spec.risk_aversion,
+        tau=bl.spec.tau,
+        assets=[
+            s.BlackLittermanAssetOut(
+                ticker=t,
+                prior_weight=_finite(float(bl.prior_weights[i])),
+                prior_return=_finite(float(bl.prior_returns[i])),
+                posterior_return=_finite(float(bl.posterior_returns[i])),
+            )
+            for i, t in enumerate(est.tickers)
+        ],
+        views=[v.describe() for v in bl.spec.views],
+    )
+
+
 def estimation_out(est: MarketEstimates, settings: s.EstimationSettings) -> s.EstimationOut:
     return s.EstimationOut(
+        black_litterman=black_litterman_out(est),
         risk_free_rate=settings.risk_free_rate,
         risk_free_source=settings.risk_free_source or "Entered by the user",
         mean_estimator=est.mean_estimator.value,
@@ -150,8 +173,64 @@ def load(
     return service.load(u.dataset_id, tickers, u.start, u.end, u.frequency, u.base_currency)
 
 
+def market_cap_weights(
+    service: MarketDataService, data: LoadedData, tickers: Sequence[str]
+) -> dict[str, float]:
+    """Latest market capitalisations from asset metadata or the data source."""
+    source_caps = service.market_caps(data.dataset.id) or {}
+    caps: dict[str, float] = {}
+    missing: list[str] = []
+    for t in tickers:
+        a = data.asset(t)
+        cap = a.market_cap if a.market_cap is not None else source_caps.get(t)
+        if cap is None:
+            missing.append(t)
+            continue
+        if a.market_cap is not None and a.currency.upper() != data.currency:
+            raise InvalidInputError(
+                f"The market capitalisation of {t} is in {a.currency} but results are in "
+                f"{data.currency}; use equal or custom prior weights for mixed currencies."
+            )
+        caps[t] = float(cap)
+    if missing:
+        raise InvalidInputError(
+            f"No market capitalisation for {', '.join(missing)}. Add a market_cap column to "
+            "the dataset metadata, or use equal or custom Black-Litterman prior weights."
+        )
+    return caps
+
+
+def black_litterman_spec(
+    service: MarketDataService,
+    data: LoadedData,
+    e: s.EstimationSettings,
+    tickers: Sequence[str] | None = None,
+) -> BlackLittermanSpec | None:
+    if e.mean_estimator is not MeanEstimator.BLACK_LITTERMAN:
+        return None
+    b = e.black_litterman or s.BlackLittermanIn()
+    names = list(tickers) if tickers is not None else list(data.tickers)
+    if b.prior == "equal_weight":
+        weights, label = dict.fromkeys(names, 1.0), "equal weights"
+    elif b.prior == "custom":
+        weights, label = dict(b.prior_weights or {}), "custom weights"
+    else:
+        weights, label = market_cap_weights(service, data, names), "market capitalisation"
+    return BlackLittermanSpec(
+        prior_weights=weights,
+        views=tuple(View(v.weights, v.expected_return, v.confidence) for v in b.views),
+        risk_aversion=b.risk_aversion,
+        tau=b.tau,
+        risk_free_rate=risk_free_arithmetic(e.risk_free_rate, data.periods_per_year),
+        prior_label=label,
+    )
+
+
 def estimates_for(
-    data: LoadedData, e: s.EstimationSettings, tickers: Sequence[str] | None = None
+    service: MarketDataService,
+    data: LoadedData,
+    e: s.EstimationSettings,
+    tickers: Sequence[str] | None = None,
 ) -> MarketEstimates:
     rets = data.returns if tickers is None else data.returns[list(tickers)]
     return estimate(
@@ -159,6 +238,7 @@ def estimates_for(
         data.periods_per_year,
         mean_estimator=e.mean_estimator,
         covariance_estimator=e.covariance_estimator,
+        black_litterman_spec=black_litterman_spec(service, data, e, tickers),
     )
 
 
@@ -221,6 +301,7 @@ def opt_request(
         target_volatility=o.target_volatility,
         risk_aversion=o.risk_aversion,
         constraints=cons,
+        cvar_confidence=o.cvar_confidence,
     )
 
 
@@ -282,6 +363,9 @@ def portfolio_result_out(
         effective_number_of_assets=_finite(ex.effective_number_of_assets),
         holdings=holdings,
         sector_exposures=sector_exposures(res.tickers, res.weights, data),
+        var=_opt(res.var),
+        cvar=_opt(res.cvar),
+        cvar_confidence=res.cvar_confidence,
         diagnostics=[
             s.ConstraintDiagnosticOut(
                 kind=d.kind,
@@ -315,7 +399,7 @@ def asset_analytics(service: MarketDataService, req: s.AnalyticsRequest) -> s.An
     bench = req.benchmark
     data = load(service, req.universe, [bench] if bench else [])
     tickers = list(req.universe.tickers)
-    est = estimates_for(data, req.estimation, tickers)
+    est = estimates_for(service, data, req.estimation, tickers)
     b_ret = data.returns[bench].to_numpy() if bench else None
     assets = []
     for i, t in enumerate(tickers):
@@ -359,7 +443,7 @@ def asset_analytics(service: MarketDataService, req: s.AnalyticsRequest) -> s.An
 
 def run_optimise(service: MarketDataService, req: s.OptimiseRequest) -> s.OptimiseResponse:
     data = load(service, req.universe)
-    est = estimates_for(data, req.estimation)
+    est = estimates_for(service, data, req.estimation)
     cons, unscored = build_constraints(req.constraints, data, data.tickers)
     oreq = opt_request(req.objective, req.estimation, cons)
     meta = data.metadata()
@@ -380,6 +464,7 @@ def run_optimise(service: MarketDataService, req: s.OptimiseRequest) -> s.Optimi
             seed=seed,
             mean_estimator=req.estimation.mean_estimator,
             covariance_estimator=req.estimation.covariance_estimator,
+            black_litterman_spec=black_litterman_spec(service, data, req.estimation),
         )
         stability = [
             s.StabilityOut(
@@ -427,7 +512,7 @@ def _result_point(r: OptimisationResult) -> s.FrontierPointOut:
 
 def run_frontier(service: MarketDataService, req: s.FrontierRequest) -> s.FrontierResponse:
     data = load(service, req.universe)
-    est = estimates_for(data, req.estimation)
+    est = estimates_for(service, data, req.estimation)
     cons, unscored = build_constraints(req.constraints, data, data.tickers)
     meta = data.metadata()
     rf = req.estimation.risk_free_rate
@@ -482,7 +567,7 @@ def run_esg_impact(service: MarketDataService, req: s.EsgImpactRequest) -> s.Esg
             "exclusion of unscored assets) to measure its impact."
         )
     data = load(service, req.universe)
-    est = estimates_for(data, req.estimation)
+    est = estimates_for(service, data, req.estimation)
     meta = data.metadata()
     tickers = data.tickers
     base_cons, _ = build_constraints(_without_esg(req.constraints), data, tickers)
@@ -623,7 +708,7 @@ def run_montecarlo(service: MarketDataService, req: s.MonteCarloRequest) -> s.Mo
         cash_flows_per_year=req.cash_flows_per_year,
         cash_flow_growth=req.cash_flow_growth,
     )
-    est = estimates_for(data, req.estimation)
+    est = estimates_for(service, data, req.estimation)
     exp_ret = portfolio_expected_return(w, est.expected_returns)
     vol = portfolio_volatility(w, est.covariance)
     if req.method is SimulationMethod.PARAMETRIC:
@@ -672,7 +757,9 @@ def run_montecarlo(service: MarketDataService, req: s.MonteCarloRequest) -> s.Mo
 # ----------------------------------------------------------------------------- backtest
 
 
-def _strategy(req: s.BacktestRequest, data: LoadedData, tickers: Sequence[str]) -> Strategy:
+def _strategy(
+    service: MarketDataService, req: s.BacktestRequest, data: LoadedData, tickers: Sequence[str]
+) -> Strategy:
     st = req.strategy
     if isinstance(st, s.EqualWeightStrategyIn):
         return EqualWeightStrategy()
@@ -687,6 +774,7 @@ def _strategy(req: s.BacktestRequest, data: LoadedData, tickers: Sequence[str]) 
         req.estimation.mean_estimator,
         req.estimation.covariance_estimator,
         name=f"Optimised ({label})",
+        black_litterman_spec=black_litterman_spec(service, data, req.estimation, tickers),
     )
 
 
@@ -713,7 +801,7 @@ def run_backtest_service(service: MarketDataService, req: s.BacktestRequest) -> 
         periods_per_year=ppy,
     )
     rets = data.returns[tickers]
-    result = run_backtest(rets, _strategy(req, data, tickers), cfg)
+    result = run_backtest(rets, _strategy(service, req, data, tickers), cfg)
 
     b_res: BacktestResult | None = None
     if bench is not None:
@@ -829,7 +917,7 @@ def run_backtest_service(service: MarketDataService, req: s.BacktestRequest) -> 
 def run_compare(service: MarketDataService, req: s.CompareRequest) -> s.CompareResponse:
     data = load(service, req.universe)
     tickers = list(data.tickers)
-    est = estimates_for(data, req.estimation)
+    est = estimates_for(service, data, req.estimation)
     ppy = data.periods_per_year
     cfg = BacktestConfig(
         lookback_periods=2,

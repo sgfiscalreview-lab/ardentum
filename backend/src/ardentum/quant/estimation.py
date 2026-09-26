@@ -22,6 +22,10 @@ Estimators
 * ``bayes_stein`` mean: Jorion (1986), "Bayes-Stein Estimation for Portfolio
   Analysis", JFQA 21(3). Shrinks sample means toward the mean of the global
   minimum-variance portfolio with a data-determined intensity.
+* ``black_litterman`` mean: equilibrium returns implied by prior (market) weights,
+  blended with the user's views (see :mod:`ardentum.quant.black_litterman`). The
+  covariance becomes the Black-Litterman predictive covariance built on the chosen
+  covariance estimator.
 * ``sample`` covariance: unbiased sample covariance (ddof = 1).
 * ``ledoit_wolf`` covariance: Ledoit & Wolf (2004), "A well-conditioned estimator
   for large-dimensional covariance matrices", JMVA 88(2). Target: scaled identity.
@@ -40,6 +44,11 @@ from enum import StrEnum
 import numpy as np
 import pandas as pd
 
+from ardentum.quant.black_litterman import (
+    BlackLittermanResult,
+    BlackLittermanSpec,
+    black_litterman,
+)
 from ardentum.quant.errors import InsufficientDataError, InvalidInputError
 from ardentum.quant.returns import annual_rate_to_periodic, validate_returns
 
@@ -49,6 +58,7 @@ MIN_ESTIMATION_OBSERVATIONS = 24
 class MeanEstimator(StrEnum):
     HISTORICAL = "historical"
     BAYES_STEIN = "bayes_stein"
+    BLACK_LITTERMAN = "black_litterman"
 
 
 class CovarianceEstimator(StrEnum):
@@ -72,6 +82,8 @@ class MarketEstimates:
     covariance_estimator: CovarianceEstimator
     mean_shrinkage: float | None = None  # Bayes-Stein intensity phi in [0, 1]
     covariance_shrinkage: float | None = None  # Ledoit-Wolf intensity delta in [0, 1]
+    black_litterman: BlackLittermanResult | None = None
+    scenarios: np.ndarray | None = None  # (T x n) per-period simple returns, for CVaR
 
     @property
     def n_assets(self) -> int:
@@ -98,6 +110,7 @@ class MarketEstimates:
             covariance_estimator=self.covariance_estimator,
             mean_shrinkage=self.mean_shrinkage,
             covariance_shrinkage=self.covariance_shrinkage,
+            scenarios=None if self.scenarios is None else self.scenarios[:, idx],
         )
 
 
@@ -219,6 +232,7 @@ def estimate(
     mean_estimator: MeanEstimator = MeanEstimator.HISTORICAL,
     covariance_estimator: CovarianceEstimator = CovarianceEstimator.LEDOIT_WOLF,
     min_observations: int = MIN_ESTIMATION_OBSERVATIONS,
+    black_litterman_spec: BlackLittermanSpec | None = None,
 ) -> MarketEstimates:
     """Estimate annualised expected returns and covariance from a returns window."""
     x = _returns_array(returns, min_observations)
@@ -228,14 +242,6 @@ def estimate(
             f"The sample covariance of {n} assets is singular with only {t} observations. "
             "Use a Ledoit-Wolf shrinkage estimator or a longer estimation window."
         )
-
-    mean_shrinkage: float | None = None
-    if mean_estimator is MeanEstimator.HISTORICAL:
-        mu = historical_mean(returns, periods_per_year)
-    elif mean_estimator is MeanEstimator.BAYES_STEIN:
-        mu, mean_shrinkage = bayes_stein_mean(returns, periods_per_year)
-    else:  # pragma: no cover - exhaustive enum
-        raise InvalidInputError(f"Unknown mean estimator {mean_estimator!r}.")
 
     cov_shrinkage: float | None = None
     if covariance_estimator is CovarianceEstimator.SAMPLE:
@@ -247,11 +253,28 @@ def estimate(
     else:  # pragma: no cover - exhaustive enum
         raise InvalidInputError(f"Unknown covariance estimator {covariance_estimator!r}.")
 
+    tickers = tuple(str(c) for c in returns.columns)
+    mean_shrinkage: float | None = None
+    bl: BlackLittermanResult | None = None
+    if mean_estimator is MeanEstimator.HISTORICAL:
+        mu = historical_mean(returns, periods_per_year)
+    elif mean_estimator is MeanEstimator.BAYES_STEIN:
+        mu, mean_shrinkage = bayes_stein_mean(returns, periods_per_year)
+    elif mean_estimator is MeanEstimator.BLACK_LITTERMAN:
+        if black_litterman_spec is None:
+            raise InvalidInputError(
+                "Black-Litterman needs prior weights and (optionally) views; none were given."
+            )
+        bl = black_litterman(tickers, 0.5 * (cov + cov.T), black_litterman_spec)
+        mu, cov = bl.posterior_returns, bl.posterior_covariance
+    else:  # pragma: no cover - exhaustive enum
+        raise InvalidInputError(f"Unknown mean estimator {mean_estimator!r}.")
+
     index = returns.index
     start = index[0].date() if isinstance(index, pd.DatetimeIndex) else None
     end = index[-1].date() if isinstance(index, pd.DatetimeIndex) else None
     return MarketEstimates(
-        tickers=tuple(str(c) for c in returns.columns),
+        tickers=tickers,
         expected_returns=np.asarray(mu, dtype=float),
         covariance=0.5 * (cov + cov.T),
         periods_per_year=periods_per_year,
@@ -262,4 +285,6 @@ def estimate(
         covariance_estimator=covariance_estimator,
         mean_shrinkage=mean_shrinkage,
         covariance_shrinkage=cov_shrinkage,
+        black_litterman=bl,
+        scenarios=x,
     )

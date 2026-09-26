@@ -126,3 +126,18 @@ commercial use allowed), so $1+r_B=(1+r_L)(1+r_X)$: returns include currency mov
 (unhedged). Rates are carried forward over at most 5 missing days (ECB holidays); prices
 before 1999 or beyond a longer gap are errors. Hedged returns would need forward points or
 interest differentials, which have no free daily source.
+
+## D-022 Black-Litterman as a mean estimator
+Implemented as a third expected-return estimator so every feature (optimise, frontier,
+ESG impact, simulation, backtest, stability) can use it unchanged. The posterior predictive
+covariance replaces the covariance estimate. The market-cap prior needs capitalisations
+from the data (Ken French files or uploaded `market_cap`); otherwise users choose equal or
+custom weights — the server never substitutes a prior silently. Verified against
+PyPortfolioOpt. The UI offers absolute and pairwise relative views; the API accepts any
+linear view portfolio.
+
+## D-023 Minimum-CVaR objective on historical scenarios
+Rockafellar-Uryasev LP over the estimation window, solved by the same verified CVXPY path
+as other objectives. It uses no expected-return estimate unless a minimum return is set.
+Historical scenarios only (no parametric CVaR): it keeps real fat tails, at the cost of
+not extrapolating beyond the sample. A CVaR frontier is not offered yet.

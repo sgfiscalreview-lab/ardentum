@@ -9,6 +9,7 @@ from sqlalchemy import func, select
 from ardentum.api import schemas as s
 from ardentum.api.deps import DbDep, MarketService, RequiredPrincipal, SettingsDep
 from ardentum.data.models import AssetInfo, DatasetInfo
+from ardentum.data.providers import kenfrench
 from ardentum.data.providers.csv_upload import parse_metadata_csv, parse_price_csv
 from ardentum.db.models import Dataset
 from ardentum.quant.errors import InvalidInputError
@@ -55,6 +56,8 @@ def dataset_out(info: DatasetInfo, owned: bool) -> s.DatasetOut:
         assets=[_asset_out(a) for a in info.assets],
         sectors=sorted({a.sector for a in info.assets if a.sector}),
         owned=owned,
+        has_market_caps=info.id in kenfrench.DATASETS
+        or any(a.market_cap is not None for a in info.assets),
     )
 
 

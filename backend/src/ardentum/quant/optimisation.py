@@ -48,6 +48,7 @@ from ardentum.quant.esg import (
     score_vector,
 )
 from ardentum.quant.estimation import MarketEstimates
+from ardentum.quant.metrics import historical_var_cvar
 from ardentum.quant.portfolio import portfolio_volatility, validate_covariance
 
 VERIFY_TOL = 1e-6
@@ -61,6 +62,7 @@ class Objective(StrEnum):
     TARGET_RETURN = "target_return"
     TARGET_VOLATILITY = "target_volatility"
     MAX_UTILITY = "max_utility"
+    MIN_CVAR = "min_cvar"
 
 
 TILT_OBJECTIVES = frozenset(
@@ -116,6 +118,7 @@ class OptimisationRequest:
     target_volatility: float | None = None
     risk_aversion: float | None = None
     constraints: PortfolioConstraints = field(default_factory=PortfolioConstraints)
+    cvar_confidence: float = 0.95  # for MIN_CVAR and for the reported historical CVaR
 
 
 ConstraintKind = Literal[
@@ -159,6 +162,10 @@ class OptimisationResult:
     diagnostics: tuple[ConstraintDiagnostic, ...]
     solver: str
     warnings: tuple[str, ...] = ()
+    # Historical one-period VaR/CVaR of the weights over the estimation window (losses > 0).
+    var: float | None = None
+    cvar: float | None = None
+    cvar_confidence: float | None = None
 
     def weight_map(self) -> dict[str, float]:
         return dict(zip(self.tickers, (float(x) for x in self.weights), strict=True))
@@ -191,6 +198,7 @@ class _Compiled:
     benchmark: np.ndarray | None
     max_te: float | None
     esg_scores: np.ndarray | None  # aligned; NaN where unavailable and unused
+    scenarios: np.ndarray | None = None
 
     @property
     def n(self) -> int:
@@ -419,6 +427,7 @@ def _compile(
         benchmark=bench,
         max_te=c.max_tracking_error,
         esg_scores=esg_vec,
+        scenarios=estimates.scenarios,
     )
 
 
@@ -733,6 +742,13 @@ def optimise(
             raise SolverError("Maximum-Sharpe homogenisation returned a degenerate scale.")
         raw = np.asarray(y.value) / k
 
+    elif obj is Objective.MIN_CVAR:
+        wv, tagged, solver, cvar_diag, checks = _min_cvar(comp, request)
+        raw = wv.value
+        shadow_unit = "one-period CVaR"
+        extra += cvar_diag
+        extra_checks += checks
+
     else:  # pragma: no cover - exhaustive enum
         raise InvalidInputError(f"Unsupported objective {obj!r}.")
 
@@ -748,7 +764,68 @@ def optimise(
         diagnostics,
         warnings,
         mu_obj if tilt_active else None,
+        request.cvar_confidence,
     )
+
+
+def _min_cvar(
+    comp: _Compiled, request: OptimisationRequest
+) -> tuple[
+    cp.Variable,
+    list[tuple[cp.Constraint, _Row | str]],
+    str,
+    list[ConstraintDiagnostic],
+    list[tuple[str, bool]],
+]:
+    """Rockafellar-Uryasev LP: min a + sum(u) / ((1 - beta) T), u >= -R w - a, u >= 0."""
+    if comp.scenarios is None:
+        raise InvalidInputError("Minimum-CVaR optimisation needs the historical return scenarios.")
+    beta = request.cvar_confidence
+    if not 0.5 <= beta < 1.0:
+        raise InvalidInputError("CVaR confidence must be between 50% and 100% (e.g. 95%).")
+    scen = comp.scenarios
+    t_obs = scen.shape[0]
+    if (1.0 - beta) * t_obs < 1.0:
+        raise InvalidInputError(
+            f"A {beta:.1%} CVaR needs at least {int(np.ceil(1 / (1 - beta)))} observations; "
+            f"the window has {t_obs}. Lengthen the window or lower the confidence."
+        )
+    diags: list[ConstraintDiagnostic] = []
+    checks: list[tuple[str, bool]] = []
+    target = request.target_return
+    if target is not None:
+        best, _ = _max_return(comp, comp.mu)
+        if target > best + 1e-10:
+            raise InfeasibleProblemError(
+                f"Target return {target:.2%} exceeds the maximum achievable expected return "
+                f"({best:.2%}) under the constraints."
+            )
+    w = cp.Variable(comp.n)
+    alpha = cp.Variable()
+    u = cp.Variable(t_obs, nonneg=True)
+    cons, tagged = comp.cvx_constraints(w)
+    cons.append(u >= -scen @ w - alpha)
+    c_target = None
+    if target is not None:
+        c_target = comp.mu @ w >= target
+        cons.append(c_target)
+    prob = cp.Problem(cp.Minimize(alpha + cp.sum(u) / ((1.0 - beta) * t_obs)), cons)
+    solver = _solve(prob, "minimum-CVaR")
+    if target is not None and c_target is not None:
+        achieved = float(comp.mu @ w.value)
+        checks.append(("target return", achieved >= target - VERIFY_TOL))
+        diags.append(
+            ConstraintDiagnostic(
+                "target_return",
+                f"Expected return ≥ {target:.2%}",
+                achieved,
+                target,
+                abs(achieved - target) <= 1e-6,
+                shadow_price=None if c_target.dual_value is None else float(c_target.dual_value),
+                shadow_price_unit="one-period CVaR",
+            )
+        )
+    return w, tagged, solver, diags, checks
 
 
 def _build_result(
@@ -761,6 +838,7 @@ def _build_result(
     diagnostics: tuple[ConstraintDiagnostic, ...],
     warnings: list[str],
     adjusted_mu: np.ndarray | None,
+    cvar_confidence: float = 0.95,
 ) -> OptimisationResult:
     exp_ret = float(weights @ comp.mu)
     vol = portfolio_volatility(weights, comp.cov)
@@ -774,6 +852,9 @@ def _build_result(
             )
     if "inaccurate" in solver:
         warnings.append("The solver reported reduced accuracy; the solution passed verification.")
+    var = cvar = None
+    if comp.scenarios is not None and 0 < cvar_confidence < 1:
+        var, cvar = historical_var_cvar(-(comp.scenarios @ weights), cvar_confidence)
     return OptimisationResult(
         tickers=comp.tickers,
         weights=weights,
@@ -787,6 +868,9 @@ def _build_result(
         diagnostics=diagnostics,
         solver=solver,
         warnings=tuple(warnings),
+        var=var,
+        cvar=cvar,
+        cvar_confidence=None if cvar is None else cvar_confidence,
     )
 
 

@@ -13,6 +13,7 @@ const OBJECTIVE_HELP: Record<ObjectiveIn["objective"], string> = {
   target_return: "Lowest volatility that still reaches a chosen expected return.",
   target_volatility: "Highest expected return without exceeding a chosen volatility.",
   max_utility: "Maximises return − (γ/2)·variance; higher γ means more risk-averse.",
+  min_cvar: "Smallest average loss in the worst periods of the history (historical CVaR). Uses the actual return distribution, including fat tails, rather than volatility.",
 };
 
 export function ObjectivePanel({ value, onChange }: { value: ObjectiveIn; onChange: (v: ObjectiveIn) => void }) {
@@ -30,6 +31,7 @@ export function ObjectivePanel({ value, onChange }: { value: ObjectiveIn; onChan
               target_return: next === "target_return" ? (value.target_return ?? 0.08) : null,
               target_volatility: next === "target_volatility" ? (value.target_volatility ?? 0.12) : null,
               risk_aversion: next === "max_utility" ? (value.risk_aversion ?? 4) : null,
+              cvar_confidence: value.cvar_confidence ?? 0.95,
             });
           }}
         >
@@ -49,6 +51,21 @@ export function ObjectivePanel({ value, onChange }: { value: ObjectiveIn; onChan
         <Field label="Target volatility (annual)" htmlFor="target-vol">
           <NumberInput id="target-vol" value={value.target_volatility} onChange={(v) => onChange({ ...value, target_volatility: v ?? 0.1 })} scale={100} suffix="%" min={0.1} max={200} />
         </Field>
+      )}
+      {o === "min_cvar" && (
+        <>
+          <Field label="CVaR confidence" htmlFor="cvar-conf" hint="95% means the average loss in the worst 5% of periods.">
+            <Select id="cvar-conf" value={String(value.cvar_confidence ?? 0.95)} onChange={(e) => onChange({ ...value, cvar_confidence: Number(e.target.value) })}>
+              <option value="0.9">90%</option>
+              <option value="0.95">95%</option>
+              <option value="0.975">97.5%</option>
+              <option value="0.99">99%</option>
+            </Select>
+          </Field>
+          <Field label="Minimum expected return (optional)" htmlFor="cvar-target">
+            <NumberInput id="cvar-target" value={value.target_return ?? null} onChange={(v) => onChange({ ...value, target_return: v })} scale={100} suffix="%" min={-50} max={200} allowEmpty placeholder="None" />
+          </Field>
+        </>
       )}
       {o === "max_utility" && (
         <Field label="Risk aversion γ" htmlFor="gamma" hint="Typical values 2–10.">

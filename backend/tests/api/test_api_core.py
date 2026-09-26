@@ -307,3 +307,33 @@ def test_cors_allows_configured_origin(client: TestClient) -> None:
         headers={"Origin": "https://evil.example", "Access-Control-Request-Method": "POST"},
     )
     assert "access-control-allow-origin" not in r.headers
+
+
+def test_min_cvar_optimise_and_backtest(client: TestClient) -> None:
+    body = {
+        "universe": universe(),
+        "objective": {"objective": "min_cvar", "cvar_confidence": 0.95},
+        "constraints": {"max_weight": 0.5},
+    }
+    r = client.post("/api/v1/optimise", json=body)
+    assert r.status_code == 200, r.text
+    cvar = r.json()["result"]
+    assert cvar["cvar_confidence"] == 0.95
+    assert cvar["cvar"] >= cvar["var"] > 0
+    assert "CVaR" in r.json()["explanation"]["headline"]
+    mv = client.post(
+        "/api/v1/optimise", json={**body, "objective": {"objective": "min_volatility"}}
+    ).json()["result"]
+    assert cvar["cvar"] <= mv["cvar"] + 1e-10
+    assert mv["volatility"] <= cvar["volatility"] + 1e-10
+
+    bt = client.post(
+        "/api/v1/backtest",
+        json={
+            "universe": universe(),
+            "strategy": {"type": "optimised", "objective": {"objective": "min_cvar"}},
+            "lookback_years": 2,
+            "rebalance": "quarterly",
+        },
+    )
+    assert bt.status_code == 200, bt.text
