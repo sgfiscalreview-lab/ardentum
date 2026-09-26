@@ -29,7 +29,11 @@ class RequestModel(BaseModel):
 
 
 class ResponseModel(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    # Fields with defaults are always present in responses, so mark them required
+    # in the serialization schema (keeps generated frontend types precise).
+    model_config = ConfigDict(
+        from_attributes=True, json_schema_serialization_defaults_required=True
+    )
 
 
 # ----------------------------------------------------------------------------- inputs
@@ -576,6 +580,7 @@ class SeriesOut(ResponseModel):
 class BacktestResponse(ResponseModel):
     strategy: str
     dates: list[dt.date]
+    wealth_dates: list[dt.date]  # first rebalance date followed by `dates` (wealth/drawdown axis)
     portfolio: SeriesOut
     benchmark: SeriesOut | None
     performance: PerformanceOut
@@ -613,6 +618,7 @@ class ComparedPortfolioOut(ResponseModel):
 class CompareResponse(ResponseModel):
     portfolios: list[ComparedPortfolioOut]
     dates: list[dt.date]
+    wealth_dates: list[dt.date]  # start date followed by `dates` (wealth/drawdown axis)
     return_correlation: list[list[float]]
     in_sample_warning: str
     estimation: EstimationOut

@@ -770,6 +770,7 @@ def run_backtest_service(service: MarketDataService, req: s.BacktestRequest) -> 
     return s.BacktestResponse(
         strategy=result.strategy,
         dates=[d.date() for d in result.dates],
+        wealth_dates=[result.events[0].date, *(d.date() for d in result.dates)],
         portfolio=_series(result.strategy, result),
         benchmark=None if b_res is None else _series(b_res.strategy, b_res),
         performance=performance_out(perf),
@@ -831,6 +832,7 @@ def run_compare(service: MarketDataService, req: s.CompareRequest) -> s.CompareR
     out: list[s.ComparedPortfolioOut] = []
     series: list[np.ndarray] = []
     dates: pd.DatetimeIndex | None = None
+    start_date = None
     for p in req.portfolios:
         w = weight_vector(tickers, p.weights)
         exp_r = portfolio_expected_return(w, est.expected_returns)
@@ -853,6 +855,7 @@ def run_compare(service: MarketDataService, req: s.CompareRequest) -> s.CompareR
             top = []
         bt = run_backtest(data.returns, FixedWeightStrategy(tuple(w), name=p.name), cfg)
         dates = bt.dates
+        start_date = bt.events[0].date
         series.append(bt.returns)
         out.append(
             s.ComparedPortfolioOut(
@@ -872,11 +875,13 @@ def run_compare(service: MarketDataService, req: s.CompareRequest) -> s.CompareR
             )
         )
     assert dates is not None
+    assert start_date is not None
     mat = np.vstack(series)
     corr = np.corrcoef(mat) if (mat.std(axis=1) > 0).all() else np.eye(len(series))
     return s.CompareResponse(
         portfolios=out,
         dates=[d.date() for d in dates],
+        wealth_dates=[start_date, *(d.date() for d in dates)],
         return_correlation=[[_finite(float(x)) for x in row] for row in np.atleast_2d(corr)],
         in_sample_warning=(
             "Historical results replay fixed weights over the same window used to estimate "

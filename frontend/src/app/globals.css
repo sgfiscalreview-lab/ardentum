@@ -1,0 +1,209 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens. Chart colours follow the validated reference palette (categorical
+ * order is the CVD-safety mechanism; do not reorder). Text never uses series colours.
+ * Dark values are declared under both the OS media query and the explicit toggle.
+ */
+:root {
+  color-scheme: light;
+  --plane: #f9f9f7;
+  --surface: #fcfcfb;
+  --surface-2: #f3f2ee;
+  --surface-3: #eceae4;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #6f6d68;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.1);
+  --border-strong: rgba(11, 11, 11, 0.18);
+  --accent: #256abf;
+  --accent-hover: #1c5cab;
+  --accent-ink: #1c5cab;
+  --accent-wash: #e6effb;
+  --good: #006300;
+  --good-wash: #e7f4e7;
+  --warn: #8a5a00;
+  --warn-wash: #fdf3dc;
+  --critical: #b52f2f;
+  --critical-wash: #fbe9e9;
+  --synthetic: #6b4bb8;
+  --synthetic-wash: #efeafb;
+
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --series-6: #008300;
+  --series-7: #4a3aa7;
+  --series-8: #e34948;
+  --diverge-neg: #e34948;
+  --diverge-pos: #2a78d6;
+  --diverge-mid: #f0efec;
+  --seq-100: #cde2fb;
+  --seq-700: #0d366b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --plane: #0d0d0d;
+    --surface: #1a1a19;
+    --surface-2: #232321;
+    --surface-3: #2c2c2a;
+    --ink: #ffffff;
+    --ink-2: #c3c2b7;
+    --muted: #a3a29b;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, 0.1);
+    --border-strong: rgba(255, 255, 255, 0.2);
+    --accent: #256abf;
+    --accent-hover: #2a78d6;
+    --accent-ink: #86b6ef;
+    --accent-wash: #16263a;
+    --good: #0ca30c;
+    --good-wash: #10230f;
+    --warn: #fab219;
+    --warn-wash: #2b2210;
+    --critical: #e66767;
+    --critical-wash: #2d1515;
+    --synthetic: #b3a3f0;
+    --synthetic-wash: #221c33;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --series-5: #d55181;
+    --series-6: #008300;
+    --series-7: #9085e9;
+    --series-8: #e66767;
+    --diverge-neg: #e66767;
+    --diverge-pos: #3987e5;
+    --diverge-mid: #383835;
+    --seq-100: #16263a;
+    --seq-700: #9ec5f4;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --plane: #0d0d0d;
+  --surface: #1a1a19;
+  --surface-2: #232321;
+  --surface-3: #2c2c2a;
+  --ink: #ffffff;
+  --ink-2: #c3c2b7;
+  --muted: #a3a29b;
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.2);
+  --accent: #256abf;
+  --accent-hover: #2a78d6;
+  --accent-ink: #86b6ef;
+  --accent-wash: #16263a;
+  --good: #0ca30c;
+  --good-wash: #10230f;
+  --warn: #fab219;
+  --warn-wash: #2b2210;
+  --critical: #e66767;
+  --critical-wash: #2d1515;
+  --synthetic: #b3a3f0;
+  --synthetic-wash: #221c33;
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+  --series-6: #008300;
+  --series-7: #9085e9;
+  --series-8: #e66767;
+  --diverge-neg: #e66767;
+  --diverge-pos: #3987e5;
+  --diverge-mid: #383835;
+  --seq-100: #16263a;
+  --seq-700: #9ec5f4;
+}
+
+@theme inline {
+  --color-plane: var(--plane);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-grid: var(--grid);
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-wash: var(--accent-wash);
+  --color-good: var(--good);
+  --color-good-wash: var(--good-wash);
+  --color-warn: var(--warn);
+  --color-warn-wash: var(--warn-wash);
+  --color-critical: var(--critical);
+  --color-critical-wash: var(--critical-wash);
+  --color-synthetic: var(--synthetic);
+  --color-synthetic-wash: var(--synthetic-wash);
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+html,
+body {
+  background: var(--plane);
+  color: var(--ink);
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Recharts: keep chrome recessive */
+.recharts-cartesian-grid line {
+  stroke: var(--grid);
+}
+.recharts-text {
+  fill: var(--muted);
+  font-size: 11px;
+}
+.recharts-wrapper:focus,
+.recharts-surface:focus {
+  outline: none;
+}
+
+/* Markdown (research section) */
+.prose-doc h1 { font-size: 1.75rem; font-weight: 600; margin: 0 0 1rem; letter-spacing: -0.01em; }
+.prose-doc h2 { font-size: 1.25rem; font-weight: 600; margin: 2rem 0 0.75rem; }
+.prose-doc h3 { font-size: 1.05rem; font-weight: 600; margin: 1.5rem 0 0.5rem; }
+.prose-doc p, .prose-doc li { line-height: 1.7; color: var(--ink); }
+.prose-doc p { margin: 0.75rem 0; }
+.prose-doc ul, .prose-doc ol { padding-left: 1.4rem; margin: 0.75rem 0; }
+.prose-doc ul { list-style: disc; }
+.prose-doc ol { list-style: decimal; }
+.prose-doc code { font-family: var(--font-mono); font-size: 0.875em; background: var(--surface-2); padding: 0.1em 0.3em; border-radius: 4px; }
+.prose-doc pre { background: var(--surface-2); padding: 1rem; border-radius: 8px; overflow-x: auto; }
+.prose-doc pre code { background: none; padding: 0; }
+.prose-doc table { border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; display: block; overflow-x: auto; }
+.prose-doc th, .prose-doc td { border: 1px solid var(--border); padding: 0.4rem 0.7rem; text-align: left; }
+.prose-doc th { background: var(--surface-2); font-weight: 600; }
+.prose-doc a { color: var(--accent-ink); text-decoration: underline; text-underline-offset: 2px; }
+.prose-doc blockquote { border-left: 3px solid var(--border-strong); padding-left: 1rem; color: var(--ink-2); margin: 1rem 0; }
+.prose-doc .katex-display { overflow-x: auto; overflow-y: hidden; padding: 0.25rem 0; }

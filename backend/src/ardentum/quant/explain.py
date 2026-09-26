@@ -277,6 +277,17 @@ def _zero_reason(
     return "Not held: including it would not improve the objective given its return and risk."
 
 
+_MEAN_NAMES = {
+    MeanEstimator.HISTORICAL: "historical sample mean",
+    MeanEstimator.BAYES_STEIN: "Bayes-Stein shrinkage estimator (Jorion 1986)",
+}
+_COV_NAMES = {
+    CovarianceEstimator.SAMPLE: "sample covariance",
+    CovarianceEstimator.LEDOIT_WOLF: "Ledoit-Wolf shrinkage toward a scaled identity",
+    CovarianceEstimator.LEDOIT_WOLF_CONSTANT_CORRELATION: "Ledoit-Wolf shrinkage toward constant correlation",
+}
+
+
 def assumptions_for(estimates: MarketEstimates, request: OptimisationRequest) -> tuple[str, ...]:
     years = estimates.observations / estimates.periods_per_year
     window = (
@@ -287,9 +298,9 @@ def assumptions_for(estimates: MarketEstimates, request: OptimisationRequest) ->
     out = [
         f"Estimation window: {window} ({estimates.observations} observations, {years:.1f} years, "
         f"{estimates.periods_per_year} periods per year).",
-        f"Expected returns: {estimates.mean_estimator.value.replace('_', '-')} estimator of "
-        "arithmetic mean returns, annualised linearly.",
-        f"Covariance: {estimates.covariance_estimator.value.replace('_', ' ')} estimator"
+        f"Expected returns: {_MEAN_NAMES[estimates.mean_estimator]} of arithmetic mean "
+        "returns, annualised linearly.",
+        f"Covariance: {_COV_NAMES[estimates.covariance_estimator]}"
         + (
             f" (shrinkage intensity {estimates.covariance_shrinkage:.2f})."
             if estimates.covariance_shrinkage is not None

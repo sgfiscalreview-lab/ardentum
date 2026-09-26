@@ -243,3 +243,25 @@ def test_weekly_frequency(client: TestClient) -> None:
     r = client.post("/api/v1/analytics", json={"universe": universe(frequency="weekly")})
     assert r.status_code == 200, r.text
     assert r.json()["data"]["periods_per_year"] == 52
+
+
+def test_wealth_dates_align_with_wealth(client: TestClient) -> None:
+    n = len(DEMO_TICKERS)
+    r = client.post(
+        "/api/v1/compare",
+        json={
+            "universe": universe(),
+            "portfolios": [
+                {"name": "A", "weights": {t: 1 / n for t in DEMO_TICKERS}},
+                {"name": "B", "weights": {"GOVB.SYN": 1.0}},
+            ],
+        },
+    ).json()
+    assert len(r["wealth_dates"]) == len(r["portfolios"][0]["wealth"])
+    assert r["wealth_dates"][0] < r["dates"][0]
+    b = client.post(
+        "/api/v1/backtest",
+        json={"universe": universe(), "strategy": {"type": "equal_weight"}, "lookback_years": 1},
+    ).json()
+    assert len(b["wealth_dates"]) == len(b["portfolio"]["wealth"])
+    assert b["wealth_dates"][0] == b["events"][0]["date"]
