@@ -97,9 +97,7 @@ class PortfolioConstraints:
 
     def without_esg(self) -> PortfolioConstraints:
         """The same constraints with every ESG-motivated element removed."""
-        return replace(
-            self, min_esg_score=None, esg_tilt=0.0, excluded_sectors=frozenset()
-        )
+        return replace(self, min_esg_score=None, esg_tilt=0.0, excluded_sectors=frozenset())
 
 
 @dataclass(frozen=True)
@@ -288,15 +286,13 @@ def _compile(
             raise InvalidInputError(f"Excluded asset {t!r} is not in the universe.")
         excluded.add(index[t])
     for sector in c.excluded_sectors:
-        members = [i for i, t in enumerate(tickers) if sector_of.get(t) == sector]
-        if not members:
+        in_sector = [i for i, t in enumerate(tickers) if sector_of.get(t) == sector]
+        if not in_sector:
             raise InvalidInputError(f"No assets belong to the excluded sector {sector!r}.")
-        excluded.update(members)
+        excluded.update(in_sector)
     if excluded:
         if (lb[list(excluded)] > 0).any():
-            raise InfeasibleProblemError(
-                "An excluded asset also has a positive minimum weight."
-            )
+            raise InfeasibleProblemError("An excluded asset also has a positive minimum weight.")
         lb[list(excluded)] = 0.0
         ub[list(excluded)] = 0.0
     if len(excluded) == n:
@@ -304,7 +300,9 @@ def _compile(
 
     long_only = bool((lb >= 0).all())
     if c.uses_esg and not long_only:
-        raise InvalidInputError("ESG constraints and tilts are only supported for long-only portfolios.")
+        raise InvalidInputError(
+            "ESG constraints and tilts are only supported for long-only portfolios."
+        )
 
     if ub.sum() < 1.0 - 1e-12:
         raise InfeasibleProblemError(
@@ -312,9 +310,7 @@ def _compile(
             "Raise the maximum weight or allow more assets."
         )
     if lb.sum() > 1.0 + 1e-12:
-        raise InfeasibleProblemError(
-            f"Minimum weights sum to {lb.sum():.1%}, which exceeds 100%."
-        )
+        raise InfeasibleProblemError(f"Minimum weights sum to {lb.sum():.1%}, which exceeds 100%.")
 
     rows: list[_Row] = [
         _Row(np.ones(n), "eq", 1.0, "budget", "Fully invested (weights sum to 100%)", tickers)
@@ -325,20 +321,37 @@ def _compile(
         if not members:
             raise InvalidInputError(f"No assets belong to sector {lim.sector!r}.")
         a = np.array([1.0 if sector_of.get(t) == lim.sector else 0.0 for t in tickers])
-        if lim.min_weight is not None and lim.max_weight is not None:
-            if lim.min_weight > lim.max_weight:
-                raise InvalidInputError(f"Sector {lim.sector}: minimum exceeds maximum.")
+        if (
+            lim.min_weight is not None
+            and lim.max_weight is not None
+            and lim.min_weight > lim.max_weight
+        ):
+            raise InvalidInputError(f"Sector {lim.sector}: minimum exceeds maximum.")
         if lim.max_weight is not None:
             if not 0.0 <= lim.max_weight <= MAX_ABS_WEIGHT:
                 raise InvalidInputError(f"Sector {lim.sector}: invalid maximum weight.")
             rows.append(
-                _Row(a, "le", lim.max_weight, "sector_max", f"{lim.sector} ≤ {lim.max_weight:.1%}", members)
+                _Row(
+                    a,
+                    "le",
+                    lim.max_weight,
+                    "sector_max",
+                    f"{lim.sector} ≤ {lim.max_weight:.1%}",
+                    members,
+                )
             )
         if lim.min_weight is not None:
             if lim.min_weight < 0.0:
                 raise InvalidInputError(f"Sector {lim.sector}: invalid minimum weight.")
             rows.append(
-                _Row(a, "ge", lim.min_weight, "sector_min", f"{lim.sector} ≥ {lim.min_weight:.1%}", members)
+                _Row(
+                    a,
+                    "ge",
+                    lim.min_weight,
+                    "sector_min",
+                    f"{lim.sector} ≥ {lim.min_weight:.1%}",
+                    members,
+                )
             )
 
     investable = [t for i, t in enumerate(tickers) if i not in excluded]
@@ -367,7 +380,14 @@ def _compile(
             )
         a = np.nan_to_num(esg_vec, nan=0.0)
         rows.append(
-            _Row(a, "ge", c.min_esg_score, "min_esg", f"Portfolio ESG score ≥ {c.min_esg_score:.1f}", tuple(investable))
+            _Row(
+                a,
+                "ge",
+                c.min_esg_score,
+                "min_esg",
+                f"Portfolio ESG score ≥ {c.min_esg_score:.1f}",
+                tuple(investable),
+            )
         )
 
     if c.max_gross_exposure is not None and c.max_gross_exposure < 1.0:
@@ -448,9 +468,11 @@ def _finalise(comp: _Compiled, raw: np.ndarray, extra_checks: list[tuple[str, bo
     for row in comp.rows:
         v = float(row.coeffs @ w)
         tol = VERIFY_TOL * max(1.0, abs(row.bound))
-        if (row.sense == "le" and v > row.bound + tol) or (
-            row.sense == "ge" and v < row.bound - tol
-        ) or (row.sense == "eq" and abs(v - row.bound) > tol):
+        if (
+            (row.sense == "le" and v > row.bound + tol)
+            or (row.sense == "ge" and v < row.bound - tol)
+            or (row.sense == "eq" and abs(v - row.bound) > tol)
+        ):
             violations.append(row.label)
     if comp.gross is not None and np.abs(w).sum() > comp.gross + VERIFY_TOL:
         violations.append("gross exposure")
@@ -463,7 +485,7 @@ def _finalise(comp: _Compiled, raw: np.ndarray, extra_checks: list[tuple[str, bo
         raise SolverError(
             "The optimised portfolio failed verification for: " + "; ".join(violations)
         )
-    return w
+    return np.asarray(w, dtype=float)
 
 
 def _dual(c: cp.Constraint) -> np.ndarray | float | None:
@@ -526,7 +548,10 @@ def _diagnostics(
             v = float(np.abs(w).sum())
             out.append(
                 ConstraintDiagnostic(
-                    "gross_exposure", f"Gross exposure ≤ {comp.gross:.0%}", v, comp.gross,
+                    "gross_exposure",
+                    f"Gross exposure ≤ {comp.gross:.0%}",
+                    v,
+                    comp.gross,
                     abs(v - comp.gross) <= 10 * VERIFY_TOL,
                 )
             )
@@ -534,13 +559,18 @@ def _diagnostics(
             v = portfolio_volatility(w - comp.benchmark, comp.cov)
             out.append(
                 ConstraintDiagnostic(
-                    "tracking_error", f"Tracking error ≤ {comp.max_te:.2%}", v, comp.max_te,
+                    "tracking_error",
+                    f"Tracking error ≤ {comp.max_te:.2%}",
+                    v,
+                    comp.max_te,
                     abs(v - comp.max_te) <= 1e-4 * max(comp.max_te, 1e-3),
                 )
             )
     for i in sorted(comp.excluded):
         out.append(
-            ConstraintDiagnostic("excluded", f"{comp.tickers[i]} excluded", 0.0, 0.0, True, (comp.tickers[i],))
+            ConstraintDiagnostic(
+                "excluded", f"{comp.tickers[i]} excluded", 0.0, 0.0, True, (comp.tickers[i],)
+            )
         )
     return tuple(out + extra)
 
@@ -558,7 +588,9 @@ def _max_return(comp: _Compiled, mu: np.ndarray) -> tuple[float, np.ndarray]:
     return float(mu @ w.value), np.asarray(w.value)
 
 
-def _min_variance(comp: _Compiled) -> tuple[cp.Problem, cp.Variable, list[tuple[cp.Constraint, _Row | str]], str]:
+def _min_variance(
+    comp: _Compiled,
+) -> tuple[cp.Problem, cp.Variable, list[tuple[cp.Constraint, _Row | str]], str]:
     w = cp.Variable(comp.n)
     cons, tagged = comp.cvx_constraints(w)
     prob = cp.Problem(cp.Minimize(_variance(comp, w)), cons)
@@ -629,7 +661,11 @@ def optimise(
         extra_checks.append(("target return", achieved >= target - VERIFY_TOL))
         extra.append(
             ConstraintDiagnostic(
-                "target_return", f"Expected return ≥ {target:.2%}", achieved, target, binding,
+                "target_return",
+                f"Expected return ≥ {target:.2%}",
+                achieved,
+                target,
+                binding,
                 shadow_price=None if c_target.dual_value is None else float(c_target.dual_value),
                 shadow_price_unit=shadow_unit,
             )
@@ -657,7 +693,10 @@ def optimise(
         extra_checks.append(("target volatility", vol <= target + VERIFY_TOL))
         extra.append(
             ConstraintDiagnostic(
-                "target_volatility", f"Volatility ≤ {target:.2%}", vol, target,
+                "target_volatility",
+                f"Volatility ≤ {target:.2%}",
+                vol,
+                target,
                 abs(vol - target) <= 1e-5,
                 shadow_price=None if c_vol.dual_value is None else float(c_vol.dual_value),
                 shadow_price_unit=shadow_unit,
@@ -699,8 +738,17 @@ def optimise(
 
     weights = _finalise(comp, np.asarray(raw), extra_checks)
     diagnostics = _diagnostics(comp, weights, tagged, shadow_unit, extra)
-    return _build_result(comp, weights, obj, request.risk_free_rate, rf, solver, diagnostics,
-                         warnings, mu_obj if tilt_active else None)
+    return _build_result(
+        comp,
+        weights,
+        obj,
+        request.risk_free_rate,
+        rf,
+        solver,
+        diagnostics,
+        warnings,
+        mu_obj if tilt_active else None,
+    )
 
 
 def _build_result(

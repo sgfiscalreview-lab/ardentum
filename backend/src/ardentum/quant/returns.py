@@ -50,7 +50,8 @@ def simple_returns[T: (pd.DataFrame, pd.Series)](prices: T) -> T:
 def log_returns[T: (pd.DataFrame, pd.Series)](prices: T) -> T:
     """Continuously compounded returns ``ln(P_t / P_{t-1})``; the first date is dropped."""
     validate_prices(prices)
-    return np.log(prices / prices.shift(1)).iloc[1:]
+    ratio = prices / prices.shift(1)
+    return ratio.iloc[1:].apply(np.log)
 
 
 def simple_to_log[T: (pd.DataFrame, pd.Series, np.ndarray)](returns: T) -> T:
@@ -58,12 +59,12 @@ def simple_to_log[T: (pd.DataFrame, pd.Series, np.ndarray)](returns: T) -> T:
     arr = np.asarray(returns, dtype=float)
     if (arr <= -1.0).any():
         raise InvalidInputError("Simple returns must exceed -100% to convert to log returns.")
-    return np.log1p(returns)  # type: ignore[no-any-return]
+    return np.log1p(returns)  # type: ignore[return-value,no-any-return]
 
 
 def log_to_simple[T: (pd.DataFrame, pd.Series, np.ndarray)](returns: T) -> T:
     """Convert log returns to simple returns: ``exp(x) - 1``."""
-    return np.expm1(returns)  # type: ignore[no-any-return]
+    return np.expm1(returns)  # type: ignore[return-value,no-any-return]
 
 
 def validate_returns(returns: np.ndarray, *, min_obs: int = 2, name: str = "returns") -> None:

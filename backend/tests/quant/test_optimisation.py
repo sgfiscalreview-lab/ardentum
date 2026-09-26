@@ -105,7 +105,8 @@ def test_frontier_matches_merton_hyperbola(five_assets: MarketEstimates) -> None
     d = a * c - b * b
     for m in [0.08, 0.10, 0.12, 0.15]:
         res = optimise(
-            five_assets, OptimisationRequest(Objective.TARGET_RETURN, target_return=m, constraints=WIDE)
+            five_assets,
+            OptimisationRequest(Objective.TARGET_RETURN, target_return=m, constraints=WIDE),
         )
         assert res.expected_return == pytest.approx(m, abs=1e-7)
         assert res.volatility**2 == pytest.approx((a * m * m - 2 * b * m + c) / d, rel=1e-6)
@@ -117,7 +118,8 @@ def test_max_utility_closed_form(five_assets: MarketEstimates) -> None:
     eta = (b - gamma) / a
     expected = inv @ (five_assets.expected_returns - eta) / gamma
     res = optimise(
-        five_assets, OptimisationRequest(Objective.MAX_UTILITY, risk_aversion=gamma, constraints=WIDE)
+        five_assets,
+        OptimisationRequest(Objective.MAX_UTILITY, risk_aversion=gamma, constraints=WIDE),
     )
     np.testing.assert_allclose(res.weights, expected, atol=1e-6)
 
@@ -228,12 +230,23 @@ def test_max_weight_constraint_binding(five_assets: MarketEstimates) -> None:
 
 def test_infeasible_max_weight(five_assets: MarketEstimates) -> None:
     with pytest.raises(InfeasibleProblemError, match="cannot be fully invested"):
-        optimise(five_assets, OptimisationRequest(Objective.MIN_VOLATILITY, constraints=PortfolioConstraints(max_weight=0.1)))
+        optimise(
+            five_assets,
+            OptimisationRequest(
+                Objective.MIN_VOLATILITY, constraints=PortfolioConstraints(max_weight=0.1)
+            ),
+        )
 
 
 def test_invalid_bounds(five_assets: MarketEstimates) -> None:
     with pytest.raises(InvalidInputError):
-        optimise(five_assets, OptimisationRequest(Objective.MIN_VOLATILITY, constraints=PortfolioConstraints(min_weight=0.5, max_weight=0.2)))
+        optimise(
+            five_assets,
+            OptimisationRequest(
+                Objective.MIN_VOLATILITY,
+                constraints=PortfolioConstraints(min_weight=0.5, max_weight=0.2),
+            ),
+        )
 
 
 def test_asset_bounds_and_exclusions(five_assets: MarketEstimates) -> None:
@@ -250,7 +263,9 @@ def test_sector_limits(five_assets: MarketEstimates) -> None:
     cons = PortfolioConstraints(
         sector_limits=(SectorLimit("Tech", max_weight=0.2), SectorLimit("Energy", min_weight=0.3))
     )
-    res = optimise(five_assets, OptimisationRequest(Objective.MAX_SHARPE, 0.0, constraints=cons), META)
+    res = optimise(
+        five_assets, OptimisationRequest(Objective.MAX_SHARPE, 0.0, constraints=cons), META
+    )
     w = res.weight_map()
     assert w["A2"] + w["A3"] <= 0.2 + 1e-8
     assert w["A1"] + w["A4"] >= 0.3 - 1e-8
@@ -267,7 +282,9 @@ def test_sector_constraint_requires_metadata(five_assets: MarketEstimates) -> No
 
 def test_excluded_sector(five_assets: MarketEstimates) -> None:
     cons = PortfolioConstraints(excluded_sectors=frozenset({"Energy"}))
-    res = optimise(five_assets, OptimisationRequest(Objective.MAX_SHARPE, 0.0, constraints=cons), META)
+    res = optimise(
+        five_assets, OptimisationRequest(Objective.MAX_SHARPE, 0.0, constraints=cons), META
+    )
     w = res.weight_map()
     assert w["A1"] == 0.0
     assert w["A4"] == 0.0
@@ -286,7 +303,8 @@ def test_gross_exposure_with_shorts(five_assets: MarketEstimates) -> None:
     best, _ = max_achievable_return(five_assets, cons)
     assert best == pytest.approx(1.15 * 0.13 - 0.15 * 0.05, abs=1e-7)
     res = optimise(
-        five_assets, OptimisationRequest(Objective.TARGET_RETURN, target_return=0.14, constraints=cons)
+        five_assets,
+        OptimisationRequest(Objective.TARGET_RETURN, target_return=0.14, constraints=cons),
     )
     assert np.abs(res.weights).sum() <= 1.3 + 1e-7
     assert res.weights.min() < 0
@@ -318,7 +336,11 @@ def test_target_return_infeasible_above_max(five_assets: MarketEstimates) -> Non
     with pytest.raises(InfeasibleProblemError, match="exceeds the maximum achievable"):
         optimise(
             five_assets,
-            OptimisationRequest(Objective.TARGET_RETURN, target_return=0.125, constraints=PortfolioConstraints(max_weight=0.5)),
+            OptimisationRequest(
+                Objective.TARGET_RETURN,
+                target_return=0.125,
+                constraints=PortfolioConstraints(max_weight=0.5),
+            ),
         )
 
 
@@ -330,13 +352,20 @@ def test_target_return_below_min_vol_is_not_binding(five_assets: MarketEstimates
 
 
 def test_target_volatility(five_assets: MarketEstimates) -> None:
-    res = optimise(five_assets, OptimisationRequest(Objective.TARGET_VOLATILITY, target_volatility=0.15))
+    res = optimise(
+        five_assets, OptimisationRequest(Objective.TARGET_VOLATILITY, target_volatility=0.15)
+    )
     assert res.volatility == pytest.approx(0.15, abs=1e-6)
     # It must lie on the frontier: min vol for its return equals 15%.
-    tr = optimise(five_assets, OptimisationRequest(Objective.TARGET_RETURN, target_return=res.expected_return - 1e-9))
+    tr = optimise(
+        five_assets,
+        OptimisationRequest(Objective.TARGET_RETURN, target_return=res.expected_return - 1e-9),
+    )
     assert tr.volatility == pytest.approx(0.15, abs=1e-5)
     with pytest.raises(InfeasibleProblemError, match="below the minimum achievable"):
-        optimise(five_assets, OptimisationRequest(Objective.TARGET_VOLATILITY, target_volatility=0.01))
+        optimise(
+            five_assets, OptimisationRequest(Objective.TARGET_VOLATILITY, target_volatility=0.01)
+        )
 
 
 def test_max_sharpe_undefined_when_rf_too_high(five_assets: MarketEstimates) -> None:
@@ -376,7 +405,9 @@ def test_min_esg_constraint(five_assets: MarketEstimates) -> None:
     assert base.esg_score is not None
     level = base.esg_score + 10
     cons = PortfolioConstraints(min_esg_score=level)
-    res = optimise(five_assets, OptimisationRequest(Objective.MAX_SHARPE, 0.0, constraints=cons), META)
+    res = optimise(
+        five_assets, OptimisationRequest(Objective.MAX_SHARPE, 0.0, constraints=cons), META
+    )
     assert res.esg_score is not None
     assert res.esg_score >= level - 1e-6
     assert any(d.kind == "min_esg" and d.binding for d in res.diagnostics)
@@ -400,7 +431,9 @@ def test_min_esg_requires_scores(five_assets: MarketEstimates) -> None:
     cons_ok = PortfolioConstraints(
         min_esg_score=40.0, excluded_assets=frozenset({"A1", "A2", "A3", "A4"})
     )
-    res = optimise(five_assets, OptimisationRequest(Objective.MIN_VOLATILITY, constraints=cons_ok), meta)
+    res = optimise(
+        five_assets, OptimisationRequest(Objective.MIN_VOLATILITY, constraints=cons_ok), meta
+    )
     assert res.weights[0] == pytest.approx(1.0)
 
 
@@ -410,14 +443,20 @@ def test_esg_rejected_for_long_short(five_assets: MarketEstimates) -> None:
         optimise(five_assets, OptimisationRequest(Objective.MIN_VOLATILITY, constraints=cons), META)
 
 
-def test_esg_tilt_increases_score_and_reports_unadjusted_return(five_assets: MarketEstimates) -> None:
+def test_esg_tilt_increases_score_and_reports_unadjusted_return(
+    five_assets: MarketEstimates,
+) -> None:
     scores = []
     for tilt in [0.0, 0.01, 0.03, 0.1]:
         cons = PortfolioConstraints(esg_tilt=tilt)
-        res = optimise(five_assets, OptimisationRequest(Objective.MAX_SHARPE, 0.0, constraints=cons), META)
+        res = optimise(
+            five_assets, OptimisationRequest(Objective.MAX_SHARPE, 0.0, constraints=cons), META
+        )
         assert res.esg_score is not None
         scores.append(res.esg_score)
-        assert res.expected_return == pytest.approx(float(res.weights @ five_assets.expected_returns))
+        assert res.expected_return == pytest.approx(
+            float(res.weights @ five_assets.expected_returns)
+        )
         if tilt > 0:
             assert res.esg_adjusted_return is not None
     assert all(b >= a - 1e-6 for a, b in itertools.pairwise(scores))
@@ -428,7 +467,9 @@ def test_esg_tilt_inactive_for_min_vol(five_assets: MarketEstimates) -> None:
     base = optimise(five_assets, OptimisationRequest(Objective.MIN_VOLATILITY), META)
     tilted = optimise(
         five_assets,
-        OptimisationRequest(Objective.MIN_VOLATILITY, constraints=PortfolioConstraints(esg_tilt=0.05)),
+        OptimisationRequest(
+            Objective.MIN_VOLATILITY, constraints=PortfolioConstraints(esg_tilt=0.05)
+        ),
         META,
     )
     np.testing.assert_allclose(base.weights, tilted.weights, atol=1e-8)
@@ -436,7 +477,9 @@ def test_esg_tilt_inactive_for_min_vol(five_assets: MarketEstimates) -> None:
 
 
 def test_esg_sharpe_frontier_is_non_increasing(five_assets: MarketEstimates) -> None:
-    pts = esg_sharpe_frontier(five_assets, PortfolioConstraints(), META, 0.0, [30, 45, 60, 70, 79, 90])
+    pts = esg_sharpe_frontier(
+        five_assets, PortfolioConstraints(), META, 0.0, [30, 45, 60, 70, 79, 90]
+    )
     feasible = [p for p in pts if p.feasible]
     assert not pts[-1].feasible  # 90 > best score 80
     sharpes = [p.result.sharpe_ratio for p in feasible if p.result]
@@ -473,7 +516,9 @@ def test_unconstrained_frontier_matches_merton(five_assets: MarketEstimates) -> 
     )
     a, b, c, _ = _abc(five_assets)
     d = a * c - b * b
-    interior = [p for p in ef.points if (p.weights > -1 + 1e-6).all() and (p.weights < 2 - 1e-6).all()]
+    interior = [
+        p for p in ef.points if (p.weights > -1 + 1e-6).all() and (p.weights < 2 - 1e-6).all()
+    ]
     assert len(interior) >= 3
     for p in interior:  # where no bound binds, the Merton closed form applies
         m = p.expected_return
@@ -482,7 +527,9 @@ def test_unconstrained_frontier_matches_merton(five_assets: MarketEstimates) -> 
 
 def test_esg_constraint_shifts_frontier_right(five_assets: MarketEstimates) -> None:
     base = efficient_frontier(five_assets, PortfolioConstraints(), 0.0, META, n_points=15)
-    esg = efficient_frontier(five_assets, PortfolioConstraints(min_esg_score=65.0), 0.0, META, n_points=15)
+    esg = efficient_frontier(
+        five_assets, PortfolioConstraints(min_esg_score=65.0), 0.0, META, n_points=15
+    )
     assert esg.min_volatility.volatility >= base.min_volatility.volatility - 1e-9
     for p in esg.points:
         assert p.esg_score is not None

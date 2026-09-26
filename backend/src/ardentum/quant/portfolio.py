@@ -59,7 +59,7 @@ def validate_covariance(cov: np.ndarray, *, tol: float = 1e-10) -> np.ndarray:
         raise InvalidInputError(
             f"Covariance matrix is not positive semi-definite (smallest eigenvalue {min_eig:.3e})."
         )
-    return c
+    return np.asarray(c, dtype=float)
 
 
 def portfolio_expected_return(weights: np.ndarray, expected_returns: np.ndarray) -> float:

@@ -19,9 +19,7 @@ from tests.conftest import make_returns
 
 
 def test_historical_mean(returns_df: pd.DataFrame) -> None:
-    np.testing.assert_allclose(
-        historical_mean(returns_df, 252), returns_df.mean().to_numpy() * 252
-    )
+    np.testing.assert_allclose(historical_mean(returns_df, 252), returns_df.mean().to_numpy() * 252)
 
 
 def test_sample_covariance(returns_df: pd.DataFrame) -> None:
@@ -62,9 +60,7 @@ def _naive_constant_correlation(x: np.ndarray) -> tuple[np.ndarray, float]:
             for i in range(n)
         ]
     )
-    pi_hat = sum(
-        np.mean((y[:, i] * y[:, j] - s[i, j]) ** 2) for i in range(n) for j in range(n)
-    )
+    pi_hat = sum(np.mean((y[:, i] * y[:, j] - s[i, j]) ** 2) for i in range(n) for j in range(n))
 
     def theta(i: int, j: int) -> float:
         return float(np.mean((y[:, i] ** 2 - s[i, i]) * (y[:, i] * y[:, j] - s[i, j])))

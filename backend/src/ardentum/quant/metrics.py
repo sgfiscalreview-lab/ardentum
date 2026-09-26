@@ -92,9 +92,7 @@ def beta(asset_returns: ArrayLike1D, market_returns: ArrayLike1D) -> float:
     return float(np.cov(a, m, ddof=1)[0, 1] / var_m)
 
 
-def sharpe_ratio(
-    returns: ArrayLike1D, periods_per_year: int, risk_free_rate: float = 0.0
-) -> float:
+def sharpe_ratio(returns: ArrayLike1D, periods_per_year: int, risk_free_rate: float = 0.0) -> float:
     """Annualised ex-post Sharpe ratio using an effective annual risk-free rate."""
     r = _as_array(returns)
     excess = r - annual_rate_to_periodic(risk_free_rate, periods_per_year)

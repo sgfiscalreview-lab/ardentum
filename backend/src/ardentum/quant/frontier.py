@@ -82,20 +82,28 @@ def efficient_frontier(
     rf_arith = estimates.risk_free_arithmetic(risk_free_rate)
 
     min_vol = optimise(
-        estimates, OptimisationRequest(Objective.MIN_VOLATILITY, risk_free_rate, constraints=constraints), meta
+        estimates,
+        OptimisationRequest(Objective.MIN_VOLATILITY, risk_free_rate, constraints=constraints),
+        meta,
     )
     max_sharpe: OptimisationResult | None = None
     reason: str | None = None
     try:
         max_sharpe = optimise(
-            estimates, OptimisationRequest(Objective.MAX_SHARPE, risk_free_rate, constraints=replace(constraints, esg_tilt=0.0)), meta
+            estimates,
+            OptimisationRequest(
+                Objective.MAX_SHARPE, risk_free_rate, constraints=replace(constraints, esg_tilt=0.0)
+            ),
+            meta,
         )
     except InfeasibleProblemError as exc:
         reason = str(exc)
 
     r_lo = min_vol.expected_return
     r_hi, _ = _max_return(comp, comp.mu)
-    targets = [r_lo] if r_hi - r_lo < 1e-9 else list(np.linspace(r_lo, r_hi, n_points))
+    targets: list[float] = (
+        [r_lo] if r_hi - r_lo < 1e-9 else [float(x) for x in np.linspace(r_lo, r_hi, n_points)]
+    )
     if len(targets) > 1:
         # The last target admits a single portfolio; back off by a negligible amount
         # so the interior-point solver has a strictly feasible region.
@@ -168,7 +176,9 @@ def esg_sharpe_frontier(
         cons = replace(constraints, min_esg_score=float(level), esg_tilt=0.0)
         try:
             res = optimise(
-                estimates, OptimisationRequest(Objective.MAX_SHARPE, risk_free_rate, constraints=cons), metadata
+                estimates,
+                OptimisationRequest(Objective.MAX_SHARPE, risk_free_rate, constraints=cons),
+                metadata,
             )
             out.append(EsgFrontierPoint(float(level), True, res))
         except InfeasibleProblemError as exc:
