@@ -1073,6 +1073,24 @@ export interface components {
             mean_block_length: number;
             /** Seed */
             seed?: number | null;
+            /**
+             * Annual Cash Flow
+             * @description Per year: positive contributes, negative withdraws.
+             * @default 0
+             */
+            annual_cash_flow: number;
+            /**
+             * Cash Flows Per Year
+             * @default 12
+             * @enum {integer}
+             */
+            cash_flows_per_year: 1 | 4 | 12;
+            /**
+             * Cash Flow Growth
+             * @description Annual indexation.
+             * @default 0
+             */
+            cash_flow_growth: number;
         };
         /** MonteCarloResponse */
         MonteCarloResponse: {
@@ -1123,6 +1141,14 @@ export interface components {
             portfolio_expected_return: number;
             /** Portfolio Volatility */
             portfolio_volatility: number;
+            /** Net Cash Flow */
+            net_cash_flow: number;
+            /** Probability Of Depletion */
+            probability_of_depletion: number | null;
+            /** Depletion Years Percentiles */
+            depletion_years_percentiles: {
+                [key: string]: number;
+            } | null;
             /** Assumptions */
             assumptions: string[];
             data: components["schemas"]["DataWindowOut"];

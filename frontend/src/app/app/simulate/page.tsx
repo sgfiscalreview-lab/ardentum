@@ -39,6 +39,10 @@ export default function SimulatePage() {
   const [initial, setInitial] = useState(10_000);
   const [target, setTarget] = useState<number | null>(20_000);
   const [seed, setSeed] = useState<number | null>(20260926);
+  const [flowKind, setFlowKind] = useState<"none" | "contribute" | "withdraw">("none");
+  const [flowAmount, setFlowAmount] = useState(1_200);
+  const [flowFreq, setFlowFreq] = useState<1 | 4 | 12>(12);
+  const [flowGrowth, setFlowGrowth] = useState(0);
   const { data, error, running, run } = useComputation<MonteCarloRequest, MonteCarloResponse>("simulate", (req) =>
     unwrap(api.POST("/api/v1/montecarlo", { body: req })),
   );
@@ -58,6 +62,9 @@ export default function SimulatePage() {
       target_value: target,
       seed,
       mean_block_length: 21,
+      annual_cash_flow: flowKind === "none" ? 0 : flowKind === "contribute" ? flowAmount : -flowAmount,
+      cash_flows_per_year: flowFreq,
+      cash_flow_growth: flowGrowth,
     });
   };
 
@@ -96,6 +103,30 @@ export default function SimulatePage() {
                   <NumberInput id="target" value={target} onChange={setTarget} min={1} max={1e13} allowEmpty placeholder="None" />
                 </Field>
               </div>
+              <Field label="Regular cash flows" htmlFor="flow-kind" hint="Paid at the end of each interval. A path is depleted when it cannot cover a withdrawal.">
+                <Select id="flow-kind" value={flowKind} onChange={(e) => setFlowKind(e.target.value as typeof flowKind)}>
+                  <option value="none">None</option>
+                  <option value="contribute">Contributions</option>
+                  <option value="withdraw">Withdrawals</option>
+                </Select>
+              </Field>
+              {flowKind !== "none" && (
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Amount per year ($)" htmlFor="flow-amount">
+                    <NumberInput id="flow-amount" value={flowAmount} onChange={(v) => setFlowAmount(Math.abs(v ?? 0))} min={0} max={1e11} />
+                  </Field>
+                  <Field label="Paid" htmlFor="flow-freq">
+                    <Select id="flow-freq" value={flowFreq} onChange={(e) => setFlowFreq(Number(e.target.value) as 1 | 4 | 12)}>
+                      <option value={12}>Monthly</option>
+                      <option value={4}>Quarterly</option>
+                      <option value={1}>Annually</option>
+                    </Select>
+                  </Field>
+                  <Field label="Annual increase" htmlFor="flow-growth" className="col-span-2" hint="E.g. 2% to keep pace with inflation.">
+                    <NumberInput id="flow-growth" value={flowGrowth} onChange={(v) => setFlowGrowth(v ?? 0)} scale={100} suffix="%" min={-20} max={20} />
+                  </Field>
+                </div>
+              )}
               <Field label="Random seed" htmlFor="seed" hint="Same seed and inputs ⇒ identical results. Leave empty for a random seed (it will be reported).">
                 <NumberInput id="seed" value={seed} onChange={(v) => setSeed(v == null ? null : Math.round(v))} min={0} max={2147483647} allowEmpty placeholder="Random" />
               </Field>
@@ -134,8 +165,20 @@ function Results({ data }: { data: MonteCarloResponse }) {
       >
         <div className="grid grid-cols-2 gap-2 md:grid-cols-3 2xl:grid-cols-6">
           <Stat label="Median final value" value={money(p.p50, true)} sub={`5th–95th: ${money(p.p05, true)} – ${money(p.p95, true)}`} />
-          <Stat label="Median annual growth" value={pct(data.cagr_percentiles.p50)} sub={`5th pct ${pct(data.cagr_percentiles.p05)}`} />
-          <Stat label="Probability of loss" value={pct(data.probability_of_loss, 1)} sub="final value below start" />
+          <Stat label="Median annual growth" value={pct(data.cagr_percentiles.p50)} sub={`5th pct ${pct(data.cagr_percentiles.p05)}${data.net_cash_flow === 0 ? "" : " · time-weighted"}`} />
+          <Stat
+            label="Probability of loss"
+            value={pct(data.probability_of_loss, 1)}
+            sub={data.net_cash_flow === 0 ? "final value below start" : `final value below start + net flows (${money(data.initial_value + data.net_cash_flow, true)})`}
+          />
+          {data.probability_of_depletion != null && (
+            <Stat
+              label="Probability of running out"
+              value={pct(data.probability_of_depletion, 1)}
+              sub={data.depletion_years_percentiles ? `median after ${(data.depletion_years_percentiles.p50 ?? 0).toFixed(1)} years` : "no path ran out"}
+              help="Share of paths whose wealth could not cover a withdrawal before the horizon."
+            />
+          )}
           <Stat label="Probability of target" value={data.probability_of_target == null ? "—" : pct(data.probability_of_target, 1)} sub={data.target_value ? `≥ ${money(data.target_value)}` : "no target set"} />
           <Stat label="Terminal VaR 95%" value={pct(data.terminal_return_var_95, 1)} sub={`CVaR ${pct(data.terminal_return_cvar_95, 1)}`} help="Loss of initial value exceeded in only 5% of paths; CVaR is the mean loss in that tail." />
           <Stat label="Median max drawdown" value={pct(data.max_drawdown_percentiles.p50, 1)} sub={`5% of paths worse than ${pct(data.max_drawdown_percentiles.p05, 1)}`} />

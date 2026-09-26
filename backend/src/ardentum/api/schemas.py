@@ -188,6 +188,11 @@ class MonteCarloRequest(RequestModel):
     target_value: float | None = Field(None, gt=0.0, le=1e13)
     mean_block_length: float = Field(21.0, ge=1.0, le=252.0)
     seed: int | None = Field(None, ge=0, le=2**31 - 1)
+    annual_cash_flow: float = Field(
+        0.0, ge=-1e11, le=1e11, description="Per year: positive contributes, negative withdraws."
+    )
+    cash_flows_per_year: Literal[1, 4, 12] = 12
+    cash_flow_growth: float = Field(0.0, ge=-0.2, le=0.2, description="Annual indexation.")
 
 
 class OptimisedStrategyIn(RequestModel):
@@ -585,6 +590,9 @@ class MonteCarloResponse(ResponseModel):
     max_drawdown_percentiles: dict[str, float]
     portfolio_expected_return: float
     portfolio_volatility: float
+    net_cash_flow: float
+    probability_of_depletion: float | None
+    depletion_years_percentiles: dict[str, float] | None
     assumptions: list[str]
     data: DataWindowOut
 

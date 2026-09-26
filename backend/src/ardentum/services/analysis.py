@@ -619,6 +619,9 @@ def run_montecarlo(service: MarketDataService, req: s.MonteCarloRequest) -> s.Mo
         periods_per_step=max(1, ppy // 12),
         mean_block_length=req.mean_block_length,
         target_value=req.target_value,
+        annual_cash_flow=req.annual_cash_flow,
+        cash_flows_per_year=req.cash_flows_per_year,
+        cash_flow_growth=req.cash_flow_growth,
     )
     est = estimates_for(data, req.estimation)
     exp_ret = portfolio_expected_return(w, est.expected_returns)
@@ -654,6 +657,13 @@ def run_montecarlo(service: MarketDataService, req: s.MonteCarloRequest) -> s.Mo
         },
         portfolio_expected_return=_finite(exp_ret),
         portfolio_volatility=_finite(vol),
+        net_cash_flow=_finite(res.net_cash_flow),
+        probability_of_depletion=res.probability_of_depletion,
+        depletion_years_percentiles=(
+            None
+            if res.depletion_years_percentiles is None
+            else {k: float(v) for k, v in _pct_keys(res.depletion_years_percentiles)}
+        ),
         assumptions=list(res.assumptions),
         data=data_window(data),
     )

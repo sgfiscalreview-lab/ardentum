@@ -174,6 +174,31 @@ def test_montecarlo_reproducible(client: TestClient) -> None:
     assert boot.status_code == 200, boot.text
 
 
+def test_montecarlo_withdrawals_report_depletion(client: TestClient) -> None:
+    w = {t: 1 / len(DEMO_TICKERS) for t in DEMO_TICKERS}
+    req = {
+        "universe": universe(),
+        "weights": w,
+        "n_paths": 500,
+        "horizon_years": 20,
+        "seed": 5,
+        "initial_value": 100_000,
+        "annual_cash_flow": -12_000,
+        "cash_flows_per_year": 12,
+    }
+    r = client.post("/api/v1/montecarlo", json=req)
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["net_cash_flow"] == pytest.approx(-240_000)
+    assert 0 < body["probability_of_depletion"] <= 1
+    assert set(body["depletion_years_percentiles"]) == {"p10", "p50", "p90"}
+    assert any("depleted" in a for a in body["assumptions"])
+    plain = client.post("/api/v1/montecarlo", json={**req, "annual_cash_flow": 0}).json()
+    assert plain["probability_of_depletion"] is None
+    # Time-weighted growth does not depend on cash flows (same seed, same draws).
+    assert plain["cagr_percentiles"] == body["cagr_percentiles"]
+
+
 def test_montecarlo_rejects_bad_weights(client: TestClient) -> None:
     r = client.post(
         "/api/v1/montecarlo",

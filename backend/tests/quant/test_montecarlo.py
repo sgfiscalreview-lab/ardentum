@@ -6,6 +6,7 @@ import pytest
 from ardentum.quant.errors import InsufficientDataError, InvalidInputError
 from ardentum.quant.montecarlo import (
     MonteCarloConfig,
+    MonteCarloResult,
     SimulationMethod,
     lognormal_parameters,
     simulate_bootstrap,
@@ -220,3 +221,78 @@ def test_stationary_bootstrap_block_structure() -> None:
     cont = (idx[1:] == (idx[:-1] + 1) % t).mean()
     # P(continue) = (1 - 1/L) + (1/L)(1/T) for a uniformly drawn new start.
     assert cont == pytest.approx(0.9 + 0.1 / t, abs=0.01)
+
+
+# ----------------------------------------------------------------------------- cash flows
+
+
+def _det(**kw: object) -> MonteCarloResult:
+    """Deterministic returns (zero volatility): 5% p.a. arithmetic per period."""
+    cfg = MonteCarloConfig(seed=0, n_paths=10, initial_value=100_000.0, **kw)  # type: ignore[arg-type]
+    return simulate_parametric(cfg, 0.05, 0.0)
+
+
+def test_contributions_match_annuity_closed_form() -> None:
+    res = _det(horizon_years=10, annual_cash_flow=12_000.0, cash_flows_per_year=1)
+    g = (1 + 0.05 / 252) ** 252
+    expected = 100_000 * g**10 + 12_000 * (g**10 - 1) / (g - 1)
+    np.testing.assert_allclose(res.terminal_values, expected, rtol=1e-10)
+    assert res.net_cash_flow == pytest.approx(120_000)
+    assert res.probability_of_depletion is None
+    assert res.probability_of_loss == 0.0
+
+
+def test_monthly_indexed_contributions_closed_form() -> None:
+    res = _det(
+        horizon_years=3, annual_cash_flow=1_200.0, cash_flows_per_year=12, cash_flow_growth=0.03
+    )
+    gm = (1 + 0.05 / 252) ** 21  # growth over one 21-period month
+    w = 100_000.0
+    flows = 0.0
+    for j in range(1, 37):
+        cf = 100.0 * 1.03 ** ((j * 21) / 252 - 1 / 12)
+        w = w * gm + cf
+        flows += cf
+    np.testing.assert_allclose(res.terminal_values, w, rtol=1e-10)
+    assert res.net_cash_flow == pytest.approx(flows)
+
+
+def test_withdrawals_deplete_at_the_closed_form_year() -> None:
+    res = _det(horizon_years=20, annual_cash_flow=-15_000.0, cash_flows_per_year=1)
+    g = (1 + 0.05 / 252) ** 252
+    # Independent brute force of the year the balance can no longer cover a withdrawal.
+    w, year = 100_000.0, 0
+    while w * g - 15_000 > 0:
+        w, year = w * g - 15_000, year + 1
+    assert res.probability_of_depletion == 1.0
+    assert res.depletion_years_percentiles is not None
+    assert res.depletion_years_percentiles[50] == pytest.approx(year + 1)
+    np.testing.assert_array_equal(res.terminal_values, 0.0)
+    # Time-weighted statistics ignore cash flows.
+    assert res.cagr_percentiles[50] == pytest.approx(g - 1, rel=1e-10)
+
+
+def test_expected_wealth_with_flows_matches_theory() -> None:
+    # E[W_n] = W0 m^n + C * sum_{k<n} m^k for i.i.d. annual gross returns with mean m.
+    cfg = MonteCarloConfig(
+        seed=11,
+        n_paths=20_000,
+        horizon_years=10,
+        initial_value=100.0,
+        periods_per_year=12,
+        periods_per_step=12,
+        annual_cash_flow=10.0,
+        cash_flows_per_year=1,
+    )
+    res = simulate_parametric(cfg, 0.06, 0.15)
+    m = (1 + 0.06 / 12) ** 12
+    expected = 100 * m**10 + 10 * sum(m**k for k in range(10))
+    se = res.terminal_values.std() / np.sqrt(cfg.n_paths)
+    assert abs(res.terminal_values.mean() - expected) < 4 * se
+
+
+def test_cash_flow_validation() -> None:
+    with pytest.raises(InvalidInputError, match="Cash flows per year"):
+        _det(annual_cash_flow=1.0, cash_flows_per_year=0)
+    with pytest.raises(InvalidInputError, match="growth"):
+        _det(annual_cash_flow=1.0, cash_flow_growth=0.9)

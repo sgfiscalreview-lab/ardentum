@@ -26,9 +26,26 @@ Reproducibility: all randomness comes from one ``numpy.random.Generator``
 (PCG64) seeded with the explicit ``seed``; identical inputs and seed give
 bit-identical outputs.
 
-Limitations: no parameter uncertainty (estimates are treated as true), no cash
-flows, taxes or transaction costs, and history-based methods cannot generate
-scenarios worse than the historical sample's worst periods.
+Cash flows
+----------
+Optional regular contributions (positive) or withdrawals (negative) of
+``annual_cash_flow / cash_flows_per_year`` are made at the end of every
+``round(periods_per_year / cash_flows_per_year)`` periods, growing at
+``cash_flow_growth`` per year (e.g. inflation indexation): the flow at time ``t``
+years is ``(A / f)(1 + g)^(t - 1/f)``. Wealth evolves as
+``W <- W (1 + r)`` each period and ``W <- W + CF`` on flow dates. A path whose
+wealth cannot cover a withdrawal is **depleted**: its wealth becomes zero and
+stays zero. With deterministic returns this reproduces the annuity closed form
+``W_n = W_0 G^n + C (G^n - 1) / (G - 1)`` (tested).
+
+Growth rates, drawdowns and terminal VaR/CVaR describe the portfolio's
+time-weighted return (they are unaffected by cash flows); wealth percentiles,
+target and depletion probabilities include the cash flows. With cash flows,
+"loss" means ending with less than the initial value plus net contributions.
+
+Limitations: no parameter uncertainty (estimates are treated as true), no taxes
+or transaction costs, and history-based methods cannot generate scenarios worse
+than the historical sample's worst periods.
 """
 
 from __future__ import annotations
@@ -64,6 +81,24 @@ class MonteCarloConfig:
     target_value: float | None = None
     percentiles: tuple[int, ...] = DEFAULT_PERCENTILES
     n_sample_paths: int = 20
+    annual_cash_flow: float = 0.0  # + contributions / - withdrawals, per year
+    cash_flows_per_year: int = 12
+    cash_flow_growth: float = 0.0  # annual growth of the flows
+
+    @property
+    def has_cash_flows(self) -> bool:
+        return self.annual_cash_flow != 0.0
+
+    @property
+    def cash_flow_interval(self) -> int:
+        """Data periods between cash flows."""
+        return max(1, round(self.periods_per_year / max(1, self.cash_flows_per_year)))
+
+    def cash_flow_at(self, t_years: float) -> float:
+        f = self.periods_per_year / self.cash_flow_interval
+        return float(
+            (self.annual_cash_flow / f) * (1.0 + self.cash_flow_growth) ** (t_years - 1.0 / f)
+        )
 
 
 @dataclass(frozen=True)
@@ -84,6 +119,9 @@ class MonteCarloResult:
     per_period_mean: float
     per_period_volatility: float
     assumptions: tuple[str, ...] = field(default_factory=tuple)
+    net_cash_flow: float = 0.0  # sum of all scheduled flows (before any depletion)
+    probability_of_depletion: float | None = None  # None unless there are withdrawals
+    depletion_years_percentiles: dict[int, float] | None = None  # among depleted paths
 
     def histogram(self, bins: int = 50) -> tuple[np.ndarray, np.ndarray]:
         counts, edges = np.histogram(self.terminal_values, bins=bins)
@@ -109,6 +147,14 @@ def _validate(config: MonteCarloConfig) -> int:
         raise InvalidInputError("Initial value must be positive.")
     if config.periods_per_step < 1:
         raise InvalidInputError("Periods per reporting step must be at least 1.")
+    if not 1 <= config.cash_flows_per_year <= config.periods_per_year:
+        raise InvalidInputError(
+            "Cash flows per year must be between 1 and the number of data periods per year."
+        )
+    if not np.isfinite(config.annual_cash_flow):
+        raise InvalidInputError("Cash flow must be a finite number.")
+    if not -0.5 < config.cash_flow_growth <= 0.5:
+        raise InvalidInputError("Cash-flow growth must be between -50% and 50% per year.")
     if config.mean_block_length < 1:
         raise InvalidInputError("Mean block length must be at least 1.")
     if any(not 0 < p < 100 for p in config.percentiles):
@@ -143,7 +189,7 @@ def simulate_parametric(
         f"Moments from estimates: expected return {annual_expected_return:.2%} p.a. "
         f"(arithmetic), volatility {annual_volatility:.2%} p.a.",
         "Estimated parameters are treated as known (no parameter uncertainty).",
-        "No contributions, withdrawals, fees, taxes or transaction costs.",
+        *_flow_assumptions(config),
     )
     return _run(config, draw, m, np.sqrt(v), assumptions)
 
@@ -195,9 +241,29 @@ def simulate_bootstrap(
         f"Returns resampled from {t_len} historical portfolio returns by {label}.",
         "Future return distribution assumed to resemble the historical sample; "
         "scenarios worse than the sample's worst periods cannot occur.",
-        "No contributions, withdrawals, fees, taxes or transaction costs.",
+        *_flow_assumptions(config),
     )
     return _run(config, draw, float(hist.mean()), float(hist.std(ddof=1)), assumptions)
+
+
+def _flow_assumptions(config: MonteCarloConfig) -> tuple[str, ...]:
+    if not config.has_cash_flows:
+        return ("No contributions, withdrawals, fees, taxes or transaction costs.",)
+    kind = "Contributions" if config.annual_cash_flow > 0 else "Withdrawals"
+    f = config.periods_per_year / config.cash_flow_interval
+    growth = (
+        f", growing {config.cash_flow_growth:.2%} per year"
+        if config.cash_flow_growth
+        else ", not indexed"
+    )
+    out = [
+        f"{kind} of {abs(config.annual_cash_flow):,.2f} per year in {f:g} equal instalments "
+        f"at the end of each interval{growth}.",
+        "No fees, taxes or transaction costs.",
+    ]
+    if config.annual_cash_flow < 0:
+        out.append("A path is depleted when its wealth cannot cover a withdrawal; it stays at 0.")
+    return tuple(out)
 
 
 def _run(
@@ -213,8 +279,14 @@ def _run(
     step = config.periods_per_step
     pct = tuple(sorted(set(config.percentiles) | {5, 50, 95}))
     n_keep = min(config.n_sample_paths, n)
+    ppy = config.periods_per_year
+    flows = config.has_cash_flows
+    interval = config.cash_flow_interval
 
-    log_w = np.zeros(n)
+    log_w = np.zeros(n)  # log of the time-weighted return index
+    wealth = np.full(n, config.initial_value)
+    depleted_at = np.full(n, np.nan)
+    net_flow = 0.0
     peak = np.zeros(n)
     mdd = np.zeros(n)
     times = [0.0]
@@ -223,27 +295,46 @@ def _run(
     samples = [np.full(n_keep, config.initial_value)]
 
     done = 0
+    next_report = step
+    next_flow = interval if flows else n_periods + 1
     while done < n_periods:
-        k = min(step, n_periods - done)
+        k = min(next_report, next_flow, n_periods) - done
         inc = draw(rng, k, n)  # type: ignore[operator]
-        path = log_w + np.cumsum(inc, axis=0)
+        cum = np.cumsum(inc, axis=0)
+        path = log_w + cum
         run_peak = np.maximum(peak, np.maximum.accumulate(path, axis=0))
         mdd = np.minimum(mdd, np.min(np.expm1(path - run_peak), axis=0))
         peak = run_peak[-1]
         log_w = path[-1]
         done += k
-        wealth = config.initial_value * np.exp(log_w)
-        times.append(done / config.periods_per_year)
-        pct_rows.append(np.percentile(wealth, pct))
-        mean_row.append(float(wealth.mean()))
-        samples.append(wealth[:n_keep].copy())
+        if flows:
+            wealth = wealth * np.exp(cum[-1])
+            if done == next_flow:
+                cf = config.cash_flow_at(done / ppy)
+                net_flow += cf
+                alive = np.isnan(depleted_at)
+                wealth = np.where(alive, wealth + cf, 0.0)
+                newly = alive & (wealth <= 0.0)
+                depleted_at[newly] = done / ppy
+                wealth[newly] = 0.0
+                next_flow += interval
+        else:
+            wealth = config.initial_value * np.exp(log_w)
+        if done in (next_report, n_periods):
+            times.append(done / ppy)
+            pct_rows.append(np.percentile(wealth, pct))
+            mean_row.append(float(wealth.mean()))
+            samples.append(wealth[:n_keep].copy())
+            next_report = done + step
 
-    terminal = config.initial_value * np.exp(log_w)
+    terminal = wealth
     pct_arr = np.vstack(pct_rows)
-    term_ret = terminal / config.initial_value - 1.0
+    term_ret = np.expm1(log_w)  # time-weighted
     var_q = float(np.quantile(term_ret, 0.05))
-    years = n_periods / config.periods_per_year
+    years = n_periods / ppy
     cagr = np.exp(log_w / years) - 1.0
+    withdrawals = flows and config.annual_cash_flow < 0
+    dep = depleted_at[~np.isnan(depleted_at)]
     return MonteCarloResult(
         config=config,
         times_years=np.array(times),
@@ -252,7 +343,7 @@ def _run(
         sample_paths=np.vstack(samples).T,
         terminal_values=terminal,
         terminal_percentiles={p: float(np.percentile(terminal, p)) for p in pct},
-        probability_of_loss=float(np.mean(terminal < config.initial_value)),
+        probability_of_loss=float(np.mean(terminal < config.initial_value + net_flow)),
         probability_of_target=(
             None if config.target_value is None else float(np.mean(terminal >= config.target_value))
         ),
@@ -263,4 +354,9 @@ def _run(
         per_period_mean=per_period_mean,
         per_period_volatility=per_period_vol,
         assumptions=assumptions,
+        net_cash_flow=net_flow,
+        probability_of_depletion=float(dep.size / n) if withdrawals else None,
+        depletion_years_percentiles=(
+            {p: float(np.percentile(dep, p)) for p in (10, 50, 90)} if dep.size else None
+        ),
     )
