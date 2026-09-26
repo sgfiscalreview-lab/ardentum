@@ -7,13 +7,15 @@ import { Suspense, useState } from "react";
 import { Button, Callout, Card, Field, Input } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
 
+const EMAIL_AUTH = process.env.NEXT_PUBLIC_AUTH_EMAIL_ENABLED === "true";
+
 function safeNext(n: string | null): string {
   // Only allow same-site relative paths to prevent open redirects.
   return n && n.startsWith("/") && !n.startsWith("//") ? n : "/app";
 }
 
 function LoginForm() {
-  const { mode, status, signInDev, signInPassword, signUpPassword } = useAuth();
+  const { mode, status, signInDev, signInPassword, signUpPassword, signInOAuth } = useAuth();
   const router = useRouter();
   const params = useSearchParams();
   const next = safeNext(params.get("next"));
@@ -58,8 +60,44 @@ function LoginForm() {
     }
   };
 
+  const oauth = async (provider: "google" | "github") => {
+    setError(null);
+    try {
+      await signInOAuth(provider, next);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  if (mode === "supabase" && !EMAIL_AUTH) {
+    // Email sign-in needs a custom SMTP sender; until one is configured, use OAuth only.
+    return (
+      <div className="space-y-3">
+        <Button variant="secondary" className="w-full" onClick={() => void oauth("google")}>
+          Continue with Google
+        </Button>
+        <Button variant="secondary" className="w-full" onClick={() => void oauth("github")}>
+          Continue with GitHub
+        </Button>
+        {error && <Callout tone="error">{error}</Callout>}
+        <p className="text-center text-[11px] text-muted">We only receive your email address and name from the provider.</p>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={(e) => void submit(e)} className="space-y-4">
+      {mode === "supabase" && (
+        <div className="space-y-2">
+          <Button type="button" variant="secondary" className="w-full" onClick={() => void oauth("google")}>
+            Continue with Google
+          </Button>
+          <Button type="button" variant="secondary" className="w-full" onClick={() => void oauth("github")}>
+            Continue with GitHub
+          </Button>
+          <p className="text-center text-xs text-muted">or use email</p>
+        </div>
+      )}
       {mode === "dev" && (
         <Callout tone="warning" title="Development sign-in">
           This server runs in development mode: any email signs you in without a password. Production deployments use Supabase authentication.

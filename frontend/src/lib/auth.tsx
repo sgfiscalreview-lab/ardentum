@@ -19,6 +19,7 @@ interface AuthContextValue {
   signInDev: (email: string) => Promise<void>;
   signInPassword: (email: string, password: string) => Promise<void>;
   signUpPassword: (email: string, password: string) => Promise<{ confirmationRequired: boolean }>;
+  signInOAuth: (provider: "google" | "github", next: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -125,6 +126,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { confirmationRequired: !data.session };
   }, []);
 
+  const signInOAuth = useCallback(async (provider: "google" | "github", next: string) => {
+    const sb = supabaseClient();
+    if (!sb) throw new Error("Sign-in is not configured for this deployment.");
+    const { error } = await sb.auth.signInWithOAuth({
+      provider,
+      // Returns to the page the user came from; the session is read from the URL on load.
+      options: { redirectTo: `${window.location.origin}${next}` },
+    });
+    if (error) throw new Error(error.message);
+  }, []);
+
   const signOut = useCallback(async () => {
     if (mode === "dev") {
       window.localStorage.removeItem(DEV_KEY);
@@ -136,8 +148,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [mode]);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ status, user, meta, mode, signInDev, signInPassword, signUpPassword, signOut }),
-    [status, user, meta, mode, signInDev, signInPassword, signUpPassword, signOut],
+    () => ({ status, user, meta, mode, signInDev, signInPassword, signUpPassword, signInOAuth, signOut }),
+    [status, user, meta, mode, signInDev, signInPassword, signUpPassword, signInOAuth, signOut],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

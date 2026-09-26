@@ -34,7 +34,8 @@ ARDENTUM_DATABASE_URL=... uv run alembic upgrade head
 Frontend (from `frontend/`):
 ```bash
 npm ci
-npm run dev            # http://localhost:3000 (expects API at NEXT_PUBLIC_API_URL)
+npm run dev            # http://localhost:3000; proxies /api/v1 to API_URL (default http://localhost:8000)
+NEXT_OUTPUT=export NEXT_PUBLIC_API_BASE=https://<api> npm run build   # static site in out/ (Cloudflare Pages)
 npm run gen:api        # regenerate src/lib/api/schema.d.ts from the running backend
 npm run lint && npm run typecheck && npm test
 npm run build

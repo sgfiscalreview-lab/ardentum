@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     env: Environment = Environment.DEVELOPMENT
     database_url: str = "sqlite:///./ardentum-dev.sqlite3"
     cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
+    # Optional regex for preview deployments, e.g. r"https://[a-z0-9-]+\.ardentum\.pages\.dev"
+    cors_origin_regex: str | None = None
 
     auth_mode: AuthMode = AuthMode.DEV
     dev_jwt_secret: str = "dev-only-insecure-secret-change-me-0123456789"

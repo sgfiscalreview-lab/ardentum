@@ -265,3 +265,20 @@ def test_wealth_dates_align_with_wealth(client: TestClient) -> None:
     ).json()
     assert len(b["wealth_dates"]) == len(b["portfolio"]["wealth"])
     assert b["wealth_dates"][0] == b["events"][0]["date"]
+
+
+def test_health_db(client: TestClient) -> None:
+    assert client.get("/api/v1/health/db").json() == {"status": "ok", "database": "ok"}
+
+
+def test_cors_allows_configured_origin(client: TestClient) -> None:
+    r = client.options(
+        "/api/v1/optimise",
+        headers={"Origin": "http://localhost:3000", "Access-Control-Request-Method": "POST"},
+    )
+    assert r.headers.get("access-control-allow-origin") == "http://localhost:3000"
+    r = client.options(
+        "/api/v1/optimise",
+        headers={"Origin": "https://evil.example", "Access-Control-Request-Method": "POST"},
+    )
+    assert "access-control-allow-origin" not in r.headers

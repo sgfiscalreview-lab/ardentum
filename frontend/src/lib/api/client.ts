@@ -30,8 +30,11 @@ const authMiddleware: Middleware = {
   },
 };
 
-// Relative URLs: Next.js proxies /api/v1/* to the backend (see next.config.ts).
-const baseUrl = typeof window === "undefined" ? (process.env.API_URL ?? "http://localhost:8000") : "";
+// NEXT_PUBLIC_API_BASE (static hosting): the browser calls the API origin directly.
+// Empty (Node server / dev): relative URLs, proxied to the backend by next.config.ts.
+const baseUrl =
+  process.env.NEXT_PUBLIC_API_BASE?.replace(/\/$/, "") ??
+  (typeof window === "undefined" ? (process.env.API_URL ?? "http://localhost:8000") : "");
 
 export const api = createClient<paths>({ baseUrl });
 api.use(authMiddleware);
