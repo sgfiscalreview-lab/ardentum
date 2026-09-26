@@ -1,5 +1,8 @@
 # Deployment (free tier)
 
+Technical reference. For click-by-click instructions (accounts, keys, OAuth apps, Cloud
+Shell commands, troubleshooting) follow [docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md).
+
 Approved topology (DECISIONS D-017). Every component has a free tier; the only possible
 cost is an optional domain name.
 
@@ -19,8 +22,10 @@ Order: Supabase → API → web app → OAuth redirect URLs → keep-alive → v
 
 1. Create a free project at supabase.com; choose the region closest to your users and
    note the database password.
-2. **Project Settings → API**: copy the **Project URL** (`https://<ref>.supabase.co`) and
-   the **anon public key**.
+2. **Project Settings → API Keys** (tab *Publishable and secret API keys*): copy the
+   **publishable key** (`sb_publishable_...`, for the web app) and a **secret key**
+   (`sb_secret_...`, optional, lets account deletion also remove the sign-in record). The
+   project URL is `https://<ref>.supabase.co`.
 3. **Connect → Transaction pooler**: copy the connection string (port **6543**):
    `postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:6543/postgres`.
    The API disables server-side prepared statements, so the transaction pooler is safe.
@@ -66,7 +71,7 @@ gcloud run deploy ardentum-api --source backend --region europe-west1 \
   --allow-unauthenticated --min-instances 0 --max-instances 2 \
   --cpu 1 --memory 1Gi --concurrency 20 --timeout 60 \
   --env-vars-file cloudrun.env.yaml \
-  --set-secrets "ARDENTUM_DATABASE_URL=ardentum-db-url:latest"
+  --set-secrets "ARDENTUM_DATABASE_URL=ardentum-db-url:latest,ARDENTUM_SUPABASE_SERVICE_KEY=ardentum-supabase-secret:latest"
 ```
 
 Create the secret first: **Secret Manager → Create secret** `ardentum-db-url` with the
@@ -109,7 +114,8 @@ Workers & Pages → Create → Pages → Connect to Git → this repository:
 | Output directory | `out` |
 | `NEXT_OUTPUT` | `export` (static export) |
 | `NEXT_PUBLIC_API_BASE` | Cloud Run URL, e.g. `https://ardentum-api-xxxxx.a.run.app` |
-| `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` | from step 1.2 |
+| `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | from step 1.2 (the legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY` also works) |
+| `NEXT_PUBLIC_LEGAL_OPERATOR`, `NEXT_PUBLIC_LEGAL_CONTACT_EMAIL`, `NEXT_PUBLIC_LEGAL_GOVERNING_LAW`, `NEXT_PUBLIC_LEGAL_LAST_UPDATED` | shown in the Terms of Service and Privacy Policy |
 | `NODE_VERSION` | `22` |
 
 The build reads `../docs/methodology` for the Research section (the whole repository is
@@ -137,7 +143,7 @@ domains → add it; update `ARDENTUM_CORS_ORIGINS` and Supabase URL configuratio
 
 1. `GET <api>/api/v1/meta` → `environment: production`, `auth_mode: supabase`.
 2. `GET <api>/api/v1/health/db` → `{"status": "ok", "database": "ok"}`.
-3. Open the web app, sign in with Google or GitHub, select **US industries — 12
+3. Open the web app, sign in with Google or GitHub, select **US industries: 12
    portfolios** (the first load downloads and caches the Ken French files), optimise,
    save the portfolio, reload and find it under **Portfolios**.
 4. Run a Monte Carlo simulation (a background job) and a backtest.

@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "gen:api": "openapi-typescript ${API_URL:-http://localhost:8000}/api/v1/openapi.json -o src/lib/api/schema.d.ts",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "screenshots": "node scripts/capture-screenshots.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",

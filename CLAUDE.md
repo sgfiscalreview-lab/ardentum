@@ -32,9 +32,9 @@ Read this first, then `ARCHITECTURE.md`, `DECISIONS.md`, `PROGRESS.md`, `TODO.md
 * Operating-system fonts only (`--font-sans`; serif `--font-display` for page titles);
   never Inter, Geist or Space Grotesk.
 * No feature-card rows, bento grids, terminal windows, testimonials or pricing tables.
-  Show the real product (screenshots from `npm run screenshots`-style capture, see
-  `frontend/scripts/capture-screenshots.mjs`) and plain statements; avoid "it's not X,
-  it's Y" copy.
+  Show the real product (`npm run screenshots` in `frontend/` with the app running
+  captures the landing-page screenshots) and plain statements; avoid "it's not X, it's Y"
+  copy.
 * Loading states use static skeletons (`Skeleton`, `SkeletonRows`, `ResultsSkeleton`).
 * Every page links the Terms of Service and Privacy Policy (site footer).
 
