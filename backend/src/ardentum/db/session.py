@@ -20,4 +20,12 @@ def make_engine(url: str) -> Engine:
         return engine
     if url.startswith("postgresql://"):
         url = "postgresql+psycopg://" + url.removeprefix("postgresql://")
-    return create_engine(url, pool_pre_ping=True, pool_size=5, max_overflow=5)
+    # prepare_threshold=None disables server-side prepared statements, which are
+    # incompatible with transaction-mode poolers such as Supabase's PgBouncer.
+    return create_engine(
+        url,
+        pool_pre_ping=True,
+        pool_size=5,
+        max_overflow=5,
+        connect_args={"prepare_threshold": None},
+    )

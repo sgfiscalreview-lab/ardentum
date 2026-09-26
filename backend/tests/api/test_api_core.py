@@ -252,7 +252,7 @@ def test_wealth_dates_align_with_wealth(client: TestClient) -> None:
         json={
             "universe": universe(),
             "portfolios": [
-                {"name": "A", "weights": {t: 1 / n for t in DEMO_TICKERS}},
+                {"name": "A", "weights": dict.fromkeys(DEMO_TICKERS, 1 / n)},
                 {"name": "B", "weights": {"GOVB.SYN": 1.0}},
             ],
         },

@@ -33,7 +33,9 @@ export default function AnalyticsPage() {
   const { state } = useWorkspace();
   const ds = useDataset(state.universe.dataset_id);
   const bench = ds.data?.assets.find((a) => a.is_benchmark)?.ticker ?? null;
-  const [benchmark, setBenchmark] = useState<string | null>(bench);
+  // undefined = the dataset's benchmark index (if any); null = none.
+  const [chosen, setBenchmark] = useState<string | null | undefined>(undefined);
+  const benchmark = chosen === undefined ? bench : chosen;
   const { data, error, running, run } = useComputation<Req, AnalyticsResponse>("analytics", (req) =>
     unwrap(api.POST("/api/v1/analytics", { body: req as never })),
   );
@@ -52,7 +54,7 @@ export default function AnalyticsPage() {
             running={running}
             label={data ? "Recompute" : "Compute analytics"}
             disabled={state.universe.tickers.length < 1}
-            onRun={() => run({ universe: state.universe, estimation: state.estimation, benchmark: benchmark ?? bench })}
+            onRun={() => run({ universe: state.universe, estimation: state.estimation, benchmark })}
           />
         }
       />
@@ -63,7 +65,8 @@ export default function AnalyticsPage() {
           <label htmlFor="bench" className="text-ink-2">
             Benchmark for beta and tracking error
           </label>
-          <Select id="bench" className="w-56" value={benchmark ?? ""} onChange={(e) => setBenchmark(e.target.value || null)}>
+          <div className="w-56">
+          <Select id="bench" value={benchmark ?? ""} onChange={(e) => setBenchmark(e.target.value || null)}>
             <option value="">None</option>
             {ds.data.assets.map((a) => (
               <option key={a.ticker} value={a.ticker}>
@@ -71,6 +74,7 @@ export default function AnalyticsPage() {
               </option>
             ))}
           </Select>
+          </div>
         </div>
       )}
       {!data ? (

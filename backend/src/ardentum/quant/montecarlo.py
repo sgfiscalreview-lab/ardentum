@@ -41,7 +41,7 @@ import numpy as np
 from ardentum.quant.errors import InsufficientDataError, InvalidInputError
 
 MAX_PATHS = 50_000
-MAX_WORK = 250_000_000  # paths x periods
+MAX_WORK = 100_000_000  # paths x periods (~5 s worst case; keeps requests interactive)
 DEFAULT_PERCENTILES = (5, 10, 25, 50, 75, 90, 95)
 
 
@@ -165,19 +165,25 @@ def simulate_bootstrap(
 
     def draw(rng: np.random.Generator, k: int, n: int) -> np.ndarray:
         if not block:
-            return log_hist[rng.integers(0, t_len, size=(k, n))]
-        idx = np.empty((k, n), dtype=np.int64)
+            return log_hist[rng.integers(0, t_len, size=(k, n), dtype=np.int32)]
+        # Stationary bootstrap, vectorised over the k periods of this step: a new
+        # block starts with probability p_new (always at the very first period);
+        # otherwise the path continues with the next historical observation.
+        starts = rng.integers(0, t_len, size=(k, n), dtype=np.int32)
+        new_block = rng.random((k, n)) < p_new
         current = state.get("idx")
-        for j in range(k):
-            starts = rng.integers(0, t_len, size=n)
-            if current is None:
-                current = starts
-            else:
-                new_block = rng.random(n) < p_new
-                current = np.where(new_block, starts, (current + 1) % t_len)
-            idx[j] = current
-        state["idx"] = current  # type: ignore[assignment]
-        return log_hist[idx]
+        if current is None:
+            new_block[0] = True
+        rows = np.arange(k)[:, None]
+        last = np.maximum.accumulate(np.where(new_block, rows, -1), axis=0)
+        from_start = np.take_along_axis(starts, np.maximum(last, 0), axis=0) + (rows - last)
+        if current is None:
+            idx = from_start % t_len
+        else:
+            idx = np.where(last >= 0, from_start, current[None, :] + 1 + rows) % t_len
+        current = idx[-1]
+        state["idx"] = current
+        return np.asarray(log_hist[idx])
 
     label = (
         f"stationary block bootstrap (mean block length {config.mean_block_length:g} periods)"

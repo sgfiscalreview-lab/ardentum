@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     fred_api_key: str | None = None
 
     max_upload_bytes: int = 5 * 1024 * 1024
+    compute_rate_limit: int = 60  # compute requests per client per minute (0 disables)
     log_level: str = "INFO"
 
     @model_validator(mode="after")

@@ -1,0 +1,33 @@
+# Full local stack: PostgreSQL + API + web. `docker compose up --build`, then open http://localhost:3000
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ardentum
+      POSTGRES_PASSWORD: ardentum
+      POSTGRES_DB: ardentum
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ardentum"]
+      interval: 5s
+      retries: 10
+  backend:
+    build: ./backend
+    environment:
+      ARDENTUM_ENV: development
+      ARDENTUM_DATABASE_URL: postgresql://ardentum:ardentum@db:5432/ardentum
+      ARDENTUM_AUTH_MODE: dev
+      ARDENTUM_DEV_JWT_SECRET: local-compose-secret-change-me-0123456789
+      ARDENTUM_CORS_ORIGINS: '["http://localhost:3000"]'
+    depends_on:
+      db: { condition: service_healthy }
+    ports: ["8000:8000"]
+  web:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args: { API_URL: "http://backend:8000" }
+    depends_on: [backend]
+    ports: ["3000:3000"]
+volumes:
+  pgdata:

@@ -13,10 +13,12 @@ from collections.abc import Awaitable, Callable
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import sessionmaker
 
 from ardentum import __version__
 from ardentum.api import errors
+from ardentum.api.ratelimit import COMPUTE_PATHS, RateLimiter
 from ardentum.api.routers import analysis, auth, datasets, meta, portfolios
 from ardentum.config import Environment, Settings, get_settings
 from ardentum.db.models import Base
@@ -49,6 +51,32 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_headers=["Authorization", "Content-Type"],
         max_age=600,
     )
+
+    limiter = (
+        RateLimiter(settings.compute_rate_limit, 60.0) if settings.compute_rate_limit > 0 else None
+    )
+
+    @app.middleware("http")
+    async def _rate_limit(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
+        if limiter is not None and request.method == "POST" and request.url.path in COMPUTE_PATHS:
+            auth = request.headers.get("authorization", "")
+            key = auth[-32:] if auth else (request.client.host if request.client else "unknown")
+            wait = limiter.check(key)
+            if wait is not None:
+                return JSONResponse(
+                    {
+                        "error": {
+                            "type": "rate_limited",
+                            "message": f"Too many calculations; try again in {int(wait) + 1} s.",
+                            "details": None,
+                        }
+                    },
+                    status_code=429,
+                    headers={"Retry-After": str(int(wait) + 1)},
+                )
+        return await call_next(request)
 
     @app.middleware("http")
     async def _context(

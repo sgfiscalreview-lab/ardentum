@@ -402,7 +402,8 @@ export function Tabs<T extends string>({
 
 export function Table({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cx("overflow-x-auto", className)}>
+    // Focusable so keyboard users can scroll wide tables (WCAG 2.1.1).
+    <div className={cx("overflow-x-auto", className)} tabIndex={0}>
       <table className="w-full border-collapse text-sm">{children}</table>
     </div>
   );

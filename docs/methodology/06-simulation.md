@@ -28,6 +28,10 @@ All randomness comes from one PCG64 generator seeded with an explicit seed. The 
 
 Percentile paths (5th, 10th, 25th, 50th, 75th, 90th, 95th), mean path, sample paths, the distribution of final values, probability of loss and of reaching a target, VaR and CVaR of the terminal return, and percentiles of annualised growth and of maximum drawdown.
 
+## Limits
+
+To keep requests interactive, paths × simulated periods may not exceed 100 million (for example 10,000 daily paths over 39 years); the API returns a clear error beyond that.
+
 ## Limitations
 
 - Parameters are treated as known; estimation error in $\mu$ and $\Sigma$ is not simulated, so the spread of outcomes is understated.

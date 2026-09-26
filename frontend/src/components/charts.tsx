@@ -195,11 +195,25 @@ export function TimeSeriesChart({
     [dates, series],
   );
   const Chart = area ? ComposedChart : LineChart;
+  // One tick per calendar year (first date in each year) for multi-year series.
+  const yearTicks = useMemo(() => {
+    if (xFormat !== yearTick || dates.length < 2) return undefined;
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const d of dates) {
+      const y = d.slice(0, 4);
+      if (!seen.has(y)) {
+        seen.add(y);
+        out.push(d);
+      }
+    }
+    return out.length >= 3 ? out.slice(1) : undefined;
+  }, [dates, xFormat]);
   return (
     <ResponsiveContainer width="100%" height={height}>
       <Chart data={data} margin={{ top: 8, right: 16, bottom: 0, left: 4 }}>
         <CartesianGrid vertical={false} />
-        <XAxis dataKey="date" tickFormatter={xFormat} minTickGap={48} axisLine={AXIS} tickLine={false} tick={TICK} />
+        <XAxis dataKey="date" ticks={yearTicks} tickFormatter={xFormat} minTickGap={32} axisLine={AXIS} tickLine={false} tick={TICK} />
         <YAxis tickFormatter={yFormat} width={60} axisLine={false} tickLine={false} tick={TICK} domain={["auto", "auto"]} />
         {baseline !== undefined && (
           <Line dataKey={() => baseline} stroke="var(--axis)" strokeWidth={1} dot={false} isAnimationActive={false} activeDot={false} legendType="none" />
@@ -554,8 +568,10 @@ export function Heatmap({ labels, matrix, dark }: { labels: string[]; matrix: nu
       >
         <div />
         {labels.map((l) => (
-          <div key={l} className="h-16 origin-bottom-left translate-x-3 -rotate-45 whitespace-nowrap text-[10px] text-ink-2" style={{ writingMode: "horizontal-tb" }}>
-            {l.replace(".SYN", "")}
+          <div key={l} className="flex h-16 items-end justify-center pb-1" aria-hidden>
+            <span className="rotate-180 whitespace-nowrap text-[10px] leading-none text-ink-2" style={{ writingMode: "vertical-rl" }}>
+              {l.replace(".SYN", "")}
+            </span>
           </div>
         ))}
         {labels.map((row, i) => (

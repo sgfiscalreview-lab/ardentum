@@ -31,6 +31,7 @@ def settings() -> Settings:
         auth_mode=AuthMode.DEV,
         dev_jwt_secret="test-secret-that-is-long-enough-0123456789",
         cors_origins=["http://localhost:3000"],
+        compute_rate_limit=0,
     )
 
 

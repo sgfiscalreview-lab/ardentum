@@ -230,6 +230,7 @@ export function ErrorCallout({ error }: { error: Error | null }) {
           not_configured: "Not available on this server",
           network_error: "Connection problem",
           undefined_metric: "Metric undefined",
+          rate_limited: "Too many requests",
         }[error.type] ?? "Something went wrong"
       : "Something went wrong";
   return (

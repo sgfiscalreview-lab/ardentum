@@ -174,10 +174,49 @@ def test_bootstrap_requires_history() -> None:
         MonteCarloConfig(seed=1, n_paths=0),
         MonteCarloConfig(seed=1, horizon_years=0),
         MonteCarloConfig(seed=1, initial_value=-5),
-        MonteCarloConfig(seed=1, n_paths=50_000, horizon_years=50),
+        MonteCarloConfig(seed=1, n_paths=20_000, horizon_years=25),
         MonteCarloConfig(seed=1, percentiles=(0, 50)),
     ],
 )
 def test_invalid_configs(cfg: MonteCarloConfig) -> None:
     with pytest.raises(InvalidInputError):
         simulate_parametric(cfg, 0.05, 0.1)
+
+
+def test_stationary_bootstrap_block_structure() -> None:
+    """Consecutive draws continue the history (i -> i+1 mod T) with probability 1 - 1/L."""
+    from ardentum.quant import montecarlo
+
+    t = 997
+    hist = np.linspace(-0.02, 0.02, t)  # distinct values let us recover the indices
+    log_hist = np.log1p(hist)
+    captured: list[np.ndarray] = []
+    original = montecarlo._run
+
+    def spy(config, draw, *args):  # type: ignore[no-untyped-def]
+        def wrapped(rng, k, n):  # type: ignore[no-untyped-def]
+            inc = draw(rng, k, n)
+            captured.append(inc)
+            return inc
+
+        return original(config, wrapped, *args)
+
+    montecarlo._run = spy  # type: ignore[assignment]
+    try:
+        cfg = MonteCarloConfig(
+            seed=3,
+            method=SimulationMethod.BLOCK_BOOTSTRAP,
+            n_paths=400,
+            horizon_years=4,
+            mean_block_length=10,
+            periods_per_step=21,
+        )
+        simulate_bootstrap(cfg, hist)
+    finally:
+        montecarlo._run = original  # type: ignore[assignment]
+    inc = np.concatenate(captured, axis=0)
+    idx = np.searchsorted(log_hist, inc)
+    np.testing.assert_allclose(log_hist[idx], inc)
+    cont = (idx[1:] == (idx[:-1] + 1) % t).mean()
+    # P(continue) = (1 - 1/L) + (1/L)(1/T) for a uniformly drawn new start.
+    assert cont == pytest.approx(0.9 + 0.1 / t, abs=0.01)
