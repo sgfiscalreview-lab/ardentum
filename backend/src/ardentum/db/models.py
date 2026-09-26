@@ -137,3 +137,28 @@ class Job(Base):
     started_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
     heartbeat_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
     finished_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class EsgOverlay(Base):
+    """ESG scores for a dataset's assets built from open data (e.g. WikiRate).
+
+    ``entries`` holds, per ticker, the matched company, the answer year, raw value,
+    derived 0-100 score and a link to the source answer; ``spec`` the metric and
+    transform so the overlay can be explained and rebuilt.
+    """
+
+    __tablename__ = "esg_overlays"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    owner_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    name: Mapped[str] = mapped_column(String(120))
+    dataset_id: Mapped[str] = mapped_column(String(64))
+    source: Mapped[str] = mapped_column(String(40))
+    spec: Mapped[dict[str, Any]] = mapped_column(JsonType)
+    entries: Mapped[list[dict[str, Any]]] = mapped_column(JsonType)
+    license: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )

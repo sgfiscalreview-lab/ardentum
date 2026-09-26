@@ -38,6 +38,8 @@ class Settings(BaseSettings):
 
     tiingo_api_key: str | None = None
     fred_api_key: str | None = None
+    wikirate_api_key: str | None = None  # free account at wikirate.org
+    wikirate_base_url: str = "https://wikirate.org"
 
     max_upload_bytes: int = 5 * 1024 * 1024
     compute_rate_limit: int = 60  # compute requests per client per minute (0 disables)

@@ -42,3 +42,12 @@ export type MetaOut = S["MetaOut"];
 export type RiskFreeOut = S["RiskFreeOut"];
 export type RiskFreeSourceOut = S["RiskFreeSourceOut"];
 export type TokenOut = S["TokenOut"];
+
+export type OpenMetricOut = S["OpenMetricOut"];
+export type OpenCompanyOut = S["OpenCompanyOut"];
+export type EsgTransformIn = S["EsgTransformIn"];
+export type OverlayPreviewRequest = S["OverlayPreviewRequest"];
+export type OverlayPreviewOut = S["OverlayPreviewOut"];
+export type OverlayEntryOut = S["OverlayEntryOut"];
+export type OverlayOut = S["OverlayOut"];
+export type OverlaySummaryOut = S["OverlaySummaryOut"];

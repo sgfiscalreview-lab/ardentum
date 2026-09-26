@@ -27,7 +27,7 @@ from ardentum.api.ratelimit import (
     RateLimiter,
     client_ip,
 )
-from ardentum.api.routers import analysis, auth, datasets, jobs, meta, portfolios
+from ardentum.api.routers import analysis, auth, datasets, jobs, meta, open_esg, portfolios
 from ardentum.config import Environment, Settings, get_settings
 from ardentum.db.models import Base
 from ardentum.db.session import make_engine
@@ -150,6 +150,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         analysis.router,
         portfolios.router,
         jobs.router,
+        open_esg.router,
     ):
         app.include_router(r, prefix=API_PREFIX)
 

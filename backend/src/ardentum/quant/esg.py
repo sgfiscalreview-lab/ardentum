@@ -81,3 +81,48 @@ def portfolio_esg_score(weights: np.ndarray, scores: np.ndarray) -> float:
         # no accepted interpretation, so it is not reported.
         raise InvalidInputError("A portfolio ESG score is only defined for long-only portfolios.")
     return float(w @ s)
+
+
+# --------------------------------------------------------------------------- raw metrics -> 0-100
+
+
+def scale_linear(
+    values: np.ndarray, lower: float, upper: float, higher_is_better: bool = True
+) -> np.ndarray:
+    """Map raw metric values onto 0-100: ``100 (x - lower) / (upper - lower)``, clipped.
+
+    With ``higher_is_better=False`` (e.g. emissions) the scale is reversed. Values
+    outside ``[lower, upper]`` are clipped to the end points.
+    """
+    x = np.asarray(values, dtype=float)
+    if not np.isfinite(x).all():
+        raise InvalidInputError("Metric values must be finite numbers.")
+    if not (np.isfinite(lower) and np.isfinite(upper)) or upper <= lower:
+        raise InvalidInputError("The scale needs a lower bound strictly below the upper bound.")
+    s = np.clip((x - lower) / (upper - lower), 0.0, 1.0) * 100.0
+    return s if higher_is_better else 100.0 - s
+
+
+def percentile_scores(values: np.ndarray, higher_is_better: bool = True) -> np.ndarray:
+    """Percentile rank within the group on 0-100: ``100 (rank - 1) / (n - 1)``.
+
+    Ranks start at 1; ties receive their average rank. The best value scores 100 and the
+    worst 0. Relative scores say nothing about absolute performance and change when
+    the group changes. At least two values are required.
+    """
+    x = np.asarray(values, dtype=float)
+    if x.size < 2:
+        raise InvalidInputError(
+            "Percentile scores need at least two companies with values; use a fixed scale."
+        )
+    if not np.isfinite(x).all():
+        raise InvalidInputError("Metric values must be finite numbers.")
+    key = x if higher_is_better else -x
+    order = np.argsort(key, kind="mergesort")
+    ranks = np.empty(x.size)
+    ranks[order] = np.arange(1, x.size + 1, dtype=float)
+    for v in np.unique(key):  # average ranks of ties
+        tie = key == v
+        if tie.sum() > 1:
+            ranks[tie] = ranks[tie].mean()
+    return 100.0 * (ranks - 1.0) / (x.size - 1.0)

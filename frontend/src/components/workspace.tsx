@@ -17,6 +17,7 @@ export const STEPS: { href: string; label: string; hint: string }[] = [
   { href: "/app/analytics", label: "Analytics", hint: "History, risk, correlation" },
   { href: "/app/optimise", label: "Optimise", hint: "Objective & constraints" },
   { href: "/app/frontier", label: "Frontier", hint: "Risk–return trade-off" },
+  { href: "/app/esg-data", label: "ESG data", hint: "Open scores from WikiRate" },
   { href: "/app/esg", label: "ESG impact", hint: "Cost of ESG constraints" },
   { href: "/app/simulate", label: "Monte Carlo", hint: "Range of outcomes" },
   { href: "/app/backtest", label: "Backtest", hint: "Out-of-sample history" },
@@ -152,6 +153,16 @@ export function UniverseSummary() {
             {pct(state.estimation.risk_free_rate)}
           </dd>
         </div>
+        {u.esg_overlay_id && (
+          <div className="flex justify-between gap-2">
+            <dt>ESG scores</dt>
+            <dd className="text-ink">
+              <Link href="/app/esg-data" className="underline underline-offset-2">
+                WikiRate overlay
+              </Link>
+            </dd>
+          </div>
+        )}
         {u.base_currency && (
           <div className="flex justify-between gap-2">
             <dt>Currency</dt>

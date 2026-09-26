@@ -406,6 +406,105 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/esg/open/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search Metrics
+         * @description Search WikiRate metrics by name (CC BY 4.0 open data).
+         */
+        get: operations["search_metrics_api_v1_esg_open_metrics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/esg/open/companies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search Companies
+         * @description Search WikiRate companies by name, to confirm matches for assets without an ISIN.
+         */
+        get: operations["search_companies_api_v1_esg_open_companies_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/esg/open/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview Overlay
+         * @description Match assets to companies, fetch answers and compute 0-100 scores (not saved).
+         */
+        post: operations["preview_overlay_api_v1_esg_open_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/esg/overlays": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Overlays */
+        get: operations["list_overlays_api_v1_esg_overlays_get"];
+        put?: never;
+        /**
+         * Save Overlay
+         * @description Recompute the preview on the server and save it for use in analyses.
+         */
+        post: operations["save_overlay_api_v1_esg_overlays_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/esg/overlays/{overlay_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Overlay Detail */
+        get: operations["get_overlay_detail_api_v1_esg_overlays__overlay_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Overlay */
+        delete: operations["delete_overlay_api_v1_esg_overlays__overlay_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -927,6 +1026,30 @@ export interface components {
             /** Excluded Unscored */
             excluded_unscored: string[];
         };
+        /** EsgTransformIn */
+        EsgTransformIn: {
+            /**
+             * Method
+             * @default percentile
+             * @enum {string}
+             */
+            method: "linear" | "percentile";
+            /**
+             * Higher Is Better
+             * @default true
+             */
+            higher_is_better: boolean;
+            /**
+             * Lower
+             * @description Raw value mapped to 0 (linear method).
+             */
+            lower?: number | null;
+            /**
+             * Upper
+             * @description Raw value mapped to 100 (linear method).
+             */
+            upper?: number | null;
+        };
         /** EstimationOut */
         EstimationOut: {
             /** Risk Free Rate */
@@ -1328,6 +1451,44 @@ export interface components {
              */
             cvar_confidence: number;
         };
+        /** OpenCompanyOut */
+        OpenCompanyOut: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Headquarters */
+            headquarters: string | null;
+            /** Isins */
+            isins: string[];
+            /** Url */
+            url: string;
+        };
+        /** OpenMetricOut */
+        OpenMetricOut: {
+            /** Id */
+            id: number;
+            /** Designer */
+            designer: string;
+            /** Title */
+            title: string;
+            /** Value Type */
+            value_type: string | null;
+            /** Metric Type */
+            metric_type: string | null;
+            /** Unit */
+            unit: string | null;
+            /** Range */
+            range: string | null;
+            /** Answers */
+            answers: number | null;
+            /** Topics */
+            topics: string[];
+            /** Url */
+            url: string;
+            /** Numeric */
+            numeric: boolean;
+        };
         /** OptimiseRequest */
         OptimiseRequest: {
             universe: components["schemas"]["UniverseSelection"];
@@ -1366,6 +1527,123 @@ export interface components {
             type: "optimised";
             objective?: components["schemas"]["ObjectiveIn"];
             constraints?: components["schemas"]["ConstraintsIn"];
+        };
+        /** OverlayEntryOut */
+        OverlayEntryOut: {
+            /** Ticker */
+            ticker: string;
+            /** Asset Name */
+            asset_name: string;
+            /** Isin */
+            isin: string | null;
+            /** Company */
+            company: string | null;
+            /** Company Id */
+            company_id: number | null;
+            /** Matched By */
+            matched_by: ("isin" | "user") | null;
+            /** Year */
+            year: number | null;
+            /** Raw Value */
+            raw_value: number | null;
+            /** Score */
+            score: number | null;
+            /** Answer Url */
+            answer_url: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "scored" | "no_company" | "no_answer" | "not_numeric";
+            /** Note */
+            note: string;
+        };
+        /** OverlayOut */
+        OverlayOut: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Dataset Id */
+            dataset_id: string;
+            /** Source */
+            source: string;
+            metric: components["schemas"]["OpenMetricOut"];
+            transform: components["schemas"]["EsgTransformIn"];
+            /** Year */
+            year: number | null;
+            /** Entries */
+            entries: components["schemas"]["OverlayEntryOut"][];
+            /** Scored */
+            scored: number;
+            /** License */
+            license: string;
+            /** Attribution */
+            attribution: string;
+            /** Created At */
+            created_at: string | null;
+        };
+        /** OverlayPreviewOut */
+        OverlayPreviewOut: {
+            metric: components["schemas"]["OpenMetricOut"];
+            transform: components["schemas"]["EsgTransformIn"];
+            /** Year */
+            year: number | null;
+            /** Entries */
+            entries: components["schemas"]["OverlayEntryOut"][];
+            /** Scored */
+            scored: number;
+            /** Warnings */
+            warnings: string[];
+            /** License */
+            license: string;
+            /** Attribution */
+            attribution: string;
+        };
+        /** OverlayPreviewRequest */
+        OverlayPreviewRequest: {
+            /** Dataset Id */
+            dataset_id: string;
+            /** Tickers */
+            tickers: string[];
+            /** Metric Id */
+            metric_id: number;
+            /**
+             * Year
+             * @description Latest answer up to this year.
+             */
+            year?: number | null;
+            transform?: components["schemas"]["EsgTransformIn"];
+            /**
+             * Company Overrides
+             * @description Ticker -> WikiRate company id, confirmed by the user.
+             */
+            company_overrides?: {
+                [key: string]: number;
+            };
+        };
+        /** OverlaySaveIn */
+        OverlaySaveIn: {
+            /** Name */
+            name: string;
+            preview: components["schemas"]["OverlayPreviewRequest"];
+        };
+        /** OverlaySummaryOut */
+        OverlaySummaryOut: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Dataset Id */
+            dataset_id: string;
+            /** Metric Title */
+            metric_title: string;
+            /** Scored */
+            scored: number;
+            /** Total */
+            total: number;
+            /** Created At */
+            created_at: string | null;
         };
         /** PerformanceOut */
         PerformanceOut: {
@@ -1707,6 +1985,11 @@ export interface components {
              * @enum {string}
              */
             frequency: "daily" | "weekly" | "monthly";
+            /**
+             * Esg Overlay Id
+             * @description Use ESG scores from this saved open-data overlay.
+             */
+            esg_overlay_id?: string | null;
             /**
              * Base Currency
              * @description Express all prices in this ISO 4217 currency (unhedged, ECB rates).
@@ -2601,6 +2884,239 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["JobOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_metrics_api_v1_esg_open_metrics_get: {
+        parameters: {
+            query: {
+                q: string;
+                limit?: number;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpenMetricOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_companies_api_v1_esg_open_companies_get: {
+        parameters: {
+            query: {
+                q: string;
+                limit?: number;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpenCompanyOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_overlay_api_v1_esg_open_preview_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OverlayPreviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverlayPreviewOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_overlays_api_v1_esg_overlays_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverlaySummaryOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_overlay_api_v1_esg_overlays_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OverlaySaveIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverlayOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_overlay_detail_api_v1_esg_overlays__overlay_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                overlay_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverlayOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_overlay_api_v1_esg_overlays__overlay_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                overlay_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

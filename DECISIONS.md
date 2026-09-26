@@ -161,3 +161,13 @@ safe; after two interrupted runs the job fails with a message. No Redis/Celery o
 queue is needed. Results (gzip JSON) expire after 24 h. Signed-in users' jobs are
 private; anonymous jobs are addressed by an unguessable UUID. The synchronous endpoints
 remain for API clients.
+
+## D-026 Open ESG data from WikiRate (founder-approved)
+The founder asked for ESG values from open databases in addition to user-supplied scores.
+WikiRate is free, licensed CC BY 4.0 (commercial use allowed with attribution), has a JSON
+API and company ISINs. Scores are *derived* by Ardentum from one numeric metric chosen by
+the user (fixed linear scale or percentile rank, user-chosen direction); matching is by ISIN
+or user confirmation only; missing or non-numeric answers stay unscored. Overlays are
+recomputed server-side on save, stored per user and dataset, and replace (never mix with)
+the dataset's scores. Responses are cached for a day in `provider_cache`. A free WikiRate
+API key can be set in `ARDENTUM_WIKIRATE_API_KEY` if WikiRate requires one.

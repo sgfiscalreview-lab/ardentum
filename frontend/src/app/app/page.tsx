@@ -59,7 +59,11 @@ export default function UniversePage() {
                 <button
                   key={d.id}
                   type="button"
-                  onClick={() => setUniverse({ dataset_id: d.id, tickers: d.id === u.dataset_id ? u.tickers : [] })}
+                  onClick={() =>
+                    setUniverse(
+                      d.id === u.dataset_id ? { dataset_id: d.id } : { dataset_id: d.id, tickers: [], esg_overlay_id: null },
+                    )
+                  }
                   aria-pressed={d.id === u.dataset_id}
                   className={`rounded-md border p-3 text-left transition-colors ${d.id === u.dataset_id ? "border-accent bg-accent-wash" : "border-line hover:bg-surface-2"}`}
                 >
@@ -361,7 +365,7 @@ function UploadCard() {
       );
       await qc.invalidateQueries({ queryKey: ["datasets"] });
       setOk(`Uploaded “${res.name}” with ${res.assets.length} assets.`);
-      setUniverse({ dataset_id: res.id, tickers: res.assets.slice(0, 60).map((a) => a.ticker), start: null, end: null });
+      setUniverse({ dataset_id: res.id, tickers: res.assets.slice(0, 60).map((a) => a.ticker), start: null, end: null, esg_overlay_id: null });
     } catch (e) {
       setError(e instanceof ApiError || e instanceof Error ? e : new Error(String(e)));
     } finally {

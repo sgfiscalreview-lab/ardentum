@@ -4,7 +4,7 @@ Legend: **[F]** needs a founder decision/credential · **[E]** engineering
 
 ## Founder decisions (blocking production launch)
 - [ ] **[F]** Market-data licence: Tiingo commercial plan vs. alternative vendor (DECISIONS D-004).
-- [ ] **[F]** ESG data source: licensed provider (e.g. MSCI, Sustainalytics, LSEG) or user-supplied only.
+- [x] **[F]** ESG data source: user-supplied plus open WikiRate data (CC BY 4.0, D-026). A licensed provider remains optional.
 - [ ] **[F]** Supabase project (URL, JWT keys) and hosting accounts (Vercel + Render/Fly/Cloud Run).
 - [ ] **[F]** Domain name, privacy policy and terms of use (financial-information disclaimer).
 
@@ -20,5 +20,6 @@ Legend: **[F]** needs a founder decision/credential · **[E]** engineering
 - [x] Background jobs with long-polling for long calculations (D-025).
 - [x] Black–Litterman views (D-022); minimum-CVaR optimisation (D-023).
 - [ ] Mean-CVaR efficient frontier.
+- [ ] Open ESG overlays from several metrics combined into one composite score (weights chosen by the user).
 - [x] Multi-currency universes, unhedged conversion at ECB rates (D-021).
 - [ ] Currency-hedged returns (needs a free source of forward points or daily interest differentials).

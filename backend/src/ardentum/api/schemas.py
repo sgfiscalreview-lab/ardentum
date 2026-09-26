@@ -45,6 +45,9 @@ class UniverseSelection(RequestModel):
     start: dt.date | None = None
     end: dt.date | None = None
     frequency: Literal["daily", "weekly", "monthly"] = "daily"
+    esg_overlay_id: str | None = Field(
+        None, max_length=64, description="Use ESG scores from this saved open-data overlay."
+    )
     base_currency: str | None = Field(
         None,
         pattern=r"^[A-Z]{3}$",
@@ -803,3 +806,102 @@ class JobOut(ResponseModel):
         None, description="Response of the corresponding endpoint, once succeeded."
     )
     error: JobErrorOut | None = None
+
+
+# ----------------------------------------------------------------------------- open ESG data
+
+
+class OpenMetricOut(ResponseModel):
+    id: int
+    designer: str
+    title: str
+    value_type: str | None
+    metric_type: str | None
+    unit: str | None
+    range: str | None
+    answers: int | None
+    topics: list[str]
+    url: str
+    numeric: bool
+
+
+class OpenCompanyOut(ResponseModel):
+    id: int
+    name: str
+    headquarters: str | None
+    isins: list[str]
+    url: str
+
+
+class EsgTransformIn(RequestModel):
+    method: Literal["linear", "percentile"] = "percentile"
+    higher_is_better: bool = True
+    lower: float | None = Field(None, description="Raw value mapped to 0 (linear method).")
+    upper: float | None = Field(None, description="Raw value mapped to 100 (linear method).")
+
+
+class OverlayPreviewRequest(RequestModel):
+    dataset_id: str = Field(min_length=1, max_length=64)
+    tickers: list[Ticker] = Field(min_length=1, max_length=200)
+    metric_id: int = Field(gt=0)
+    year: int | None = Field(None, ge=1990, le=2100, description="Latest answer up to this year.")
+    transform: EsgTransformIn = Field(default_factory=EsgTransformIn)
+    company_overrides: dict[Ticker, int] = Field(
+        default_factory=dict, description="Ticker -> WikiRate company id, confirmed by the user."
+    )
+
+
+class OverlayEntryOut(ResponseModel):
+    ticker: str
+    asset_name: str
+    isin: str | None
+    company: str | None
+    company_id: int | None
+    matched_by: Literal["isin", "user"] | None
+    year: int | None
+    raw_value: float | None
+    score: float | None
+    answer_url: str | None
+    status: Literal["scored", "no_company", "no_answer", "not_numeric"]
+    note: str
+
+
+class OverlayPreviewOut(ResponseModel):
+    metric: OpenMetricOut
+    transform: EsgTransformIn
+    year: int | None
+    entries: list[OverlayEntryOut]
+    scored: int
+    warnings: list[str] = Field(default_factory=list)
+    license: str
+    attribution: str
+
+
+class OverlaySaveIn(RequestModel):
+    name: str = Field(min_length=1, max_length=120)
+    preview: OverlayPreviewRequest
+
+
+class OverlayOut(ResponseModel):
+    id: str
+    name: str
+    dataset_id: str
+    source: str
+    metric: OpenMetricOut
+    transform: EsgTransformIn
+    year: int | None
+    entries: list[OverlayEntryOut]
+    scored: int
+    license: str
+    attribution: str
+    created_at: dt.datetime | None
+
+
+class OverlaySummaryOut(ResponseModel):
+    id: str
+    name: str
+    dataset_id: str
+    metric_title: str
+    scored: int
+    total: int
+    created_at: dt.datetime | None

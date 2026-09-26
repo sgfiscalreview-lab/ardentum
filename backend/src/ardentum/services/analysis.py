@@ -10,6 +10,7 @@ from __future__ import annotations
 import math
 import secrets
 from collections.abc import Mapping, Sequence
+from dataclasses import replace
 from typing import Any
 
 import numpy as np
@@ -62,6 +63,7 @@ from ardentum.quant.portfolio import (
     risk_decomposition,
 )
 from ardentum.services.market_data import LoadedData, MarketDataService
+from ardentum.services.open_esg import get_overlay, overlay_assets
 
 # ----------------------------------------------------------------------------- helpers
 
@@ -170,7 +172,25 @@ def load(
     service: MarketDataService, u: s.UniverseSelection, extra: Sequence[str] = ()
 ) -> LoadedData:
     tickers = list(u.tickers) + [t for t in extra if t not in u.tickers]
-    return service.load(u.dataset_id, tickers, u.start, u.end, u.frequency, u.base_currency)
+    data = service.load(u.dataset_id, tickers, u.start, u.end, u.frequency, u.base_currency)
+    if u.esg_overlay_id is None:
+        return data
+    overlay = get_overlay(service, u.esg_overlay_id)
+    if overlay.dataset_id != u.dataset_id:
+        raise InvalidInputError(
+            f"ESG overlay “{overlay.name}” was built for another dataset; build one for this "
+            "dataset or remove it from the universe."
+        )
+    dataset = replace(data.dataset, assets=overlay_assets(data.dataset, tickers, overlay))
+    note = (
+        f"ESG scores from the open-data overlay “{overlay.name}”: "
+        f"{overlay.spec.get('attribution', overlay.license)}"
+    )
+    return replace(
+        data,
+        dataset=dataset,
+        provenance=replace(data.provenance, notes=(*data.provenance.notes, note)),
+    )
 
 
 def market_cap_weights(

@@ -14,6 +14,24 @@ Ardentum's rules:
 - The built-in demo dataset uses **synthetic, illustrative** scores that do not come from any rating provider, and says so on every screen.
 - No licensed ESG dataset is bundled. Production use requires either user-supplied scores or a licensed provider (a business decision recorded in the project's decision log).
 
+## Open ESG data (WikiRate)
+
+Instead of supplying scores yourself, you can build them from **WikiRate**, a non-profit, community-researched database of company disclosures (greenhouse-gas emissions, energy, water, pay gaps, fines, supply-chain transparency and more), published under **CC BY 4.0**. Each WikiRate answer is one company's value for one metric and year, linked to its source document.
+
+An *ESG overlay* is built in three steps:
+
+1. **Matching.** Assets are matched to WikiRate companies **automatically only by ISIN**, an exact identifier. Assets without an ISIN match are matched only when you pick the company yourself; names are never fuzzy-matched silently, because a wrong match would attach another company's data.
+2. **Answers.** For each company the latest answer up to the chosen year is used. Values that are not numbers (e.g. "Unknown") are left unscored.
+3. **Scores.** Raw values $x$ become 0–100 scores by either
+   - a **fixed linear scale** $s = 100\,\mathrm{clip}\!\left(\frac{x-L}{U-L}, 0, 1\right)$, comparable across groups, or
+   - a **percentile rank** within the matched companies $s = 100\,\frac{\mathrm{rank}(x)-1}{n-1}$ (ties share their average rank), which is relative only and needs at least two values;
+
+   with the direction you choose (for emissions or fines, lower is better: $s \to 100 - s$).
+
+Assets without a match, an answer or a numeric value get **no score**: nothing is imputed, and the existing rules apply (ESG constraints fail until unscored assets are excluded explicitly). A saved overlay replaces the dataset's own ESG scores for its assets, so scores from different sources are never mixed in one portfolio score. Every score records the metric, its designer, the year, the company, the transformation and a link to the WikiRate answer; results carry the CC BY 4.0 attribution.
+
+A single metric is a narrow view of "ESG". Choose one that is material for the assets in question, and read the scores as that metric's ranking, not an overall sustainability rating. Demo (synthetic) assets and industry portfolios cannot be matched to companies, so overlays require your own dataset.
+
 ## How ESG changes the optimisation
 
 ESG settings are part of the optimisation problem, not a label added afterwards.
