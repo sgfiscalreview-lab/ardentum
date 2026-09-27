@@ -352,7 +352,7 @@ You will use **Cloud Shell**, a terminal inside the browser with everything inst
    | Variable name | Value |
    |---|---|
    | `NODE_VERSION` | `22` |
-   | `NEXT_OUTPUT` | `export` |
+   | `NEXT_OUTPUT` | `export` (optional: Cloudflare Pages builds are detected automatically) |
    | `NEXT_PUBLIC_API_BASE` | `API_URL` (no trailing slash) |
    | `NEXT_PUBLIC_SUPABASE_URL` | `SUPABASE_PROJECT_URL` |
    | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | `SUPABASE_PUBLISHABLE_KEY` |
@@ -498,6 +498,8 @@ runs daily and emails you if something breaks.
 | The first visit after a quiet spell takes about a minute | Render was asleep. Check that step 9 is set up and its runs are green. |
 | `health/db` shows an error | Check the pooler URL (port 6543, password filled in, no brackets). Render: fix `ARDENTUM_DATABASE_URL` on the **Environment** page. Cloud Run: store a corrected value with `read -rsp "URL: " V && printf '%s' "$V" \| gcloud secrets versions add ardentum-db-url --data-file=-`, then restart with `gcloud run services update ardentum-api --region $REGION --update-env-vars RESTARTED_AT=$(date +%s)`. |
 | Cloudflare build fails | Check the root directory is `frontend`, output `out`, `NODE_VERSION` 22; open the build log for the first red line. |
+| Cloudflare build log ends with `Output directory "frontend/out" not found` | The code before 27 September 2026 needed `NEXT_OUTPUT` = `export`; newer code detects Cloudflare by itself. Merge the latest pull request (or add the variable) and retry the deployment. |
+| Cloudflare build log says `Static build settings need fixing` | A variable is missing or not a plain address (for example pasted as `[https://...](https://...)`). The lines below it name the variable; fix it under **Settings** > **Variables and Secrets** and retry. |
 | A budget email arrives | Cloud Run: **ardentum-api** > **Metrics**; Billing > **Reports** shows which service cost money. Lower `--max-instances` to 1 if needed. |
 
 ## If a secret was exposed
