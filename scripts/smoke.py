@@ -29,7 +29,7 @@ from urllib.parse import urlparse
 UA = "ardentum-smoke/1"
 KF_UNIVERSE = {
     "dataset_id": "kf12",
-    "tickers": ["NoDur", "Hlth", "Money"],
+    "tickers": ["NODUR", "HLTH", "MONEY"],
     "start": "2015-01-01",
     "frequency": "monthly",
 }
@@ -106,6 +106,15 @@ def error_message(r: Response) -> str:
         return str(r.json()["error"]["message"])
     except Exception:
         return r.text[:200]
+
+
+def describe(r: Response) -> str:
+    """Status, serving host and the start of the page, to tell apart a wrong address,
+    a missing deployment and a build without the expected files."""
+    text = re.sub(r"<[^>]+>", " ", r.text)
+    text = re.sub(r"\s+", " ", text).strip()[:160]
+    server = r.headers.get("server", "?")
+    return f"HTTP {r.status} from {server}: {text!r}"
 
 
 def check_api(rep: Report, api: str, site: str) -> None:
@@ -223,7 +232,7 @@ def check_api(rep: Report, api: str, site: str) -> None:
             "kind": "montecarlo",
             "request": {
                 "universe": KF_UNIVERSE,
-                "weights": {"NoDur": 0.4, "Hlth": 0.3, "Money": 0.3},
+                "weights": {"NODUR": 0.4, "HLTH": 0.3, "MONEY": 0.3},
                 "n_paths": 1000,
                 "horizon_years": 5,
                 "seed": 7,
@@ -269,7 +278,7 @@ def check_site(rep: Report, site: str, api: str, supabase: str | None, key: str 
     def pages() -> None:
         r = request("GET", base + "/")
         if r.status != 200 or "shows its working" not in r.text:
-            rep.fail("Website", f"HTTP {r.status}; landing page text not found")
+            rep.fail("Website", f"landing page not found at {base}/; {describe(r)}")
             return
         rep.ok("Website", "landing page loads")
         if "x-frame-options" in r.headers:
