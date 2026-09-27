@@ -13,7 +13,8 @@ Legend: **[F]** needs a founder decision/credential · **[E]** engineering
 
 ## Engineering — next
 - [ ] **[E]** Deploy to staging once accounts exist; run E2E against staging; manual acceptance pass.
-- [ ] **[E]** Verify Docker builds in CI (first run) and live calls to Ken French, Frankfurter, WikiRate and FRED from the deployed API.
+- [x] **[E]** Verify Docker builds in CI (first run).
+- [ ] **[E]** Live calls to Ken French, Frankfurter, WikiRate and FRED from the deployed API: `scripts/smoke.py`, run daily by the Live smoke test workflow; act on its first results.
 
 ## Engineering — backlog
 - [x] Persist provider payloads (Ken French, Tiingo, FRED, FX) in PostgreSQL (D-019).

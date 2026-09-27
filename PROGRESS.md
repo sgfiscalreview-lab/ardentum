@@ -38,6 +38,7 @@ Status as of 2026-09-26.
 | Terms of Service, Privacy Policy, account export and deletion | ✅ | `tests/api/test_account.py`, E2E legal/account flow |
 | Founder setup guide (click by click) | ✅ | `docs/SETUP_GUIDE.md` |
 | Render Blueprint (`render.yaml`, no card) as the recommended API host; keep-alive every 10 minutes | ✅ | D-028; memory measured at 243 MB peak of 512 MB |
+| Live smoke test of the deployment (`scripts/smoke.py`, daily workflow); keep-alive defaults to the production API | ✅ | checked locally against a production-mode API and a Pages-like server |
 | Database URLs copied from Supabase's ORM snippets (`?pgbouncer=true`) accepted | ✅ | `tests/data/test_db_url.py`; migrations checked with such a URL on PostgreSQL |
 
 ## Test status

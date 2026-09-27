@@ -3,8 +3,9 @@ name: Keep free tiers awake
 # Supabase pauses free projects after 7 days without database activity, and Render's
 # free plan stops the API after 15 idle minutes (the next visitor then waits about a
 # minute). A request to /health/db (which runs SELECT 1) every 10 minutes prevents both;
-# runs are free for public repositories and cost Cloud Run nothing noticeable. Set the
-# repository variable API_URL (Settings > Secrets and variables > Actions > Variables).
+# runs are free for public repositories and cost Cloud Run nothing noticeable. The
+# repository variable API_URL (Settings > Secrets and variables > Actions > Variables)
+# overrides the default address below.
 # GitHub switches schedules off after 60 days without repository activity; re-enable
 # the workflow on the Actions tab if that happens.
 on:
@@ -17,7 +18,8 @@ permissions: {}
 jobs:
   ping:
     runs-on: ubuntu-latest
-    if: ${{ vars.API_URL != '' }}
+    env:
+      API_URL: ${{ vars.API_URL || 'https://ardentum-api.onrender.com' }}
     steps:
       - name: Ping API and database
-        run: curl --fail --silent --show-error --max-time 120 --retry 3 --retry-delay 20 "${{ vars.API_URL }}/api/v1/health/db"
+        run: curl --fail --silent --show-error --max-time 120 --retry 3 --retry-delay 20 "$API_URL/api/v1/health/db"
