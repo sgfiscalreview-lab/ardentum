@@ -157,6 +157,11 @@ domains → add it; update `ARDENTUM_CORS_ORIGINS` and Supabase URL configuratio
    dataset that has ISINs, build an ESG overlay on **ESG data**.
 6. Optionally run the Playwright suite against the deployment (`baseURL` override).
 
+`scripts/smoke.py` automates the outside checks (health, production settings, CORS for
+the site, Ken French, ECB rates, WikiRate, FRED when configured, a background job, the
+settings baked into the website, legal details, Supabase providers and signing keys). The
+**Live smoke test** workflow runs it daily and on demand against the production addresses.
+
 ## Security checklist
 
 - Production refuses dev sign-in, SQLite, wildcard CORS and missing Supabase settings.

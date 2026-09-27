@@ -480,6 +480,10 @@ Keep the reply. Until then the site is free, so this is not urgent.
 7. Visit `/terms`, `/privacy` and `/account`. On **Account**, **Download JSON** works;
    delete a test account to check deletion.
 
+**Automatic check.** GitHub > **Actions** > **Live smoke test** > **Run workflow**. After a few
+minutes the run's page lists every check with a plain fix for anything that failed. It also
+runs daily and emails you if something breaks.
+
 ## Troubleshooting
 
 | Symptom | Likely cause and fix |

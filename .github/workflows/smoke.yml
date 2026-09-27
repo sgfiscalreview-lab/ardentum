@@ -1,0 +1,39 @@
+name: Live smoke test
+
+# Checks the deployed API, website and Supabase sign-in settings from outside
+# (scripts/smoke.py): health, CORS, live data sources, a background job and the
+# settings baked into the website. Runs daily, on demand (Actions tab > Live smoke test >
+# Run workflow) and when the script changes. The addresses below are public; override
+# them with repository variables API_URL, SITE_URL, SUPABASE_URL and
+# SUPABASE_PUBLISHABLE_KEY if the deployment moves.
+on:
+  schedule:
+    - cron: "41 5 * * *"
+  workflow_dispatch:
+  push:
+    paths:
+      - scripts/smoke.py
+      - .github/workflows/smoke.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: smoke
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      API_URL: ${{ vars.API_URL || 'https://ardentum-api.onrender.com' }}
+      SITE_URL: ${{ vars.SITE_URL || 'https://ardentum-frontend.pages.dev' }}
+      SUPABASE_URL: ${{ vars.SUPABASE_URL || 'https://nkfcdwltcmatapijhpli.supabase.co' }}
+      SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_CiH4Os2AiFUzLhUNPbR0xg_YlspWU1K' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the live deployment
+        run: >-
+          python3 scripts/smoke.py --api "$API_URL" --site "$SITE_URL"
+          --supabase "$SUPABASE_URL" --publishable-key "$SUPABASE_PUBLISHABLE_KEY"
