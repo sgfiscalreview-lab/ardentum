@@ -29,6 +29,7 @@ Order: Supabase → API → web app → OAuth redirect URLs → keep-alive → v
 3. **Connect → Transaction pooler**: copy the connection string (port **6543**):
    `postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:6543/postgres`.
    The API disables server-side prepared statements, so the transaction pooler is safe.
+   ORM-only options such as Prisma's `?pgbouncer=true` are dropped before connecting.
 4. **Authentication → Providers**:
    - **Google**: in Google Cloud Console → APIs & Services → Credentials, create an
      *OAuth client ID* (Web application) with authorised redirect URI

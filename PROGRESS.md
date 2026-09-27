@@ -37,9 +37,10 @@ Status as of 2026-09-26.
 | Plain visual design (founder's list of patterns to avoid), real screenshots on the landing page, skeleton loaders | ✅ | CLAUDE.md UI rules, D-027; axe checks on every page in both themes |
 | Terms of Service, Privacy Policy, account export and deletion | ✅ | `tests/api/test_account.py`, E2E legal/account flow |
 | Founder setup guide (click by click) | ✅ | `docs/SETUP_GUIDE.md` |
+| Database URLs copied from Supabase's ORM snippets (`?pgbouncer=true`) accepted | ✅ | `tests/data/test_db_url.py`; migrations checked with such a URL on PostgreSQL |
 
 ## Test status
-- Backend: 299 tests passing (SQLite); API suite (73 tests) also passing on PostgreSQL 16; 93% line coverage; ruff clean; mypy --strict clean. Migrations 0001–0005 upgrade, `alembic check` and downgrade cleanly on PostgreSQL.
+- Backend: 302 tests passing (SQLite); API suite (73 tests) also passing on PostgreSQL 16; 93% line coverage; ruff clean; mypy --strict clean. Migrations 0001–0005 upgrade, `alembic check` and downgrade cleanly on PostgreSQL.
 - Frontend: ESLint (incl. React Compiler rules) clean; `tsc --strict` clean; Vitest unit tests passing.
 - End-to-end: 30 Playwright tests (11 workflows incl. open ESG data and account deletion, 19 accessibility checks over 9 pages in light and dark) passing; Playwright starts the API, the web app and a local WikiRate stand-in.
 

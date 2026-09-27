@@ -53,6 +53,11 @@ Never paste values marked "secret" into the repository, a chat or an issue.
 | UK | West EU (London) | `europe-west2` |
 | US East | East US (North Virginia) | `us-east4` |
 | South-East Asia | Southeast Asia (Singapore) | `asia-southeast1` |
+| Japan, Korea, East Asia | Northeast Asia (Tokyo) | `asia-northeast1` |
+
+The Supabase region shows in the pooler address: `aws-0-ap-northeast-1` is Tokyo, so
+`REGION=asia-northeast1`; `ap-southeast-1` is Singapore (`asia-southeast1`); `ap-south-1` is
+Mumbai (`asia-south1`).
 
 **Choose the website name now.** Cloudflare gives the site the address
 `https://<name>.pages.dev`. Pick a name (for example `ardentum`) and check that
@@ -72,6 +77,10 @@ be built from `main`.
 4. Wait for the checks at the bottom to finish (about 10 to 15 minutes; CI runs the
    tests, the static build and the browser tests). All should be green.
 5. Click **Merge pull request** > **Confirm merge**.
+
+If an earlier pull request from this branch is already merged, do the same again: the new
+pull request contains only the newer changes. Merge it before steps 7 and 8, which build
+from `main`.
 
 If `main` does not exist yet (a brand-new repository), the branch can be made the default
 instead: **Settings** > **General** > **Default branch** > switch to the Claude branch.
@@ -108,7 +117,10 @@ Then use that branch name wherever this guide says `main`.
    `postgresql://postgres.<ref>:[YOUR-PASSWORD]@aws-0-<region>.pooler.supabase.com:6543/postgres`.
 4. Replace `[YOUR-PASSWORD]` with `SUPABASE_DB_PASSWORD` and save the result as
    `SUPABASE_POOLER_URL`. If the password contains `@`, `:` or `/`, generate a new password
-   without them (**Project Settings** > **Database** > **Reset database password**).
+   without them (**Project Settings** > **Database** > **Reset database password**). Other
+   symbols are fine, written as they are or encoded (`?` as `%3F`).
+5. A string copied from an ORM tab (Prisma) ends in `?pgbouncer=true`; the API ignores that
+   option, so either form works. You do not need the `DIRECT_URL` (port 5432) string.
 
 ### 2.4 Use modern token signing (recommended)
 
@@ -401,12 +413,29 @@ Keep the reply. Until then the site is free, so this is not urgent.
 | Symptom | Likely cause and fix |
 |---|---|
 | Website says "Cannot reach the Ardentum API" | `NEXT_PUBLIC_API_BASE` wrong or has a trailing slash; or the site address is missing from `ARDENTUM_CORS_ORIGINS` (step 7.4, then redeploy). |
+| Google sign-in says "Access blocked" or works only for your own account; the client dialog said "OAuth access is restricted to the test users" | The app is still in Testing: **Google Auth Platform** > **Audience** > **Publish app** > **Confirm** (step 4.5). |
 | Google sign-in shows "redirect_uri_mismatch" | The redirect URI in step 4.6 must be exactly `https://<ref>.supabase.co/auth/v1/callback`. |
 | After sign-in you land on the wrong site or get "requested path is invalid" | Supabase **URL Configuration** (step 6.5) needs `SITE_URL/**` in Redirect URLs. |
 | Signed in, but saving says "Invalid authentication token" | Do step 2.4 (JWT signing keys), or set `ARDENTUM_SUPABASE_JWT_SECRET` to the legacy secret. |
-| `health/db` shows an error | Check the pooler URL (port 6543, password filled in, no brackets). Store a corrected value with `read -rsp "URL: " V && printf '%s' "$V" \| gcloud secrets versions add ardentum-db-url --data-file=-`, then restart with `gcloud run services update ardentum-api --region $REGION`. |
+| `health/db` shows an error | Check the pooler URL (port 6543, password filled in, no brackets). Store a corrected value with `read -rsp "URL: " V && printf '%s' "$V" \| gcloud secrets versions add ardentum-db-url --data-file=-`, then restart with `gcloud run services update ardentum-api --region $REGION --update-env-vars RESTARTED_AT=$(date +%s)`. |
 | Cloudflare build fails | Check the root directory is `frontend`, output `out`, `NODE_VERSION` 22; open the build log for the first red line. |
 | A budget email arrives | Cloud Run: **ardentum-api** > **Metrics**; Billing > **Reports** shows which service cost money. Lower `--max-instances` to 1 if needed. |
+
+## If a secret was exposed
+
+If a value marked "secret" ended up somewhere public or shared (a chat, a screenshot, an
+issue, a commit), replace it. Doing this before step 7 is quickest, because nothing uses the
+old values yet. Put the new values straight into the dashboards and Cloud Shell; do not
+share them.
+
+| Secret | Replace it | Then update |
+|---|---|---|
+| `SUPABASE_DB_PASSWORD` | Supabase > **Project Settings** > **Database** > **Reset database password**. Type your own long password of letters and digits (24 or more) so the URL needs no escaping. | Build the new `SUPABASE_POOLER_URL`. If the API is deployed, store it with the `health/db` command in Troubleshooting. |
+| `SUPABASE_SECRET_KEY` | Supabase > **Project Settings** > **API Keys** > **Secret keys**: add a new secret key, then delete the old one from its menu. | If deployed: `read -rsp "Secret key: " V && printf '%s' "$V" \| gcloud secrets versions add ardentum-supabase-secret --data-file=-`, then the restart command from Troubleshooting. |
+| `GOOGLE_CLIENT_SECRET` | Google Auth Platform > **Clients** > **Ardentum web** > **Add secret**; copy it, then disable and delete the old secret. | Supabase > **Authentication** > **Sign In / Providers** > **Google**: paste the new secret, **Save**. |
+| `GITHUB_CLIENT_SECRET` | GitHub > **Settings** > **Developer settings** > **OAuth Apps** > **Ardentum** > **Generate a new client secret**; copy it, then delete the old one. | Supabase > **Sign In / Providers** > **GitHub**: paste the new secret, **Save**. |
+
+The publishable key, project URL and client IDs are public by design and need no action.
 
 ## Updating later
 
