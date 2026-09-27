@@ -221,9 +221,10 @@ def check_api(rep: Report, api: str, site: str) -> None:
         if r.status != 200:
             rep.fail("Optimisation", f"HTTP {r.status}: {error_message(r)}")
             return
-        total = sum(r.json()["weights"].values())
+        result = r.json()["result"]
+        total = sum(h["weight"] for h in result["holdings"])
         if abs(total - 1) < 1e-6:
-            rep.ok("Optimisation", "weights sum to 1")
+            rep.ok("Optimisation", f"weights sum to 1, solver {result['solver']}")
         else:
             rep.fail("Optimisation", f"weights sum to {total}")
 
