@@ -256,7 +256,7 @@ def check_api(rep: Report, api: str, site: str) -> None:
             rep.fail("Background job", f"status {job['status']} after {took}: {job.get('error')}")
 
     rep.check("API health", health)
-    if rep.failed:
+    if rep.rows and rep.rows[-1][:2] == ("FAIL", "API health"):
         return  # nothing else can work
     for name, fn in [
         ("Database", health_db),
@@ -379,6 +379,19 @@ def check_supabase(rep: Report, supabase: str, key: str) -> None:
     rep.check("Token signing keys", signing_keys)
 
 
+def plain_url(rep: Report, name: str, value: str) -> str:
+    """Accept a value pasted as a Markdown link, [url](url), but flag it: other tools
+    (the keep-alive's curl, the website build) would use it as written and fail."""
+    m = re.fullmatch(r"\s*\[([^\]]+)\]\(([^)]+)\)\s*", value)
+    if not m:
+        return value.strip()
+    rep.fail(
+        f"Setting {name}",
+        f"written as a Markdown link ({value}); change it to the plain address {m.group(2)}",
+    )
+    return m.group(2).strip()
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
     ap.add_argument("--api", required=True, help="API base URL")
@@ -386,13 +399,15 @@ def main() -> int:
     ap.add_argument("--supabase", help="Supabase project URL")
     ap.add_argument("--publishable-key", help="Supabase publishable key (public)")
     args = ap.parse_args()
-    site = args.site.rstrip("/")
 
     rep = Report()
-    check_api(rep, args.api, site)
-    check_site(rep, site, args.api, args.supabase, args.publishable_key)
-    if args.supabase and args.publishable_key:
-        check_supabase(rep, args.supabase, args.publishable_key)
+    api = plain_url(rep, "API_URL", args.api)
+    site = plain_url(rep, "SITE_URL", args.site).rstrip("/")
+    supabase = plain_url(rep, "SUPABASE_URL", args.supabase) if args.supabase else None
+    check_api(rep, api, site)
+    check_site(rep, site, api, supabase, args.publishable_key)
+    if supabase and args.publishable_key:
+        check_supabase(rep, supabase, args.publishable_key)
 
     if summary := os.environ.get("GITHUB_STEP_SUMMARY"):
         with open(summary, "a", encoding="utf-8") as f:

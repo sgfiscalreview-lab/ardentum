@@ -55,7 +55,7 @@ Frontend (from `frontend/`):
 ```bash
 npm ci
 npm run dev            # http://localhost:3000; proxies /api/v1 to API_URL (default http://localhost:8000)
-NEXT_OUTPUT=export NEXT_PUBLIC_API_BASE=https://<api> npm run build   # static site in out/ (Cloudflare Pages)
+NEXT_OUTPUT=export NEXT_PUBLIC_API_BASE=https://<api> npm run build   # static site in out/ (automatic on Cloudflare Pages, CF_PAGES=1); fails fast on missing/malformed NEXT_PUBLIC_* addresses
 npm run gen:api        # regenerate src/lib/api/schema.d.ts from the running backend
 npm run lint && npm run typecheck && npm test
 npm run build

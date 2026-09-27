@@ -117,7 +117,7 @@ Workers & Pages → Create → Pages → Connect to Git → this repository:
 | Root directory | `frontend` |
 | Build command | `npm ci && npm run build` |
 | Output directory | `out` |
-| `NEXT_OUTPUT` | `export` (static export) |
+| `NEXT_OUTPUT` | `export` (static export; automatic when `CF_PAGES=1`, i.e. on Cloudflare Pages) |
 | `NEXT_PUBLIC_API_BASE` | Cloud Run URL, e.g. `https://ardentum-api-xxxxx.a.run.app` |
 | `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | from step 1.2 (the legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY` also works) |
 | `NEXT_PUBLIC_LEGAL_OPERATOR`, `NEXT_PUBLIC_LEGAL_CONTACT_EMAIL`, `NEXT_PUBLIC_LEGAL_GOVERNING_LAW`, `NEXT_PUBLIC_LEGAL_LAST_UPDATED` | shown in the Terms of Service and Privacy Policy |
