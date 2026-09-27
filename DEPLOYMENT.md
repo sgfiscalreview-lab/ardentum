@@ -9,9 +9,9 @@ cost is an optional domain name.
 | Component | Host | Free-tier notes (check current terms) |
 |---|---|---|
 | Web app (static) | **Cloudflare Pages** (fallback: Netlify) | Static files, unlimited bandwidth, 500 builds/month |
-| API (container) | **Google Cloud Run** (fallback: Render free web service) | ~2M requests, 180k vCPU-s, 360k GiB-s per month; card required, budget alert recommended |
+| API (container) | **Render** free web service via `render.yaml` (no card), or **Google Cloud Run** | Render: 512 MB, small CPU share, sleeps after 15 idle minutes (the keep-alive prevents it). Cloud Run: ~2M requests, 180k vCPU-s, 360k GiB-s per month; card required, budget alert recommended |
 | PostgreSQL + sign-in | **Supabase** | 500 MB database; pauses after 7 idle days (prevented by the daily keep-alive) |
-| Keep-alive | GitHub Actions (`.github/workflows/keepalive.yml`) | Daily `GET /api/v1/health/db` |
+| Keep-alive | GitHub Actions (`.github/workflows/keepalive.yml`) | `GET /api/v1/health/db` every 10 minutes |
 | Data | Built in, no keys | Ken French industries and risk-free rate, ECB FX (Frankfurter), WikiRate open ESG data |
 | Optional keys | FRED (free), WikiRate (free account) | Only needed for FRED's T-bill series, or if WikiRate requires a key |
 | Optional domain | Cloudflare Registrar | About $10/year for a `.com` |
@@ -46,7 +46,7 @@ The API verifies Supabase tokens with the project's JWKS
 (`<URL>/auth/v1/.well-known/jwks.json`); legacy HS256 projects also need
 `ARDENTUM_SUPABASE_JWT_SECRET`.
 
-## 2. API on Google Cloud Run
+## 2. API on Google Cloud Run or Render
 
 One-time setup (Google Cloud Console or `gcloud`):
 
@@ -100,9 +100,13 @@ Cloud Run's request-based billing only allocates CPU while a request is open, an
 polls keep one open, so no "CPU always allocated" setting (which costs money) is needed.
 Keep `--timeout` above 25 s.
 
-**Fallback without a card: Render.** New → Web Service → Docker, root directory
-`backend`, instance type *Free*, the same variables, health check `/api/v1/health`.
-Free instances sleep after 15 idle minutes; the first request then takes about a minute.
+**Without a card: Render** (D-028). Dashboard → New → Blueprint → this repository.
+`render.yaml` defines the free Docker service (region Singapore, health check
+`/api/v1/health`, deploys after CI passes, only for changes under `backend/`) and the fixed
+variables; Render asks once for `ARDENTUM_SUPABASE_URL`, `ARDENTUM_CORS_ORIGINS`,
+`ARDENTUM_DATABASE_URL` and `ARDENTUM_SUPABASE_SERVICE_KEY`. Free instances sleep after 15
+idle minutes (the first request then takes about a minute); the keep-alive below pings
+every 10 minutes. Peak memory with one worker is about 250 MB of the 512 MB.
 
 ## 3. Web app on Cloudflare Pages
 
@@ -132,8 +136,9 @@ remains possible but is not needed for the free stack.
 ## 4. Keep-alive
 
 GitHub → repository → Settings → Secrets and variables → Actions → **Variables** → add
-`API_URL` = the Cloud Run URL. The `keepalive` workflow pings `/api/v1/health/db` daily,
-which keeps the Supabase project from pausing.
+`API_URL` = the Render or Cloud Run URL. The `keepalive` workflow pings `/api/v1/health/db`
+every 10 minutes, which keeps the Supabase project from pausing and a Render free instance
+from sleeping.
 
 ## 5. Optional custom domain
 

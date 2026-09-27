@@ -1,8 +1,9 @@
 # Ardentum: setup guide for the founder
 
 Everything you need to do to put Ardentum online, in order, with every click. Nothing here
-needs a paid plan. The only card you must add is to Google Cloud (it has a free allowance,
-and step 3 sets a $1 alert so you hear about any charge long before it matters).
+needs a paid plan or a card. The API can run on Render (step 7A, no card, no terminal) or
+on Google Cloud Run (step 7B, faster, but it needs a card for its free allowance and
+commands in Cloud Shell).
 
 Expect about 2 to 3 hours the first time. Dashboards change their wording from time to time;
 if a button name differs slightly, look for the closest match.
@@ -15,7 +16,8 @@ if a button name differs slightly, look for the closest match.
 |---|---|---|
 | GitHub (you already have it) | Holds the code; runs tests; daily keep-alive | Free |
 | Supabase | Database and sign-in | Free plan |
-| Google Cloud | Runs the API (Cloud Run); also the Google sign-in button | Free allowance; card required |
+| Google Cloud | The Google sign-in button; the API too if you choose Cloud Run (7B) | Free; a card only for Cloud Run |
+| Render | Runs the API (step 7A) | Free plan, no card |
 | Cloudflare | Hosts the website (Cloudflare Pages); optional domain | Free (domain about $10/year) |
 | FRED (St. Louis Fed) | 3-month Treasury-bill rate | Free |
 | WikiRate | Open ESG data | Free |
@@ -36,7 +38,7 @@ GITHUB_CLIENT_SECRET      =                        (secret)
 GCP_PROJECT_ID            =
 GCP_PROJECT_NUMBER        =
 REGION                    =
-API_URL                   = https://ardentum-api-<project-number>.<region>.run.app
+API_URL                   = https://ardentum-api.onrender.com  (Cloud Run: https://ardentum-api-<number>.<region>.run.app)
 SITE_URL                  = https://<name>.pages.dev
 FRED_API_KEY              =                        (secret)
 WIKIRATE_API_KEY          =                        (secret)
@@ -58,6 +60,11 @@ Never paste values marked "secret" into the repository, a chat or an issue.
 The Supabase region shows in the pooler address: `aws-0-ap-northeast-1` is Tokyo, so
 `REGION=asia-northeast1`; `ap-southeast-1` is Singapore (`asia-southeast1`); `ap-south-1` is
 Mumbai (`asia-south1`).
+
+Render (step 7A) has five regions: Oregon, Ohio, Virginia, Frankfurt and Singapore.
+`render.yaml` in the repository uses Singapore, the nearest to Asian Supabase regions. For
+users in the Americas or Europe, change its `region:` line to `oregon`, `virginia` or
+`frankfurt` (GitHub > the file > pencil icon > **Commit changes**) before step 7A.
 
 **Choose the website name now.** Cloudflare gives the site the address
 `https://<name>.pages.dev`. Pick a name (for example `ardentum`) and check that
@@ -112,7 +119,7 @@ Then use that branch name wherever this guide says `main`.
 
 1. Click **Connect** at the top of the project page.
 2. Choose **Transaction pooler** (port **6543**). This matters: the pooler works over IPv4,
-   which Cloud Run needs; the direct connection does not.
+   which Render and Cloud Run need; the direct connection does not.
 3. Copy the URI. It looks like
    `postgresql://postgres.<ref>:[YOUR-PASSWORD]@aws-0-<region>.pooler.supabase.com:6543/postgres`.
 4. Replace `[YOUR-PASSWORD]` with `SUPABASE_DB_PASSWORD` and save the result as
@@ -132,7 +139,10 @@ Then use that branch name wherever this guide says `main`.
 
 Sign-in providers are configured in step 6, after you have the Google and GitHub keys.
 
-## 3. Google Cloud: project, billing and a $1 alert
+## 3. Google Cloud: project (billing only for Cloud Run)
+
+The Google sign-in button needs a Google Cloud project but no billing. Items 3 and 4 below
+are only for running the API on Cloud Run (step 7B); skip them if you use Render (7A).
 
 1. Go to https://console.cloud.google.com and sign in with the Google account you want
    to own the service.
@@ -145,7 +155,7 @@ Sign-in providers are configured in step 6, after you have the Google and GitHub
    - **Amount**: **Specified amount**, `1` (in your billing currency).
    - **Actions**: alert thresholds 50%, 90% and 100% of actual spend; email alerts to
      billing admins. **Finish**.
-   A budget only sends emails; it does not stop the service. With the settings in step 7
+   A budget only sends emails; it does not stop the service. With the settings in step 7B
    the expected cost is zero or a few cents per month (image storage above 0.5 GB).
 5. Open **IAM & Admin** > **Settings** (or the project picker) and copy the **Project ID**
    and **Project number** into your notes.
@@ -195,7 +205,62 @@ Sign-in providers are configured in step 6, after you have the Google and GitHub
      and `http://localhost:3000/**`. Add your custom domain here later if you get one.
    - **Save**.
 
-## 7. Deploy the API to Cloud Run
+## 7. Deploy the API
+
+Choose one:
+
+- **7A. Render (recommended)**: no card and no terminal; it redeploys by itself when `main`
+  changes. The free plan has 512 MB of memory (Ardentum uses about 250 MB at peak) and a
+  small share of a CPU, so long calculations take several times longer than on Cloud Run.
+  It sleeps after 15 idle minutes; the keep-alive in step 9 prevents that.
+- **7B. Google Cloud Run**: faster, but needs billing with a card (step 3) and commands in
+  Cloud Shell.
+
+### 7A. Render (no card)
+
+The second pull request (step 1) must be merged first: Render reads `render.yaml` from
+`main`.
+
+1. Go to https://dashboard.render.com and click **Sign up** > **GitHub**. The free plan does
+   not ask for a card.
+2. Top right: **New** > **Blueprint**.
+3. Connect the repository: click **GitHub** (or **Configure account**) and allow access to
+   `sgfiscalreview-lab/ardentum`, then click **Connect** next to it. (It is a public
+   repository, so pasting `https://github.com/sgfiscalreview-lab/ardentum` as a public Git
+   repository also works.)
+4. **Blueprint Name**: `ardentum`. **Branch**: `main`. Render lists the service it will
+   create, **ardentum-api** (Free, Singapore), and asks for four values:
+
+   | Variable | Value |
+   |---|---|
+   | `ARDENTUM_SUPABASE_URL` | `SUPABASE_PROJECT_URL` |
+   | `ARDENTUM_CORS_ORIGINS` | `SITE_URL` inside brackets and double quotes, e.g. `["https://ardentum.pages.dev"]` |
+   | `ARDENTUM_DATABASE_URL` | `SUPABASE_POOLER_URL` (with the password filled in) |
+   | `ARDENTUM_SUPABASE_SERVICE_KEY` | `SUPABASE_SECRET_KEY` |
+
+5. Click **Deploy Blueprint** (or **Apply**). The first build takes 5 to 10 minutes; follow
+   it under **ardentum-api** > **Logs**.
+6. The service page shows its address at the top, e.g. `https://ardentum-api.onrender.com`
+   (Render adds a few characters if the name is taken). Copy it as `API_URL`. Open
+   `API_URL/api/v1/health/db`; it should show `{"status":"ok","database":"ok"}`. The first
+   start also creates the database tables.
+
+To change a value later: **ardentum-api** > **Environment** > **Edit** > change it >
+**Save, rebuild, and deploy** (or **Save and deploy**).
+
+If the Blueprint cannot be created, make the service by hand: **New** > **Web Service** >
+the repository > **Language** `Docker`, **Branch** `main`, **Region** `Singapore`, **Root
+Directory** `backend`, **Instance Type** `Free`. Under **Environment Variables** add the four
+values above plus `ARDENTUM_ENV` = `production`, `ARDENTUM_AUTH_MODE` = `supabase`,
+`ARDENTUM_TRUSTED_PROXY_HOPS` = `1`, `ARDENTUM_RATE_LIMIT_STORE` = `database` and
+`WEB_CONCURRENCY` = `1`. Under **Advanced**, **Health Check Path** `/api/v1/health`. Click
+**Deploy Web Service**.
+
+If you tried Cloud Run earlier and now use Render, nothing needs deleting. To be sure Google
+never charges you: Google Cloud console > **Billing** > **Account management** > the
+`ardentum` project > **Actions** > **Disable billing**. Google sign-in keeps working.
+
+### 7B. Google Cloud Run (card required)
 
 You will use **Cloud Shell**, a terminal inside the browser with everything installed.
 
@@ -299,23 +364,29 @@ You will use **Cloud Shell**, a terminal inside the browser with everything inst
 7. Click **Save and Deploy**. The first build takes 3 to 5 minutes. When it finishes, open
    the `https://<name>.pages.dev` address. If Cloudflare shows a different address than
    `SITE_URL`, use the one shown: update `SITE_URL` in your notes and repeat the parts of
-   steps 4, 5, 6 and 7 that use it (for step 7, edit `cloudrun.env.yaml` and re-run the
-   deploy command).
+   steps 4, 5, 6 and 7 that use it (7A: change `ARDENTUM_CORS_ORIGINS` on Render's
+   **Environment** page; 7B: edit `cloudrun.env.yaml` and re-run the deploy command).
 
 Every later push to `main` rebuilds the website automatically. To change a variable:
 **Workers & Pages** > your project > **Settings** > **Variables and Secrets** (or
 **Environment variables**), then **Deployments** > the latest one > **Retry deployment**.
 
-## 9. Keep the free database awake
+## 9. Keep the free database and API awake
 
-Supabase pauses free projects after a week without activity. The repository has a daily job
-that pings the API's database check.
+Supabase pauses free projects after a week without activity, and Render's free plan stops
+the API after 15 idle minutes (the next visitor then waits about a minute). A job in the
+repository pings the API's database check every 10 minutes, which prevents both; it is free
+for public repositories.
 
 1. GitHub repository > **Settings** > **Secrets and variables** > **Actions** >
    **Variables** tab > **New repository variable**.
 2. **Name**: `API_URL`. **Value**: your `API_URL`. **Add variable**.
 3. Test it: **Actions** tab > **keepalive** (left list) > **Run workflow** > **Run workflow**.
    After a minute it should show a green tick.
+
+If the API is down, GitHub emails you about the failed runs, which doubles as an alert.
+GitHub switches scheduled jobs off after 60 days without any change to the repository; if
+you get that email, open the **Actions** tab > **keepalive** > **Enable workflow**.
 
 If Supabase pauses the project anyway, open it in the Supabase dashboard and click
 **Restore project**; nothing is lost.
@@ -389,9 +460,10 @@ Keep the reply. Until then the site is free, so this is not urgent.
    - Supabase: **Authentication** > **URL Configuration**: Site URL and Redirect URLs.
    - Google Auth Platform > **Clients** > your client > **Authorized JavaScript origins**.
    - GitHub OAuth app > **Homepage URL**.
-   - Cloud Shell: edit `cloudrun.env.yaml` so `ARDENTUM_CORS_ORIGINS` lists both
-     addresses, e.g. `'["https://ardentum.com","https://ardentum.pages.dev"]'`, then run the
-     deploy command from step 7.5 again.
+   - The API's `ARDENTUM_CORS_ORIGINS` must list both addresses, e.g.
+     `["https://ardentum.com","https://ardentum.pages.dev"]`. Render: **Environment** page.
+     Cloud Run: edit `cloudrun.env.yaml` (the value inside single quotes there) and run the
+     deploy command from step 7B.5 again.
 
 ## 14. Final check
 
@@ -412,12 +484,15 @@ Keep the reply. Until then the site is free, so this is not urgent.
 
 | Symptom | Likely cause and fix |
 |---|---|
-| Website says "Cannot reach the Ardentum API" | `NEXT_PUBLIC_API_BASE` wrong or has a trailing slash; or the site address is missing from `ARDENTUM_CORS_ORIGINS` (step 7.4, then redeploy). |
+| Website says "Cannot reach the Ardentum API" | `NEXT_PUBLIC_API_BASE` wrong or has a trailing slash; or the site address is missing from `ARDENTUM_CORS_ORIGINS` (step 7A.4 or 7B.4, then redeploy). |
 | Google sign-in says "Access blocked" or works only for your own account; the client dialog said "OAuth access is restricted to the test users" | The app is still in Testing: **Google Auth Platform** > **Audience** > **Publish app** > **Confirm** (step 4.5). |
 | Google sign-in shows "redirect_uri_mismatch" | The redirect URI in step 4.6 must be exactly `https://<ref>.supabase.co/auth/v1/callback`. |
 | After sign-in you land on the wrong site or get "requested path is invalid" | Supabase **URL Configuration** (step 6.5) needs `SITE_URL/**` in Redirect URLs. |
 | Signed in, but saving says "Invalid authentication token" | Do step 2.4 (JWT signing keys), or set `ARDENTUM_SUPABASE_JWT_SECRET` to the legacy secret. |
-| `health/db` shows an error | Check the pooler URL (port 6543, password filled in, no brackets). Store a corrected value with `read -rsp "URL: " V && printf '%s' "$V" \| gcloud secrets versions add ardentum-db-url --data-file=-`, then restart with `gcloud run services update ardentum-api --region $REGION --update-env-vars RESTARTED_AT=$(date +%s)`. |
+| Render: the Blueprint finds no `render.yaml` | Merge the second pull request (step 1); Render reads `main`. |
+| Render: the deploy fails | **ardentum-api** > **Logs**, first red line. `invalid connection option "pgbouncer"`: the second pull request is not merged yet. `password authentication failed`: wrong password in the URL. `Tenant or user not found`: the user part of the URL must be `postgres.<ref>`. |
+| The first visit after a quiet spell takes about a minute | Render was asleep. Check that step 9 is set up and its runs are green. |
+| `health/db` shows an error | Check the pooler URL (port 6543, password filled in, no brackets). Render: fix `ARDENTUM_DATABASE_URL` on the **Environment** page. Cloud Run: store a corrected value with `read -rsp "URL: " V && printf '%s' "$V" \| gcloud secrets versions add ardentum-db-url --data-file=-`, then restart with `gcloud run services update ardentum-api --region $REGION --update-env-vars RESTARTED_AT=$(date +%s)`. |
 | Cloudflare build fails | Check the root directory is `frontend`, output `out`, `NODE_VERSION` 22; open the build log for the first red line. |
 | A budget email arrives | Cloud Run: **ardentum-api** > **Metrics**; Billing > **Reports** shows which service cost money. Lower `--max-instances` to 1 if needed. |
 
@@ -430,8 +505,8 @@ share them.
 
 | Secret | Replace it | Then update |
 |---|---|---|
-| `SUPABASE_DB_PASSWORD` | Supabase > **Project Settings** > **Database** > **Reset database password**. Type your own long password of letters and digits (24 or more) so the URL needs no escaping. | Build the new `SUPABASE_POOLER_URL`. If the API is deployed, store it with the `health/db` command in Troubleshooting. |
-| `SUPABASE_SECRET_KEY` | Supabase > **Project Settings** > **API Keys** > **Secret keys**: add a new secret key, then delete the old one from its menu. | If deployed: `read -rsp "Secret key: " V && printf '%s' "$V" \| gcloud secrets versions add ardentum-supabase-secret --data-file=-`, then the restart command from Troubleshooting. |
+| `SUPABASE_DB_PASSWORD` | Supabase > **Project Settings** > **Database** > **Reset database password**. Type your own long password of letters and digits (24 or more) so the URL needs no escaping. | Build the new `SUPABASE_POOLER_URL`. If the API is deployed: Render, `ARDENTUM_DATABASE_URL` on the **Environment** page; Cloud Run, the `health/db` command in Troubleshooting. |
+| `SUPABASE_SECRET_KEY` | Supabase > **Project Settings** > **API Keys** > **Secret keys**: add a new secret key, then delete the old one from its menu. | If deployed: Render, `ARDENTUM_SUPABASE_SERVICE_KEY` on the **Environment** page; Cloud Run, `read -rsp "Secret key: " V && printf '%s' "$V" \| gcloud secrets versions add ardentum-supabase-secret --data-file=-`, then the restart command from Troubleshooting. |
 | `GOOGLE_CLIENT_SECRET` | Google Auth Platform > **Clients** > **Ardentum web** > **Add secret**; copy it, then disable and delete the old secret. | Supabase > **Authentication** > **Sign In / Providers** > **Google**: paste the new secret, **Save**. |
 | `GITHUB_CLIENT_SECRET` | GitHub > **Settings** > **Developer settings** > **OAuth Apps** > **Ardentum** > **Generate a new client secret**; copy it, then delete the old one. | Supabase > **Sign In / Providers** > **GitHub**: paste the new secret, **Save**. |
 
@@ -440,6 +515,8 @@ The publishable key, project URL and client IDs are public by design and need no
 ## Updating later
 
 - **Website**: push to `main`; Cloudflare rebuilds automatically.
-- **API**: in Cloud Shell, `cd ardentum && git pull && gcloud run deploy ardentum-api --source backend --env-vars-file cloudrun.env.yaml` (secrets and other settings are kept). Database migrations run automatically on start.
+- **API on Render**: nothing to do; each new commit on `main` that touches `backend/` is
+  deployed once CI has passed.
+- **API on Cloud Run**: in Cloud Shell, `cd ardentum && git pull && gcloud run deploy ardentum-api --source backend --env-vars-file cloudrun.env.yaml` (secrets and other settings are kept). Database migrations run automatically on start.
 - **Screenshots on the landing page**: run the app locally and `npm run screenshots` in
   `frontend/` (see `frontend/scripts/capture-screenshots.mjs`).
