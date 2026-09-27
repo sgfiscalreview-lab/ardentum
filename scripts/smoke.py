@@ -279,7 +279,15 @@ def check_site(rep: Report, site: str, api: str, supabase: str | None, key: str 
     def pages() -> None:
         r = request("GET", base + "/")
         if r.status != 200 or "shows its working" not in r.text:
-            rep.fail("Website", f"landing page not found at {base}/; {describe(r)}")
+            # Tell apart "nothing deployed at this address" from a routing problem.
+            index = request("GET", base + "/index.html")
+            hint = (
+                "no deployment is serving this address; check the project's address and "
+                "its latest deployment in Cloudflare (Workers & Pages > project > Deployments)"
+                if index.status == 404
+                else f"/index.html gives HTTP {index.status}"
+            )
+            rep.fail("Website", f"landing page not found at {base}/; {describe(r)}; {hint}")
             return
         rep.ok("Website", "landing page loads")
         if "x-frame-options" in r.headers:
