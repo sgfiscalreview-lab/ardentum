@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { BlackLittermanEditor, DEFAULT_BLACK_LITTERMAN } from "@/components/black-litterman";
-import { Badge, Button, Callout, Card, Field, Input, NumberInput, Select, Table, Td, Th } from "@/components/ui";
+import { Badge, Button, Callout, Card, Field, Input, NumberInput, Select, Skeleton, SkeletonRows, Table, Td, Th } from "@/components/ui";
 import { ErrorCallout, PageHeader, SyntheticBanner, useDataset } from "@/components/workspace";
 import { api, ApiError, unwrap } from "@/lib/api/client";
 import type { AssetOut, EstimationSettings, RiskFreeOut, UniverseSelection } from "@/lib/api/types";
@@ -44,8 +44,8 @@ export default function UniversePage() {
         title="Universe"
         description="Choose the data, the assets and the historical window used to estimate expected returns and risk. Every later step uses these settings."
         actions={
-          <Link href="/app/analytics" className="inline-flex h-9 items-center rounded-md bg-accent px-4 text-sm font-medium text-white hover:bg-accent-hover">
-            Continue to analytics →
+          <Link href="/app/analytics" className="inline-flex h-9 items-center rounded-md bg-accent px-4 text-sm font-medium text-on-accent hover:bg-accent-hover">
+            Continue to analytics
           </Link>
         }
       />
@@ -55,6 +55,14 @@ export default function UniversePage() {
         <div className="space-y-4">
           <Card title="Dataset" subtitle="Where prices (and sector/ESG metadata) come from.">
             <div className="grid gap-2 sm:grid-cols-2">
+              {datasets.isPending &&
+                Array.from({ length: 4 }, (_, i) => (
+                  <div key={i} role="status" aria-label="Loading datasets" className="rounded-sm border border-line p-3">
+                    <Skeleton className="h-4 w-2/3" />
+                    <Skeleton className="mt-2 h-3 w-full" />
+                    <Skeleton className="mt-1.5 h-3 w-1/2" />
+                  </div>
+                ))}
               {datasets.data?.map((d) => (
                 <button
                   key={d.id}
@@ -65,7 +73,7 @@ export default function UniversePage() {
                     )
                   }
                   aria-pressed={d.id === u.dataset_id}
-                  className={`rounded-md border p-3 text-left transition-colors ${d.id === u.dataset_id ? "border-accent bg-accent-wash" : "border-line hover:bg-surface-2"}`}
+                  className={`rounded-md border p-3 text-left ${d.id === u.dataset_id ? "border-accent bg-accent-wash" : "border-line hover:bg-surface-2"}`}
                 >
                   <span className="flex items-center justify-between gap-2">
                     <span className="text-sm font-medium text-ink">{d.name}</span>
@@ -108,7 +116,7 @@ export default function UniversePage() {
                   ))}
                 </Select>
               </div>
-              <AssetTable assets={visible} selected={selected} onToggle={toggle} />
+              {ds.isPending ? <SkeletonRows rows={8} label="Loading assets" /> : <AssetTable assets={visible} selected={selected} onToggle={toggle} />}
             </Card>
           )}
         </div>
@@ -171,7 +179,7 @@ function AssetTable({ assets, selected, onToggle }: { assets: AssetOut[]; select
               )}
             </Td>
             <Td className="text-ink-2">{a.name}</Td>
-            <Td className="text-ink-2 whitespace-nowrap">{a.sector ?? "—"}</Td>
+            <Td className="text-ink-2 whitespace-nowrap">{a.sector ?? "n/a"}</Td>
             <Td className="text-ink-2">{a.asset_class.replace("_", " ")}</Td>
             <Td className="text-ink-2">{a.currency}</Td>
             <Td align="right" title={a.esg_source ?? "No ESG score available"}>
@@ -251,7 +259,7 @@ function RiskFreeFetch({ universe, onChange }: { universe: UniverseSelection; on
           {(sources.data ?? []).map((s) => (
             <option key={s.id} value={s.id} disabled={!s.available}>
               {s.name}
-              {s.available ? "" : " — not configured"}
+              {s.available ? "" : " (not configured)"}
             </option>
           ))}
         </Select>

@@ -10,6 +10,7 @@ import {
   ErrorCallout,
   ExportMenu,
   PageHeader,
+  ResultsSkeleton,
   RunBar,
   Running,
   SyntheticBanner,
@@ -72,7 +73,7 @@ export default function SimulatePage() {
     <>
       <PageHeader
         title="Monte Carlo simulation"
-        description="A range of possible outcomes for a portfolio, not a prediction. Simulations are reproducible: the seed is shown with every result."
+        description="Many simulated paths for a portfolio's value under the stated assumptions, summarised as percentile ranges. Each run is reproducible: the seed is shown with every result."
       />
       <SyntheticBanner dataset={ds.data} />
       <div className="grid gap-4 xl:grid-cols-[20rem_minmax(0,1fr)]">
@@ -136,7 +137,9 @@ export default function SimulatePage() {
         </aside>
         <div className="min-w-0">
           <ErrorCallout error={error} />
-          {!data ? (
+          {!data && running ? (
+            <ResultsSkeleton />
+          ) : !data ? (
             <EmptyState title="No simulation yet">Pick a portfolio (optimise one first, or use equal weights) and run the simulation.</EmptyState>
           ) : (
             <Running running={running}>
@@ -179,7 +182,7 @@ function Results({ data }: { data: MonteCarloResponse }) {
               help="Share of paths whose wealth could not cover a withdrawal before the horizon."
             />
           )}
-          <Stat label="Probability of target" value={data.probability_of_target == null ? "—" : pct(data.probability_of_target, 1)} sub={data.target_value ? `≥ ${money(data.target_value)}` : "no target set"} />
+          <Stat label="Probability of target" value={data.probability_of_target == null ? "n/a" : pct(data.probability_of_target, 1)} sub={data.target_value ? `≥ ${money(data.target_value)}` : "no target set"} />
           <Stat label="Terminal VaR 95%" value={pct(data.terminal_return_var_95, 1)} sub={`CVaR ${pct(data.terminal_return_cvar_95, 1)}`} help="Loss of initial value exceeded in only 5% of paths; CVaR is the mean loss in that tail." />
           <Stat label="Median max drawdown" value={pct(data.max_drawdown_percentiles.p50, 1)} sub={`5% of paths worse than ${pct(data.max_drawdown_percentiles.p05, 1)}`} />
         </div>

@@ -47,7 +47,8 @@ function readDevSession(): DevSession | null {
 let supabaseSingleton: SupabaseClient | null = null;
 function supabaseClient(): SupabaseClient | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  // Publishable key (sb_publishable_...); the legacy anon key still works as a fallback.
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
   supabaseSingleton ??= createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true } });
   return supabaseSingleton;

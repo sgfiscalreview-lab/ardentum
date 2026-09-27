@@ -52,7 +52,7 @@ test("build, save and use open ESG scores from WikiRate", async ({ page }) => {
   // First table on the page: asset statistics, whose last column is the ESG score.
   const row = page.locator("table").first().locator("tr", { hasText: "CCC" });
   await expect(row.locator("td").last()).toHaveText("100");
-  await expect(page.locator("table").first().locator("tr", { hasText: "BBB" }).locator("td").last()).toHaveText("—");
+  await expect(page.locator("table").first().locator("tr", { hasText: "BBB" }).locator("td").last()).toHaveText("n/a");
   await page.getByText("Data & provenance").click();
   await expect(page.getByText(/open-data overlay/)).toBeVisible();
 });

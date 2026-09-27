@@ -1,0 +1,42 @@
+# Render Blueprint for the API (free plan: no card needed). Dashboard: New > Blueprint >
+# this repository. Values marked `sync: false` are asked for once, when the Blueprint is
+# created. See docs/SETUP_GUIDE.md step 7A.
+services:
+  - type: web
+    name: ardentum-api
+    runtime: docker
+    plan: free
+    region: singapore
+    branch: main
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /api/v1/health
+    # Deploy a new commit on main only after CI has passed on it.
+    autoDeployTrigger: checksPass
+    buildFilter:
+      paths:
+        - backend/**
+    envVars:
+      - key: ARDENTUM_ENV
+        value: production
+      - key: ARDENTUM_AUTH_MODE
+        value: supabase
+      - key: ARDENTUM_TRUSTED_PROXY_HOPS
+        value: "1"
+      - key: ARDENTUM_RATE_LIMIT_STORE
+        value: database
+      # One worker fits the free plan's 512 MB (about 250 MB at peak).
+      - key: WEB_CONCURRENCY
+        value: "1"
+      # https://<ref>.supabase.co
+      - key: ARDENTUM_SUPABASE_URL
+        sync: false
+      # JSON list, e.g. ["https://ardentum.pages.dev"]
+      - key: ARDENTUM_CORS_ORIGINS
+        sync: false
+      # Supabase transaction pooler URL (port 6543), with the password filled in
+      - key: ARDENTUM_DATABASE_URL
+        sync: false
+      # Supabase secret key (sb_secret_...); lets account deletion remove the sign-in record
+      - key: ARDENTUM_SUPABASE_SERVICE_KEY
+        sync: false

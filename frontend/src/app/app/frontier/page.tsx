@@ -9,6 +9,7 @@ import {
   EstimationNote,
   ExportMenu,
   PageHeader,
+  ResultsSkeleton,
   RunBar,
   Running,
   SyntheticBanner,
@@ -52,7 +53,9 @@ export default function FrontierPage() {
         </aside>
         <div className="min-w-0">
           <ErrorCallout error={error} />
-          {!data ? (
+          {!data && running ? (
+            <ResultsSkeleton />
+          ) : !data ? (
             <EmptyState title="No frontier yet">Trace the constrained efficient frontier for the selected assets.</EmptyState>
           ) : (
             <Running running={running}>
@@ -114,8 +117,8 @@ function FrontierView({ data, rf, onUse }: { data: FrontierResponse; rf: number;
       <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
         <Stat label="Min-vol return" value={pct(mv.expected_return)} sub={`volatility ${pct(mv.volatility)}`} />
         <Stat label="Min-vol Sharpe" value={num(mv.sharpe_ratio)} />
-        <Stat label="Max-Sharpe return" value={ms ? pct(ms.expected_return) : "—"} sub={ms ? `volatility ${pct(ms.volatility)}` : undefined} />
-        <Stat label="Max Sharpe ratio" value={ms ? num(ms.sharpe_ratio) : "—"} sub={`rf ${pct(rf)}`} />
+        <Stat label="Max-Sharpe return" value={ms ? pct(ms.expected_return) : "n/a"} sub={ms ? `volatility ${pct(ms.volatility)}` : undefined} />
+        <Stat label="Max Sharpe ratio" value={ms ? num(ms.sharpe_ratio) : "n/a"} sub={`rf ${pct(rf)}`} />
       </div>
       <ChartFrame
         title="Risk–return space"
@@ -130,7 +133,7 @@ function FrontierView({ data, rf, onUse }: { data: FrontierResponse; rf: number;
               { key: "s", label: "Sharpe", align: "right" },
               { key: "e", label: "ESG", align: "right" },
             ]}
-            rows={data.points.map((p) => ({ r: pct(p.expected_return), v: pct(p.volatility), s: num(p.sharpe_ratio), e: p.esg_score == null ? "—" : num(p.esg_score, 1) }))}
+            rows={data.points.map((p) => ({ r: pct(p.expected_return), v: pct(p.volatility), s: num(p.sharpe_ratio), e: p.esg_score == null ? "n/a" : num(p.esg_score, 1) }))}
           />
         }
       >

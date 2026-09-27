@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
 
-import { Button, cx } from "./ui";
+import { Button, cx, Skeleton } from "./ui";
 
 const NAV = [
   { href: "/app", label: "Workspace" },
@@ -31,7 +31,7 @@ export function SiteHeader() {
   const { choice, setChoice } = useTheme();
   const next = choice === "system" ? "light" : choice === "light" ? "dark" : "system";
   return (
-    <header className="sticky top-0 z-30 border-b border-line bg-surface/95 backdrop-blur">
+    <header className="sticky top-0 z-30 border-b border-line bg-surface">
       <div className="mx-auto flex h-12 max-w-[1600px] items-center gap-6 px-4">
         <Link href="/" aria-label="Ardentum home">
           <Logo />
@@ -60,18 +60,20 @@ export function SiteHeader() {
           </Button>
           {status === "signed_in" ? (
             <>
-              <span className="hidden max-w-48 truncate text-xs text-ink-2 sm:inline" title={user?.email ?? undefined}>
-                {user?.email}
-              </span>
+              <Link href="/account" className="hidden max-w-48 truncate text-xs text-ink-2 underline-offset-2 hover:underline sm:inline" title="Account settings">
+                {user?.email ?? "Account"}
+              </Link>
               <Button variant="secondary" size="sm" onClick={() => void signOut()}>
                 Sign out
               </Button>
             </>
           ) : status === "signed_out" ? (
-            <Link href={`/login?next=${encodeURIComponent(pathname)}`} className="inline-flex h-8 items-center rounded-md bg-accent px-3 text-[13px] font-medium text-white hover:bg-accent-hover">
+            <Link href={`/login?next=${encodeURIComponent(pathname)}`} className="inline-flex h-8 items-center rounded-md bg-accent px-3 text-[13px] font-medium text-on-accent hover:bg-accent-hover">
               Sign in
             </Link>
-          ) : null}
+          ) : (
+            <Skeleton className="h-8 w-16" />
+          )}
         </div>
       </div>
     </header>

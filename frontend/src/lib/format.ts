@@ -3,7 +3,7 @@
  * every value displayed is computed and tested in the backend quant engine.
  */
 
-const DASH = "—";
+const DASH = "n/a";
 
 export function pct(x: number | null | undefined, digits = 2): string {
   if (x === null || x === undefined || !Number.isFinite(x)) return DASH;

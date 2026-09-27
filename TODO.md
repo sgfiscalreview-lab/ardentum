@@ -6,9 +6,10 @@ Legend: **[F]** needs a founder decision/credential · **[E]** engineering
 - [x] **[F]** Market data: free Ken French industry data built in (D-018). Tiingo/other licensed vendors remain optional for individual securities (D-004).
 - [ ] **[F]** Confirm Ken French Data Library terms with Prof. French before commercial launch (D-018).
 - [x] **[F]** ESG data source: user-supplied plus open WikiRate data (CC BY 4.0, D-026). A licensed provider remains optional.
-- [ ] **[F]** Create free accounts and follow DEPLOYMENT.md: Supabase (+ Google/GitHub OAuth apps), Google Cloud (Cloud Run, $1 budget alert), Cloudflare Pages; set the `API_URL` Actions variable.
+- [ ] **[F]** Create free accounts and follow docs/SETUP_GUIDE.md (step by step): Supabase (+ Google/GitHub OAuth apps), Render for the API (or Google Cloud Run with a $1 budget alert), Cloudflare Pages; set the `API_URL` Actions variable.
 - [ ] **[F]** Optional free keys: FRED API key; WikiRate account (only if its API requires a key).
-- [ ] **[F]** Optional domain (~$10/yr, Cloudflare Registrar); privacy policy and terms of use (financial-information disclaimer, CC BY 4.0 attribution for WikiRate data).
+- [ ] **[F]** Set operator name, contact email and governing law for the Terms of Service and Privacy Policy (NEXT_PUBLIC_LEGAL_*), and have both texts reviewed by a lawyer before a public launch.
+- [ ] **[F]** Optional domain (~$10/yr, Cloudflare Registrar).
 
 ## Engineering — next
 - [ ] **[E]** Deploy to staging once accounts exist; run E2E against staging; manual acceptance pass.

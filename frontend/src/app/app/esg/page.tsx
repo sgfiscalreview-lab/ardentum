@@ -8,6 +8,7 @@ import {
   ErrorCallout,
   ExportMenu,
   PageHeader,
+  ResultsSkeleton,
   RunBar,
   Running,
   SyntheticBanner,
@@ -55,7 +56,9 @@ export default function EsgPage() {
         </aside>
         <div className="min-w-0">
           <ErrorCallout error={error} />
-          {!data ? (
+          {!data && running ? (
+            <ResultsSkeleton />
+          ) : !data ? (
             <EmptyState title="No comparison yet">
               Add an ESG constraint (for example a minimum portfolio score of 60, or excluding Energy), then measure its effect.
             </EmptyState>
@@ -87,7 +90,7 @@ function Impact({ data }: { data: EsgImpactResponse }) {
         actions={<ExportMenu name="ardentum-esg-impact" json={data} csv={csv} />}
       >
         <div className="grid grid-cols-2 gap-2 md:grid-cols-3 2xl:grid-cols-6">
-          <Stat label="ESG score" value={e.esg_score == null ? "—" : num(e.esg_score, 1)} sub={`${signedNum(data.delta_esg_score, 1)} vs baseline`} />
+          <Stat label="ESG score" value={e.esg_score == null ? "n/a" : num(e.esg_score, 1)} sub={`${signedNum(data.delta_esg_score, 1)} vs baseline`} />
           <Stat label="Expected return" value={pct(e.expected_return)} sub={`${signedPct(data.delta_expected_return)} vs baseline`} tone={data.delta_expected_return < -1e-6 ? "critical" : undefined} />
           <Stat label="Volatility" value={pct(e.volatility)} sub={`${signedPct(data.delta_volatility)} vs baseline`} tone={data.delta_volatility > 1e-6 ? "critical" : undefined} />
           <Stat label="Sharpe ratio" value={num(e.sharpe_ratio)} sub={`${signedNum(data.delta_sharpe_ratio)} vs baseline`} tone={(data.delta_sharpe_ratio ?? 0) < -1e-6 ? "critical" : undefined} />
@@ -221,7 +224,7 @@ function Summary({ title, r }: { title: string; r: PortfolioResultOut }) {
         <dt className="text-ink-2">Sharpe</dt>
         <dd className="text-right tabular">{num(r.sharpe_ratio)}</dd>
         <dt className="text-ink-2">ESG score</dt>
-        <dd className="text-right tabular">{r.esg_score == null ? "—" : num(r.esg_score, 1)}</dd>
+        <dd className="text-right tabular">{r.esg_score == null ? "n/a" : num(r.esg_score, 1)}</dd>
         <dt className="text-ink-2">Effective no. of assets</dt>
         <dd className="text-right tabular">{num(r.effective_number_of_assets, 1)}</dd>
       </dl>

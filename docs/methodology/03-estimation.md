@@ -1,12 +1,12 @@
 # Estimation
 
-How expected returns and covariances are estimated — and why the estimates deserve scepticism.
+How expected returns and covariances are estimated, and why the estimates deserve scepticism.
 
 Mean–variance optimisation needs two inputs: a vector of expected returns $\mu$ and a covariance matrix $\Sigma$. Neither is observable. Ardentum estimates both from a user-chosen historical window and records the estimator, window, number of observations and shrinkage intensity with every result.
 
 ## Estimation error is the central problem
 
-The standard error of an annualised mean return is roughly $\sigma_A/\sqrt{T_{\text{years}}}$. For an asset with 20% volatility and ten years of data that is about 6.3 percentage points — larger than most differences in expected returns between assets. Optimisers amplify these errors: they overweight assets whose returns were overestimated (Best & Grauer, 1991; Chopra & Ziemba, 1993; Michaud, 1998). Ardentum responds by offering shrinkage estimators, constraints, objectives that ignore expected returns (minimum volatility), and a weight-stability analysis.
+The standard error of an annualised mean return is roughly $\sigma_A/\sqrt{T_{\text{years}}}$. For an asset with 20% volatility and ten years of data that is about 6.3 percentage points, larger than most differences in expected returns between assets. Optimisers amplify these errors: they overweight assets whose returns were overestimated (Best & Grauer, 1991; Chopra & Ziemba, 1993; Michaud, 1998). Ardentum responds by offering shrinkage estimators, constraints, objectives that ignore expected returns (minimum volatility), and a weight-stability analysis.
 
 ## Expected returns
 
@@ -28,7 +28,7 @@ Historical means are so noisy that mean-variance portfolios built on them are ex
 
 $$\pi = \delta\,\Sigma\,w_{eq} + r_f .$$
 
-Investor **views** are linear statements $P\mu = Q + \varepsilon$, $\varepsilon \sim N(0,\Omega)$ — absolute ("A returns 8%") or relative ("A outperforms B by 2%"). Following He and Litterman (1999), $\Omega_{kk} = \tau\,p_k^\top\Sigma p_k$; with a stated confidence $c\in(0,1]$ Idzorek's (2005) closed form $\Omega_{kk} = \tau\frac{1-c}{c}\,p_k^\top\Sigma p_k$ is used ($c=1$: the view holds exactly). The posterior is
+Investor **views** are linear statements $P\mu = Q + \varepsilon$, $\varepsilon \sim N(0,\Omega)$: absolute ("A returns 8%") or relative ("A outperforms B by 2%"). Following He and Litterman (1999), $\Omega_{kk} = \tau\,p_k^\top\Sigma p_k$; with a stated confidence $c\in(0,1]$ Idzorek's (2005) closed form $\Omega_{kk} = \tau\frac{1-c}{c}\,p_k^\top\Sigma p_k$ is used ($c=1$: the view holds exactly). The posterior is
 
 $$\mu_{BL} = \pi + \tau\Sigma P^\top(\tau P\Sigma P^\top + \Omega)^{-1}(Q - P\pi),$$
 $$\Sigma_{BL} = \Sigma + \tau\Sigma - \tau\Sigma P^\top(\tau P\Sigma P^\top + \Omega)^{-1}P\tau\Sigma ,$$

@@ -119,14 +119,14 @@ class KFDatasetSpec:
 DATASETS: dict[str, KFDatasetSpec] = {
     "kf12": KFDatasetSpec(
         "kf12",
-        "US industries — 12 portfolios (Kenneth French)",
+        "US industries: 12 portfolios (Kenneth French)",
         "12_Industry_Portfolios_daily",
         "12_Industry_Portfolios",
         IND12,
     ),
     "kf49": KFDatasetSpec(
         "kf49",
-        "US industries — 49 portfolios (Kenneth French)",
+        "US industries: 49 portfolios (Kenneth French)",
         "49_Industry_Portfolios_daily",
         "49_Industry_Portfolios",
         IND49,

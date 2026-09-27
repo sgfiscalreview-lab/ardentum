@@ -10,7 +10,7 @@ export default function ResearchIndex() {
   return (
     <main className="mx-auto max-w-4xl px-4 py-10">
       <p className="text-xs font-semibold uppercase tracking-widest text-accent-ink">Research</p>
-      <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink">Methodology</h1>
+      <h1 className="mt-2 font-display text-3xl font-semibold text-ink">Methodology</h1>
       <p className="mt-2 max-w-2xl text-ink-2">
         The definitions, models, assumptions and limitations behind every number in Ardentum, with references to the primary literature.
       </p>

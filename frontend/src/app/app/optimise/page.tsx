@@ -13,6 +13,7 @@ import {
   EstimationNote,
   ExportMenu,
   PageHeader,
+  ResultsSkeleton,
   RunBar,
   Running,
   SyntheticBanner,
@@ -50,7 +51,7 @@ export default function OptimisePage() {
     <>
       <PageHeader
         title="Optimise"
-        description="Mean–variance optimisation under explicit constraints. The model's reasoning — binding constraints, risk contributions and why each asset is or is not held — is shown with every result."
+        description="Mean–variance and tail-risk optimisation under explicit constraints. Every result lists the binding constraints, the risk contributions and the reason each asset is or is not held."
       />
       <SyntheticBanner dataset={ds.data} />
       <div className="grid gap-4 xl:grid-cols-[20rem_minmax(0,1fr)]">
@@ -76,7 +77,9 @@ export default function OptimisePage() {
 
         <div className="min-w-0">
           <ErrorCallout error={error} />
-          {!data ? (
+          {!data && running ? (
+            <ResultsSkeleton />
+          ) : !data ? (
             <EmptyState title="No optimisation yet">
               Choose an objective and constraints, then run the optimiser. Results are deterministic: the same inputs always give the same portfolio.
             </EmptyState>
@@ -141,7 +144,7 @@ function Results({
         <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-3 2xl:grid-cols-6">
           <Stat label="Expected return" value={pct(r.expected_return)} sub="annual, arithmetic (estimate)" />
           <Stat label="Expected volatility" value={pct(r.volatility)} sub="annual (estimate)" />
-          <Stat label="Sharpe ratio" value={r.sharpe_ratio == null ? "—" : num(r.sharpe_ratio)} sub={`rf ${pct(r.risk_free_rate)}`} />
+          <Stat label="Sharpe ratio" value={r.sharpe_ratio == null ? "n/a" : num(r.sharpe_ratio)} sub={`rf ${pct(r.risk_free_rate)}`} />
           {r.cvar != null && r.cvar_confidence != null && (
             <Stat
               label={`CVaR ${num(r.cvar_confidence * 100, r.cvar_confidence * 100 % 1 ? 1 : 0)}%`}
@@ -150,13 +153,13 @@ function Results({
               help="Historical: the average loss in the worst periods of the estimation window with these weights."
             />
           )}
-          <Stat label="ESG score" value={r.esg_score == null ? "—" : num(r.esg_score, 1)} sub={r.esg_score == null ? "not available" : "value-weighted, 0–100"} />
+          <Stat label="ESG score" value={r.esg_score == null ? "n/a" : num(r.esg_score, 1)} sub={r.esg_score == null ? "not available" : "value-weighted, 0–100"} />
           <Stat label="Effective no. of assets" value={num(r.effective_number_of_assets, 1)} sub={`${held.length} held`} help="Inverse Herfindahl index: 1/Σw²" />
-          <Stat label="Diversification ratio" value={r.diversification_ratio == null ? "—" : num(r.diversification_ratio)} sub="Σwσ / σp" />
+          <Stat label="Diversification ratio" value={r.diversification_ratio == null ? "n/a" : num(r.diversification_ratio)} sub="Σwσ / σp" />
         </div>
         {r.esg_adjusted_return != null && (
           <p className="mt-2 text-xs text-ink-2">
-            ESG-adjusted expected return used by the optimiser: {pct(r.esg_adjusted_return)} (includes the ESG preference; not a forecast).
+            ESG-adjusted expected return used by the optimiser: {pct(r.esg_adjusted_return)} (expected return plus the ESG preference term).
           </p>
         )}
       </Card>
@@ -199,7 +202,7 @@ function Results({
         </ChartFrame>
       </div>
 
-      <Card title="Why each asset is (or is not) held" subtitle="Derived from the optimiser's optimality conditions, not generated text." bodyClassName="p-0">
+      <Card title="Why each asset is (or is not) held" subtitle="Derived from the optimiser's optimality (KKT) conditions." bodyClassName="p-0">
         <Table>
           <thead>
             <tr>
@@ -218,7 +221,7 @@ function Results({
               <tr key={h.ticker}>
                 <Td>
                   <span className="font-medium text-ink">{h.ticker}</span>
-                  <span className="block text-[11px] text-muted">{h.sector ?? "—"}</span>
+                  <span className="block text-[11px] text-muted">{h.sector ?? "n/a"}</span>
                 </Td>
                 <Td>
                   <StatusBadge status={h.status} />
@@ -259,7 +262,7 @@ function Results({
                       <Td>{d.label}</Td>
                       <Td align="right">{d.kind === "min_esg" ? num(d.value, 1) : pct(d.value, 2)}</Td>
                       <Td align="right" title={d.shadow_price_unit ? `Marginal change in the objective (${d.shadow_price_unit}) per unit of the bound` : undefined}>
-                        {d.shadow_price == null ? "—" : d.shadow_price.toExponential(2)}
+                        {d.shadow_price == null ? "n/a" : d.shadow_price.toExponential(2)}
                       </Td>
                     </tr>
                   ))}
@@ -392,7 +395,7 @@ function SaveButton({ data, request }: { data: OptimiseResponse; request: Optimi
       </Button>
       {msg && <span className={msg.tone === "success" ? "ml-2 text-xs text-good" : "ml-2 text-xs text-critical"}>{msg.text}</span>}
       {open && (
-        <div className="absolute right-0 z-20 mt-2 w-72 rounded-md border border-line-strong bg-surface p-3 shadow-lg">
+        <div className="absolute right-0 z-20 mt-2 w-72 rounded-sm border border-line-strong bg-surface p-3">
           <Field label="Portfolio name" htmlFor="pf-name">
             <Input id="pf-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={120} autoFocus />
           </Field>

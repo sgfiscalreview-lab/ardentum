@@ -10,6 +10,7 @@ import {
   EstimationNote,
   ExportMenu,
   PageHeader,
+  ResultsSkeleton,
   RunBar,
   Running,
   SyntheticBanner,
@@ -26,7 +27,7 @@ import { useWorkspace } from "@/lib/workspace";
 type Req = { universe: object; estimation: object; benchmark: string | null };
 
 function metric(m: MetricOut | null | undefined, digits = 2): string {
-  return m?.value == null ? "—" : num(m.value, digits);
+  return m?.value == null ? "n/a" : num(m.value, digits);
 }
 
 export default function AnalyticsPage() {
@@ -48,7 +49,7 @@ export default function AnalyticsPage() {
     <>
       <PageHeader
         title="Historical analytics"
-        description="Realised statistics for each asset over the estimation window. These are observed historical values, not forecasts."
+        description="Realised statistics for each asset over the estimation window. Every figure on this page describes the past."
         actions={
           <RunBar
             running={running}
@@ -77,7 +78,9 @@ export default function AnalyticsPage() {
           </div>
         </div>
       )}
-      {!data ? (
+      {!data && running ? (
+            <ResultsSkeleton />
+          ) : !data ? (
         <EmptyState title="No analytics yet">Compute historical statistics for the {state.universe.tickers.length} selected assets.</EmptyState>
       ) : (
         <Running running={running}>
@@ -130,7 +133,7 @@ export default function AnalyticsPage() {
                     <tr key={a.ticker}>
                       <Td>
                         <span className="font-medium text-ink">{a.ticker}</span>
-                        <span className="block text-[11px] text-muted">{a.sector ?? "—"}</span>
+                        <span className="block text-[11px] text-muted">{a.sector ?? "n/a"}</span>
                       </Td>
                       <Td align="right">{pct(a.performance.cagr)}</Td>
                       <Td align="right">{pct(a.performance.arithmetic_annual_return)}</Td>
@@ -140,7 +143,7 @@ export default function AnalyticsPage() {
                       <Td align="right">{pct(a.performance.max_drawdown, 1)}</Td>
                       {data.benchmark && <Td align="right">{metric(a.performance.beta)}</Td>}
                       <Td align="right">{pct(a.performance.var_95)}</Td>
-                      <Td align="right">{a.esg_score != null ? a.esg_score.toFixed(0) : "—"}</Td>
+                      <Td align="right">{a.esg_score != null ? a.esg_score.toFixed(0) : "n/a"}</Td>
                     </tr>
                   ))}
                 </tbody>
@@ -168,8 +171,7 @@ export default function AnalyticsPage() {
                   <option value="">Add/remove series (max 8)…</option>
                   {tickers.map((t) => (
                     <option key={t} value={t}>
-                      {lines.includes(t) ? "✓ " : ""}
-                      {t}
+                      {lines.includes(t) ? `${t} (shown)` : t}
                     </option>
                   ))}
                 </Select>

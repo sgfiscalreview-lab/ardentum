@@ -135,7 +135,7 @@ interface TooltipRow {
 
 function TooltipBox({ title, rows }: { title?: string; rows: TooltipRow[] }) {
   return (
-    <div className="min-w-40 rounded-md border border-line-strong bg-surface px-3 py-2 text-xs shadow-lg">
+    <div className="min-w-40 rounded-sm border border-line-strong bg-surface px-3 py-2 text-xs">
       {title && <p className="mb-1 font-medium text-ink-2">{title}</p>}
       <ul className="space-y-0.5">
         {rows.map((r) => (
@@ -219,6 +219,7 @@ export function TimeSeriesChart({
           <Line dataKey={() => baseline} stroke="var(--axis)" strokeWidth={1} dot={false} isAnimationActive={false} activeDot={false} legendType="none" />
         )}
         <Tooltip
+          isAnimationActive={false}
           cursor={{ stroke: "var(--axis)", strokeWidth: 1 }}
           content={({ active, payload, label }) =>
             active && payload?.length ? (
@@ -228,7 +229,7 @@ export function TimeSeriesChart({
                   const p = payload.find((x) => x.dataKey === s.key);
                   return {
                     label: s.name,
-                    value: p && typeof p.value === "number" ? yFormat(p.value) : "—",
+                    value: p && typeof p.value === "number" ? yFormat(p.value) : "n/a",
                     color: s.color ?? seriesColor(i),
                   };
                 })}
@@ -318,6 +319,7 @@ export function FanChart({
         />
         <YAxis tickFormatter={format} width={68} axisLine={false} tickLine={false} tick={TICK} />
         <Tooltip
+          isAnimationActive={false}
           cursor={{ stroke: "var(--axis)", strokeWidth: 1 }}
           content={({ active, payload }) => {
             const row = payload?.[0]?.payload as (typeof data)[number] | undefined;
@@ -448,6 +450,7 @@ export function FrontierChart({
         />
         <ZAxis range={[64, 64]} />
         <Tooltip
+          isAnimationActive={false}
           cursor={false}
           content={({ active, payload }) => {
             const p = payload?.[0]?.payload as (MarkerPoint & { series?: string }) | undefined;
@@ -515,9 +518,9 @@ export function BarList({ rows, max, ariaLabel }: { rows: BarRow[]; max?: number
                 style={
                   hasNeg
                     ? r.value >= 0
-                      ? { left: "50%", width: `${frac * 50}%`, background: color, borderRadius: "0 4px 4px 0" }
-                      : { right: "50%", width: `${frac * 50}%`, background: color, borderRadius: "4px 0 0 4px" }
-                    : { left: 0, width: `${frac * 100}%`, background: color, borderRadius: "0 4px 4px 0" }
+                      ? { left: "50%", width: `${frac * 50}%`, background: color, borderRadius: "0 1px 1px 0" }
+                      : { right: "50%", width: `${frac * 50}%`, background: color, borderRadius: "1px 0 0 1px" }
+                    : { left: 0, width: `${frac * 100}%`, background: color, borderRadius: "0 1px 1px 0" }
                 }
               />
             </div>
@@ -536,11 +539,11 @@ function mix(a: [number, number, number], b: [number, number, number], t: number
   return `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
 }
 
-/** Diverging colour for a correlation in [-1, 1]: red (−) · neutral gray (0) · blue (+). */
+/** Diverging colour for a correlation in [-1, 1]: brick (negative), neutral (0), navy (positive). */
 export function correlationColor(v: number, dark: boolean): string {
-  const mid: [number, number, number] = dark ? [56, 56, 53] : [240, 239, 236];
-  const pos: [number, number, number] = dark ? [57, 135, 229] : [42, 120, 214];
-  const neg: [number, number, number] = dark ? [230, 103, 103] : [227, 73, 72];
+  const mid: [number, number, number] = dark ? [46, 48, 53] : [233, 230, 223];
+  const pos: [number, number, number] = dark ? [111, 157, 208] : [47, 95, 147];
+  const neg: [number, number, number] = dark ? [207, 111, 95] : [168, 72, 58];
   const t = Math.min(1, Math.abs(v));
   return v >= 0 ? mix(mid, pos, t) : mix(mid, neg, t);
 }
@@ -588,7 +591,7 @@ export function Heatmap({ labels, matrix, dark }: { labels: string[]; matrix: nu
                   onMouseEnter={() => setHover({ i, j })}
                   onFocus={() => setHover({ i, j })}
                   onMouseLeave={() => setHover(null)}
-                  className="h-7 rounded-[3px] outline-offset-0 hover:ring-2 hover:ring-[var(--ink-2)]"
+                  className="h-7 rounded-sm outline-offset-0 hover:ring-2 hover:ring-[var(--ink-2)]"
                   style={{ background: correlationColor(v, dark) }}
                 />
               );
@@ -596,15 +599,13 @@ export function Heatmap({ labels, matrix, dark }: { labels: string[]; matrix: nu
           </div>
         ))}
       </div>
-      <div className="mt-3 flex items-center gap-2 text-[11px] text-ink-2" aria-hidden>
-        <span>−1</span>
-        <div
-          className="h-2 w-40 rounded"
-          style={{
-            background: `linear-gradient(90deg, ${correlationColor(-1, dark)}, ${correlationColor(0, dark)}, ${correlationColor(1, dark)})`,
-          }}
-        />
-        <span>+1</span>
+      <div className="mt-3 flex items-end gap-px text-[10px] text-ink-2" aria-hidden>
+        {[-1, -0.5, 0, 0.5, 1].map((v) => (
+          <span key={v} className="flex w-9 flex-col items-center gap-1">
+            <span className="block h-2.5 w-full" style={{ background: correlationColor(v, dark) }} />
+            <span className="tabular">{v > 0 ? `+${v}` : v === 0 ? "0" : `−${Math.abs(v)}`}</span>
+          </span>
+        ))}
       </div>
     </div>
   );
@@ -641,6 +642,7 @@ export function Histogram({
         <XAxis dataKey="mid" tickFormatter={format} minTickGap={40} axisLine={AXIS} tickLine={false} tick={TICK} />
         <YAxis tickFormatter={(v: number) => `${(v * 100).toFixed(0)}%`} width={44} axisLine={false} tickLine={false} tick={TICK} />
         <Tooltip
+          isAnimationActive={false}
           cursor={{ fill: "var(--surface-2)" }}
           content={({ active, payload }) => {
             const p = payload?.[0]?.payload as (typeof data)[number] | undefined;
@@ -656,7 +658,7 @@ export function Histogram({
             );
           }}
         />
-        <Bar dataKey="share" fill="var(--series-1)" radius={[4, 4, 0, 0]} isAnimationActive={false} maxBarSize={24} />
+        <Bar dataKey="share" fill="var(--series-1)" radius={[1, 1, 0, 0]} isAnimationActive={false} maxBarSize={24} />
       </BarChart>
     </ResponsiveContainer>
   );

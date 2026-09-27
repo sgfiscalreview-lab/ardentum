@@ -19,6 +19,25 @@ Read this first, then `ARCHITECTURE.md`, `DECISIONS.md`, `PROGRESS.md`, `TODO.md
    orchestrate only.
 6. **Reproducibility.** Simulations take explicit seeds and echo them.
 
+## UI rules (founder request: no generic "AI-generated" look)
+
+* Colours only from the tokens in `frontend/src/app/globals.css`: warm paper and charcoal
+  (never pure white or black backgrounds), one navy accent, muted earth-tone chart series.
+  No purple, neon, pastel or rainbow palettes; no gradients, orbs or dot-grid backdrops.
+* Flat surfaces: 2px corners, 1px borders, no shadows, no blur or glass, no motion on hover
+  (no transitions, no animated arrows or chevrons); charts render without animation.
+* No icon sets (e.g. Lucide), emojis, sparkle icons, checkmark bullets or arrow glyphs;
+  use words. No em dashes in user-facing text (backend messages and methodology docs
+  included); missing values display as "n/a".
+* Operating-system fonts only (`--font-sans`; serif `--font-display` for page titles);
+  never Inter, Geist or Space Grotesk.
+* No feature-card rows, bento grids, terminal windows, testimonials or pricing tables.
+  Show the real product (`npm run screenshots` in `frontend/` with the app running
+  captures the landing-page screenshots) and plain statements; avoid "it's not X, it's Y"
+  copy.
+* Loading states use static skeletons (`Skeleton`, `SkeletonRows`, `ResultsSkeleton`).
+* Every page links the Terms of Service and Privacy Policy (site footer).
+
 ## Commands
 
 Backend (from `backend/`):

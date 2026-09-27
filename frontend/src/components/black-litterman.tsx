@@ -107,7 +107,7 @@ export function BlackLittermanEditor({
                   <option value="1">Certain</option>
                 </Select>
                 <Button size="sm" variant="ghost" aria-label={`Remove view ${i + 1}`} onClick={() => setRows(rows.filter((_, j) => j !== i))}>
-                  ×
+                  Remove
                 </Button>
               </div>
             </li>

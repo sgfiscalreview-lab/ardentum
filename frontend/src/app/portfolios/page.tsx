@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { useSavedPortfolios } from "@/components/portfolio-picker";
-import { Badge, Button, Callout, Card, EmptyState, Table, Td, Th } from "@/components/ui";
+import { Badge, Button, Callout, Card, EmptyState, Skeleton, SkeletonRows, Table, Td, Th } from "@/components/ui";
 import { download, ErrorCallout } from "@/components/workspace";
 import { api, unwrap } from "@/lib/api/client";
 import type { PortfolioOut } from "@/lib/api/types";
@@ -22,14 +22,20 @@ export default function PortfoliosPage() {
   const { state, setUniverse, setWorking } = useWorkspace();
   const [error, setError] = useState<Error | null>(null);
 
-  if (status === "loading") return null;
+  if (status === "loading") {
+    return (
+      <main className="mx-auto max-w-6xl px-4 py-8">
+        <SkeletonRows rows={5} label="Loading" />
+      </main>
+    );
+  }
   if (status !== "signed_in") {
     return (
       <main className="mx-auto max-w-3xl px-4 py-12">
         <EmptyState
           title="Sign in to see your saved portfolios"
           action={
-            <Link href="/login?next=/portfolios" className="inline-flex h-9 items-center rounded-md bg-accent px-4 text-sm font-medium text-white hover:bg-accent-hover">
+            <Link href="/login?next=/portfolios" className="inline-flex h-9 items-center rounded-md bg-accent px-4 text-sm font-medium text-on-accent hover:bg-accent-hover">
               Sign in
             </Link>
           }
@@ -94,6 +100,16 @@ export default function PortfoliosPage() {
               </tr>
             </thead>
             <tbody>
+              {saved.isPending &&
+                Array.from({ length: 4 }, (_, i) => (
+                  <tr key={i} aria-hidden>
+                    {Array.from({ length: 8 }, (__, j) => (
+                      <Td key={j}>
+                        <Skeleton className="h-4 w-full" />
+                      </Td>
+                    ))}
+                  </tr>
+                ))}
               {saved.data?.map((p) => {
                 const s = (p.summary ?? {}) as Record<string, unknown>;
                 return (
@@ -106,7 +122,7 @@ export default function PortfoliosPage() {
                         </span>
                       )}
                     </Td>
-                    <Td className="text-ink-2">{OBJECTIVE_LABELS[String(s.objective)] ?? "—"}</Td>
+                    <Td className="text-ink-2">{OBJECTIVE_LABELS[String(s.objective)] ?? "n/a"}</Td>
                     <Td align="right">{Object.keys(p.weights).length}</Td>
                     <Td align="right">{pct(s.expected_return as number | undefined)}</Td>
                     <Td align="right">{pct(s.volatility as number | undefined)}</Td>

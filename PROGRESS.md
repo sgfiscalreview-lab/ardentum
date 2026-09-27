@@ -34,11 +34,16 @@ Status as of 2026-09-26.
 | Shared rate limiting (PostgreSQL), verified-user keys, forged-header protection | ✅ | `tests/api/test_ratelimit.py` (SQLite + PostgreSQL) |
 | Background jobs with long-polling and recovery of abandoned runs | ✅ | `tests/api/test_jobs.py` |
 | Open ESG data from WikiRate (CC BY 4.0): match by ISIN, score, save, apply | ✅ | `tests/data/test_wikirate.py`, `tests/api/test_open_esg_api.py`, `e2e/open-esg.spec.ts` |
+| Plain visual design (founder's list of patterns to avoid), real screenshots on the landing page, skeleton loaders | ✅ | CLAUDE.md UI rules, D-027; axe checks on every page in both themes |
+| Terms of Service, Privacy Policy, account export and deletion | ✅ | `tests/api/test_account.py`, E2E legal/account flow |
+| Founder setup guide (click by click) | ✅ | `docs/SETUP_GUIDE.md` |
+| Render Blueprint (`render.yaml`, no card) as the recommended API host; keep-alive every 10 minutes | ✅ | D-028; memory measured at 243 MB peak of 512 MB |
+| Database URLs copied from Supabase's ORM snippets (`?pgbouncer=true`) accepted | ✅ | `tests/data/test_db_url.py`; migrations checked with such a URL on PostgreSQL |
 
 ## Test status
-- Backend: 296 tests passing (SQLite); API suite (70 tests) also passing on PostgreSQL 16; 93% line coverage; ruff clean; mypy --strict clean. Migrations 0001–0005 upgrade, `alembic check` and downgrade cleanly on PostgreSQL.
+- Backend: 302 tests passing (SQLite); API suite (73 tests) also passing on PostgreSQL 16; 93% line coverage; ruff clean; mypy --strict clean. Migrations 0001–0005 upgrade, `alembic check` and downgrade cleanly on PostgreSQL.
 - Frontend: ESLint (incl. React Compiler rules) clean; `tsc --strict` clean; Vitest unit tests passing.
-- End-to-end: 21 Playwright tests (10 workflows incl. open ESG data + 11 accessibility checks) passing; Playwright starts the API, the web app and a local WikiRate stand-in.
+- End-to-end: 30 Playwright tests (11 workflows incl. open ESG data and account deletion, 19 accessibility checks over 9 pages in light and dark) passing; Playwright starts the API, the web app and a local WikiRate stand-in.
 
 ## Performance (dev container, 14 assets, 10 years daily)
 | Request | Time |

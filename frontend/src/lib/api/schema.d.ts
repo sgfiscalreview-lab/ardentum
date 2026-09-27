@@ -89,6 +89,30 @@ export interface paths {
         get: operations["me_api_v1_auth_me_get"];
         put?: never;
         post?: never;
+        /**
+         * Delete Me
+         * @description Permanently delete the user's portfolios, datasets, ESG overlays, jobs and profile.
+         */
+        delete: operations["delete_me_api_v1_auth_me_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/me/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Me
+         * @description Everything Ardentum stores about the signed-in user, as JSON.
+         */
+        get: operations["export_me_api_v1_auth_me_export_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -509,6 +533,45 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AccountDeletedOut */
+        AccountDeletedOut: {
+            /** Portfolios */
+            portfolios: number;
+            /** Datasets */
+            datasets: number;
+            /** Esg Overlays */
+            esg_overlays: number;
+            /** Jobs */
+            jobs: number;
+            /** Identity Deleted */
+            identity_deleted: boolean;
+            /** Message */
+            message: string;
+        };
+        /** AccountExportOut */
+        AccountExportOut: {
+            /**
+             * Exported At
+             * Format: date-time
+             */
+            exported_at: string;
+            /** User Id */
+            user_id: string;
+            /** Email */
+            email: string | null;
+            /** Portfolios */
+            portfolios: {
+                [key: string]: unknown;
+            }[];
+            /** Datasets */
+            datasets: {
+                [key: string]: unknown;
+            }[];
+            /** Esg Overlays */
+            esg_overlays: {
+                [key: string]: unknown;
+            }[];
+        };
         /** AnalyticsRequest */
         AnalyticsRequest: {
             universe: components["schemas"]["UniverseSelection"];
@@ -2170,6 +2233,68 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_me_api_v1_auth_me_delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountDeletedOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_me_api_v1_auth_me_export_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountExportOut"];
                 };
             };
             /** @description Validation Error */

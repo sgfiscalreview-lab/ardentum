@@ -49,4 +49,4 @@ To keep requests interactive, paths × simulated periods may not exceed 100 mill
 - Parameters are treated as known; estimation error in $\mu$ and $\Sigma$ is not simulated, so the spread of outcomes is understated.
 - History-based methods cannot produce scenarios worse than the worst periods in the sample.
 - Cash flows are fixed in advance (no dynamic spending rules); no fees, taxes or transaction costs.
-- A simulation is a consequence of its assumptions, not a forecast.
+- A simulation shows the consequences of its assumptions. It makes no forecast.

@@ -11,7 +11,7 @@ test.beforeEach(async ({ page }) => {
 
 test("landing page leads to the workspace with synthetic data clearly labelled", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Build portfolios you can explain." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Portfolio analysis that shows its working." })).toBeVisible();
   await page.getByRole("link", { name: "Open the workspace" }).click();
   await expect(page.getByRole("heading", { name: "Universe" })).toBeVisible();
   await expect(page.getByText("Synthetic demo data").first()).toBeVisible();
@@ -114,4 +114,26 @@ test("research section renders methodology with mathematics", async ({ page }) =
   await page.getByRole("link", { name: /Optimisation/ }).click();
   await expect(page.getByRole("heading", { name: "Optimisation", level: 1 })).toBeVisible();
   await expect(page.locator(".katex").first()).toBeVisible();
+});
+
+test("legal pages are linked from every page and account data can be exported and deleted", async ({ page }) => {
+  await page.goto("/app");
+  await page.getByRole("link", { name: "Privacy Policy" }).click();
+  await expect(page.getByRole("heading", { name: "Privacy Policy" })).toBeVisible();
+  await page.getByRole("link", { name: "Terms of Service" }).first().click();
+  await expect(page.getByRole("heading", { name: "Terms of Service" })).toBeVisible();
+
+  await page.goto("/login?next=/account");
+  await expect(page.getByText(/By signing in you agree to the/)).toBeVisible();
+  await page.getByLabel("Email").fill(`acct-${Date.now()}@example.com`);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/account/);
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download JSON" }).click();
+  expect((await download).suggestedFilename()).toBe("ardentum-account-export.json");
+  const del = page.getByRole("button", { name: "Delete my account" });
+  await expect(del).toBeDisabled();
+  await page.getByLabel('Type "delete" to confirm').fill("delete");
+  await del.click();
+  await expect(page.getByText("Account deleted")).toBeVisible();
 });

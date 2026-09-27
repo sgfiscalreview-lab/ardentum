@@ -171,3 +171,30 @@ or user confirmation only; missing or non-numeric answers stay unscored. Overlay
 recomputed server-side on save, stored per user and dataset, and replace (never mix with)
 the dataset's scores. Responses are cached for a day in `provider_cache`. A free WikiRate
 API key can be set in `ARDENTUM_WIKIRATE_API_KEY` if WikiRate requires one.
+
+## D-027 Visual design and legal pages
+The founder asked that the UI avoid a list of patterns typical of generated sites (see
+CLAUDE.md "UI rules"). The design is deliberately plain: restrained warm neutrals, a navy
+accent, flat 2px surfaces, system fonts with a serif for titles, static skeletons, no
+decorative motion. The landing page shows real screenshots of the app (on the labelled
+synthetic data) instead of feature cards. Terms of Service and a Privacy Policy describe
+exactly what the system does; operator name, contact and governing law are build-time
+settings **(founder: fill in and have the texts reviewed)**. Users can export and delete
+all their data (`GET /auth/me/export`, `DELETE /auth/me`); with
+`ARDENTUM_SUPABASE_SERVICE_KEY` set, deletion also removes the Supabase sign-in record.
+
+## D-028 Render as the no-card host for the API
+The founder could not complete the Google Cloud setup. Render's free web service needs no
+card and is set up entirely in the browser from `render.yaml` (a Blueprint), so it is now
+the recommended host; Cloud Run stays supported (faster CPU, needs billing). Measured on
+the demo data: about 200 MB after start-up and 243 MB at the largest allowed simulation,
+inside the free plan's 512 MB with one worker; CPU-heavy requests take several times longer
+on the free plan's CPU share, which the background-job design (D-025) absorbs (heartbeat
+every 5 s, stale after 30 s). The free plan sleeps after 15 idle minutes, so the keep-alive
+workflow now runs every 10 minutes (free for a public repository; one always-on service
+fits the 750 free hours a month, so a second free Render service would not). Region
+Singapore, the closest Render region to the Tokyo Supabase project. Deploys wait for CI
+(`autoDeployTrigger: checksPass`) and only follow changes under `backend/`.
+Measured with the production image limited to 512 MB and 0.1 CPU: first start with all
+migrations 59 s, restart (waking from sleep) 58 s, 30-point frontier 2.7 s, default
+simulation 5.9 s, largest allowed simulation 47 s, memory under 180 MB, no OOM.

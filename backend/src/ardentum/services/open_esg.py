@@ -84,7 +84,7 @@ def parse_range(r: str | None) -> tuple[float, float] | None:
 def describe_transform(t: s.EsgTransformIn) -> str:
     direction = "higher is better" if t.higher_is_better else "lower is better"
     if t.method == "linear":
-        return f"linear scale {t.lower:g} to {t.upper:g} → 0-100, {direction}"
+        return f"linear scale from {t.lower:g} (score 0) to {t.upper:g} (score 100), {direction}"
     return f"percentile rank among matched companies, {direction}"
 
 
@@ -403,7 +403,7 @@ def overlay_assets(
             esg = EsgRecord(
                 score=float(e["score"]),
                 source=(
-                    f"WikiRate (CC BY 4.0): {metric['designer']} — {metric['title']}, {year} "
+                    f"WikiRate (CC BY 4.0): {metric['designer']}, {metric['title']}, {year} "
                     f"answer for {e['company']}; {method}"
                 ),
                 as_of=dt.date(year, 12, 31),
