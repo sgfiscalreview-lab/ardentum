@@ -263,3 +263,29 @@ Not built, and why:
 The build-time licence check allows LGPL only in build-only packages (sharp's libvips) and
 fails on any other copyleft or undeclared licence, so a dependency change cannot ship one
 unnoticed.
+
+## D-033 Audit fixes
+A full audit (quant, API, frontend, UX, security, deployment) found no wrong numbers; the
+fixes are about robustness and phones.
+* **Phone layout.** The header and eight page grids were wider than a 375 px screen (a
+  grid without `grid-cols-1` sizes its single column to its widest content). The header now
+  puts the menu on its own row below `sm`; `e2e/responsive.spec.ts` keeps it that way.
+* **Unexpected errors.** Starlette sends `Exception` handlers to its outermost middleware,
+  whose responses skip CORS, so browsers hid the message and reference and showed a
+  network error. `UnexpectedErrorMiddleware` answers inside the CORS layer. Caller-supplied
+  request ids are only echoed if they look like ids.
+* **Frontend resilience.** Styled `error.tsx`, `global-error.tsx` and `not-found.tsx`;
+  saved workspace settings are rebuilt on top of the current defaults; requests time out
+  after 90 s with a message about the API starting up; cancellations are not shown as errors.
+* **Numerics and resources.** One pooled HTTP client for data providers (clients were never
+  closed); the SCS fallback is capped at 20 s; a CVaR resting on fewer than 10 tail
+  observations carries a warning.
+* **Content-Security-Policy.** Written into `out/_headers` after each static build
+  (`scripts/add-csp.mjs`) because the allowed API and Supabase origins are build settings.
+  Next.js inlines scripts in exported pages and static hosting has no per-request nonce,
+  so `script-src` allows `'unsafe-inline'`; everything else is locked to the app's origins.
+* **Operations.** Preview deployments may call the API (`ARDENTUM_CORS_ORIGIN_REGEX` in
+  `render.yaml`); the guides recommend an outside uptime monitor because GitHub disables
+  schedules after 60 idle days, and note that one awake Render service uses ~744 of 750
+  free hours.
+

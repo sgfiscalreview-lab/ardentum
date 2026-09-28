@@ -17,6 +17,7 @@ import httpx
 import pandas as pd
 
 from ardentum.data.errors import DataProviderError
+from ardentum.data.http import shared_client
 from ardentum.quant.errors import InvalidInputError
 
 BASE_URL = "https://api.frankfurter.dev"
@@ -71,10 +72,14 @@ def check_currency(code: str) -> str:
 
 def timeseries_payload(local: str, base: str, client: httpx.Client | None = None) -> bytes:
     """All daily rates (units of ``base`` per 1 ``local``) since 1999, as raw JSON."""
-    c = client or httpx.Client(timeout=30.0, follow_redirects=True)
+    c = client or shared_client()
     url = f"{BASE_URL}/v1/{ECB_START.isoformat()}.."
     try:
-        resp = c.get(url, params={"base": check_currency(local), "symbols": check_currency(base)})
+        resp = c.get(
+            url,
+            params={"base": check_currency(local), "symbols": check_currency(base)},
+            timeout=30.0,
+        )
     except httpx.HTTPError as exc:
         raise DataProviderError(f"The exchange-rate service is unreachable: {exc}") from exc
     if resp.status_code != 200:

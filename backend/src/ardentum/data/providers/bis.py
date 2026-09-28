@@ -19,6 +19,7 @@ import httpx
 import pandas as pd
 
 from ardentum.data.errors import DataProviderError
+from ardentum.data.http import shared_client
 from ardentum.quant.errors import InvalidInputError
 
 BASE_URL = "https://stats.bis.org/api/v1/data/WS_CBPOL"
@@ -72,11 +73,12 @@ def area_for(currency: str) -> str:
 def rates_payload(currency: str, client: httpx.Client | None = None) -> bytes:
     """Daily policy rates of ``currency``'s central bank since 1999, as raw CSV."""
     area = area_for(currency)
-    c = client or httpx.Client(timeout=60.0, follow_redirects=True)
+    c = client or shared_client()
     try:
         resp = c.get(
             f"{BASE_URL}/D.{area}/all",
             params={"startPeriod": START.isoformat(), "detail": "dataonly", "format": "csv"},
+            timeout=60.0,
         )
     except httpx.HTTPError as exc:
         raise DataProviderError(f"The BIS statistics service is unreachable: {exc}") from exc

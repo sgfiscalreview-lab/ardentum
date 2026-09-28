@@ -6,6 +6,7 @@ Run with ``uvicorn ardentum.api.main:create_app --factory``.
 from __future__ import annotations
 
 import logging
+import re
 import secrets
 import time
 import uuid
@@ -35,6 +36,8 @@ from ardentum.db.models import Base
 from ardentum.db.session import make_engine
 
 API_PREFIX = "/api/v1"
+# A caller-supplied request id is echoed and logged only if it looks like one.
+_REQUEST_ID = re.compile(r"[A-Za-z0-9._-]{1,64}")
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -52,6 +55,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         openapi_url=f"{API_PREFIX}/openapi.json",
         redoc_url=None,
     )
+    # Innermost first: unexpected errors become JSON 500s that still pass through CORS.
+    app.add_middleware(errors.UnexpectedErrorMiddleware)
     app.add_middleware(GZipMiddleware, minimum_size=2048)
     app.add_middleware(
         CORSMiddleware,
@@ -124,7 +129,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def _context(
         request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
-        rid = request.headers.get("x-request-id") or uuid.uuid4().hex[:16]
+        given = request.headers.get("x-request-id", "")
+        rid = given if _REQUEST_ID.fullmatch(given) else uuid.uuid4().hex[:16]
         request.state.request_id = rid
         start = time.perf_counter()
         response = await call_next(request)

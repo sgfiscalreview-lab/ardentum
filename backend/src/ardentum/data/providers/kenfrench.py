@@ -29,6 +29,7 @@ import numpy as np
 import pandas as pd
 
 from ardentum.data.errors import DataProviderError
+from ardentum.data.http import shared_client
 from ardentum.data.models import AssetClass, AssetInfo, DataProvenance
 
 BASE_URL = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/"
@@ -206,9 +207,9 @@ def unzip_text(payload: bytes) -> str:
 
 def download(name: str, client: httpx.Client | None = None, timeout: float = 60.0) -> bytes:
     url = f"{BASE_URL}{name}_CSV.zip"
-    c = client or httpx.Client(timeout=timeout, follow_redirects=True)
+    c = client or shared_client()
     try:
-        resp = c.get(url)
+        resp = c.get(url, timeout=timeout)
     except httpx.HTTPError as exc:
         raise DataProviderError(f"The Kenneth French Data Library is unreachable: {exc}") from exc
     if resp.status_code != 200:

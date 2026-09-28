@@ -180,7 +180,7 @@ export default function EsgDataPage() {
         </Callout>
       )}
       <ErrorCallout error={error} />
-      <div className="grid gap-4 xl:grid-cols-[22rem_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[22rem_minmax(0,1fr)]">
         <aside className="space-y-4">
           <Card title="1. Metric" subtitle="Search WikiRate, e.g. “scope 1”, “water”, “women”, “fines”.">
             <form

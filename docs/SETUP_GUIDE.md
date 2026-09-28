@@ -393,6 +393,20 @@ you get that email, open the **Actions** tab > **keepalive** > **Enable workflow
 If Supabase pauses the project anyway, open it in the Supabase dashboard and click
 **Restore project**; nothing is lost.
 
+**Second pinger (recommended, 3 minutes).** If the GitHub job is ever switched off, the API
+sleeps and a week later the database pauses. A free outside monitor covers that and emails
+you when the site is down:
+
+1. Sign up at https://uptimerobot.com (free plan).
+2. **New monitor** > type **HTTP(s)** > **Friendly name** `Ardentum API` >
+   **URL** `https://ardentum-api.onrender.com/api/v1/health/db` (your `API_URL` plus
+   `/api/v1/health/db`) > **Monitoring interval** 5 minutes > **Create monitor**.
+3. Optionally add a second monitor for the website address.
+
+**Render's free hours.** The free plan includes 750 instance hours a month; keeping one API
+awake uses about 744. Do not run a second free service on the same Render account, or both
+will stop before the month ends.
+
 ## 10. Optional free data keys
 
 **FRED (3-month Treasury bill as the risk-free rate)**

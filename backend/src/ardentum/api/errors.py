@@ -13,6 +13,7 @@ import logging
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from ardentum.api.auth import AuthError
 from ardentum.data.errors import DataNotConfiguredError, DataProviderError
@@ -90,13 +91,50 @@ def install(app: FastAPI) -> None:
 
     @app.exception_handler(Exception)
     async def _unexpected(request: Request, _exc: Exception) -> JSONResponse:
-        rid = getattr(request.state, "request_id", "unknown")
-        log.exception("unhandled error on %s (request %s)", request.url.path, rid)
-        return JSONResponse(
-            _body(
-                "internal_error",
-                f"An unexpected error occurred (reference {rid}).",
-                {"request_id": rid},
-            ),
-            status_code=500,
-        )
+        # Last resort only: UnexpectedErrorMiddleware normally answers first (see below).
+        return unexpected_response(request)
+
+
+def unexpected_response(request: Request) -> JSONResponse:
+    """Generic 500 for an unexpected exception; logs the traceback with the request id."""
+    rid = getattr(request.state, "request_id", "unknown")
+    log.exception("unhandled error on %s (request %s)", request.url.path, rid)
+    return JSONResponse(
+        _body(
+            "internal_error",
+            f"An unexpected error occurred (reference {rid}).",
+            {"request_id": rid},
+        ),
+        status_code=500,
+    )
+
+
+class UnexpectedErrorMiddleware:
+    """Turns unexpected exceptions into the JSON 500 *inside* the CORS layer.
+
+    Starlette sends ``Exception`` handlers to its outermost error middleware, whose
+    responses skip CORS: browsers then block them and users see a network error instead
+    of the message and reference. Installed before CORSMiddleware, this answers first.
+    """
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        started = False
+
+        async def _send(message: Message) -> None:
+            nonlocal started
+            if message["type"] == "http.response.start":
+                started = True
+            await send(message)
+
+        try:
+            await self.app(scope, receive, _send)
+        except Exception:
+            if started:  # part of the response is already out; nothing sensible to add
+                raise
+            await unexpected_response(Request(scope))(scope, receive, send)

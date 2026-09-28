@@ -51,7 +51,7 @@ export default function ComparePage() {
         description="Side-by-side estimated (ex-ante) characteristics and historical behaviour of fixed-weight portfolios over the same window."
       />
       <SyntheticBanner dataset={ds.data} />
-      <div className="grid gap-4 xl:grid-cols-[20rem_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[20rem_minmax(0,1fr)]">
         <aside className="space-y-4">
           <Card title="Portfolios" subtitle="Choose 2–6. Save portfolios from the optimiser to compare more.">
             <div className="space-y-2">

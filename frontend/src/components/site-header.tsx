@@ -32,11 +32,12 @@ export function SiteHeader() {
   const next = choice === "system" ? "light" : choice === "light" ? "dark" : "system";
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-surface">
-      <div className="mx-auto flex h-12 max-w-[1600px] items-center gap-6 px-4">
-        <Link href="/" aria-label="Ardentum home">
+      {/* Below "sm" the menu moves to its own row so the header never exceeds the screen. */}
+      <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-6 px-4 sm:h-12 sm:flex-nowrap">
+        <Link href="/" aria-label="Ardentum home" className="flex h-12 items-center">
           <Logo />
         </Link>
-        <nav aria-label="Primary" className="flex items-center gap-1">
+        <nav aria-label="Primary" className="order-last -mx-1 flex w-full items-center gap-1 overflow-x-auto pb-2 sm:order-none sm:mx-0 sm:w-auto sm:pb-0">
           {NAV.map((n) => {
             const active = pathname === n.href || pathname.startsWith(`${n.href}/`);
             return (
@@ -45,7 +46,7 @@ export function SiteHeader() {
                 href={n.href}
                 aria-current={active ? "page" : undefined}
                 className={cx(
-                  "rounded-md px-2.5 py-1.5 text-sm",
+                  "whitespace-nowrap rounded-md px-2.5 py-1.5 text-sm",
                   active ? "bg-surface-2 font-medium text-ink" : "text-ink-2 hover:text-ink",
                 )}
               >

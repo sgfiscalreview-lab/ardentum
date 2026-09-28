@@ -246,6 +246,8 @@ export function ErrorCallout({ error }: { error: Error | null }) {
           unauthorized: "Sign in required",
           not_configured: "Not available on this server",
           network_error: "Connection problem",
+          timeout: "The server is slow to answer",
+          internal_error: "Unexpected server error",
           undefined_metric: "Metric undefined",
           rate_limited: "Too many requests",
         }[error.type] ?? "Something went wrong"

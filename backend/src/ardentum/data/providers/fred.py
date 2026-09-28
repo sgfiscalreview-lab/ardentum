@@ -12,11 +12,13 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+from typing import Any
 
 import httpx
 import pandas as pd
 
 from ardentum.data.errors import DataNotConfiguredError, DataProviderError
+from ardentum.data.http import shared_client
 
 BASE_URL = "https://api.stlouisfed.org"
 DEFAULT_SERIES = "DGS3MO"
@@ -35,12 +37,16 @@ class FredClient:
             raise DataNotConfiguredError("FRED is not configured: set FRED_API_KEY.")
         self._key = api_key
         self._base = base_url.rstrip("/")
-        self._client = client or httpx.Client(timeout=timeout)
+        self._client = client or shared_client()
+        self._timeout = timeout
+
+    def _get(self, url: str, **kwargs: Any) -> httpx.Response:
+        return self._client.get(url, timeout=self._timeout, **kwargs)
 
     def series_payload(self, series_id: str, start: dt.date = dt.date(1980, 1, 1)) -> bytes:
         """Raw JSON observations from ``start`` to today (for caching)."""
         try:
-            resp = self._client.get(
+            resp = self._get(
                 f"{self._base}/fred/series/observations",
                 params={
                     "series_id": series_id,
@@ -58,7 +64,7 @@ class FredClient:
     def series(self, series_id: str, start: dt.date, end: dt.date) -> pd.Series:
         """Observations as decimal fractions (percent / 100)."""
         try:
-            resp = self._client.get(
+            resp = self._get(
                 f"{self._base}/fred/series/observations",
                 params={
                     "series_id": series_id,

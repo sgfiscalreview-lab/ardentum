@@ -67,6 +67,41 @@ export const DEFAULT_STATE: WorkspaceState = {
   version: STATE_VERSION,
 };
 
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+
+const isStringList = (v: unknown): v is string[] => Array.isArray(v) && v.every((x) => typeof x === "string");
+
+/**
+ * Rebuilds saved settings on top of the current defaults, so fields added since they were
+ * saved get their default values and malformed parts fall back instead of crashing a page.
+ * Returns null when the data is not a workspace of this version.
+ */
+export function restoreState(raw: unknown): WorkspaceState | null {
+  if (!isRecord(raw) || raw.version !== STATE_VERSION) return null;
+  const d = DEFAULT_STATE;
+  const universe = { ...d.universe, ...(isRecord(raw.universe) ? raw.universe : {}) } as UniverseSelection;
+  if (typeof universe.dataset_id !== "string" || !isStringList(universe.tickers) || universe.tickers.length === 0) {
+    return { ...d };
+  }
+  const constraints = { ...d.constraints, ...(isRecord(raw.constraints) ? raw.constraints : {}) } as ConstraintsIn;
+  if (!isRecord(constraints.asset_bounds)) constraints.asset_bounds = {};
+  if (!Array.isArray(constraints.sector_limits)) constraints.sector_limits = [];
+  if (!isStringList(constraints.excluded_assets)) constraints.excluded_assets = [];
+  if (!isStringList(constraints.excluded_sectors)) constraints.excluded_sectors = [];
+  const working = isRecord(raw.working) && isRecord(raw.working.weights) ? (raw.working as unknown as WorkingPortfolio) : null;
+  return {
+    universe,
+    estimation: { ...d.estimation, ...(isRecord(raw.estimation) ? raw.estimation : {}) } as EstimationSettings,
+    objective: { ...d.objective, ...(isRecord(raw.objective) ? raw.objective : {}) } as ObjectiveIn,
+    constraints,
+    working,
+    requests: isRecord(raw.requests) ? (raw.requests as WorkspaceState["requests"]) : {},
+    version: STATE_VERSION,
+  };
+}
+
 type Action =
   | { type: "universe"; value: Partial<UniverseSelection> }
   | { type: "estimation"; value: Partial<EstimationSettings> }
@@ -132,8 +167,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       if (raw) {
-        const parsed = JSON.parse(raw) as WorkspaceState;
-        if (parsed.version === STATE_VERSION) dispatch({ type: "hydrate", value: parsed });
+        const restored = restoreState(JSON.parse(raw));
+        if (restored) dispatch({ type: "hydrate", value: restored });
       }
     } catch {
       /* corrupted or unavailable storage: start from defaults */

@@ -54,7 +54,7 @@ export default function OptimisePage() {
         description="Mean–variance and tail-risk optimisation under explicit constraints. Every result lists the binding constraints, the risk contributions and the reason each asset is or is not held."
       />
       <SyntheticBanner dataset={ds.data} />
-      <div className="grid gap-4 xl:grid-cols-[20rem_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[20rem_minmax(0,1fr)]">
         <aside className="space-y-4">
           <Card title="Objective">
             <ObjectivePanel value={state.objective} onChange={setObjective} />

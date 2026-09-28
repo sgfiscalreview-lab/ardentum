@@ -133,3 +133,21 @@ def test_esg_tilt_warning_and_constraints_apply() -> None:
         assert p.weights.max() <= 0.5 + 1e-8
         assert p.esg_score is not None
         assert p.esg_score >= 60.0 - 1e-6
+
+
+def test_thin_tail_warning() -> None:
+    from ardentum.quant.optimisation import cvar_tail_warning
+
+    assert cvar_tail_warning(0.95, 400) is None  # 20 tail observations
+    assert cvar_tail_warning(0.95, 200) is None  # exactly 10
+    note = cvar_tail_warning(0.99, 400)  # 4 tail observations
+    assert note is not None
+    assert "4.0 of 400" in note
+    est = estimate(_scenarios(t=150), periods_per_year=252)
+    # 97.5% of 150 observations leaves about 3.75 in the tail.
+    res = optimise(est, OptimisationRequest(Objective.MIN_CVAR, 0.0, cvar_confidence=0.975))
+    assert any("CVaR averages only about 3.8" in w for w in res.warnings)
+    wide = optimise(est, OptimisationRequest(Objective.MIN_CVAR, 0.0, cvar_confidence=0.9))
+    assert not any("CVaR averages" in w for w in wide.warnings)
+    front = mean_cvar_frontier(est, PortfolioConstraints(), n_points=5, confidence=0.975)
+    assert sum("CVaR averages" in w for w in front.warnings) == 1
