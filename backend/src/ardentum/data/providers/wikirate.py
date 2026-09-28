@@ -29,6 +29,7 @@ from typing import Any
 import httpx
 
 from ardentum.data.errors import DataProviderError
+from ardentum.data.http import shared_client
 
 BASE_URL = "https://wikirate.org"
 LICENSE = "WikiRate.org, licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0)"
@@ -190,14 +191,16 @@ class WikiRateClient:
         if api_key:
             headers["X-API-Key"] = api_key
         self._base = base_url.rstrip("/")
-        self._client = client or httpx.Client(timeout=timeout, follow_redirects=True)
+        self._client = client or shared_client()
+        self._timeout = timeout
         self._headers = headers
+
+    def _get(self, url: str, **kwargs: Any) -> httpx.Response:
+        return self._client.get(url, timeout=self._timeout, **kwargs)
 
     def get(self, path: str, params: list[tuple[str, str]]) -> bytes:
         try:
-            resp = self._client.get(
-                f"{self._base}{path}", params=tuple(params), headers=self._headers
-            )
+            resp = self._get(f"{self._base}{path}", params=tuple(params), headers=self._headers)
         except httpx.HTTPError as exc:
             raise DataProviderError(f"WikiRate is unreachable: {exc}") from exc
         if resp.status_code in (401, 403):

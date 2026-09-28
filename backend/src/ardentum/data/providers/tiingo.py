@@ -20,6 +20,7 @@ import httpx
 import pandas as pd
 
 from ardentum.data.errors import DataNotConfiguredError, DataProviderError
+from ardentum.data.http import shared_client
 from ardentum.data.models import AssetInfo, DataProvenance, PriceData
 
 BASE_URL = "https://api.tiingo.com"
@@ -43,7 +44,8 @@ class TiingoProvider:
             )
         self._key = api_key
         self._base = base_url.rstrip("/")
-        self._client = client or httpx.Client(timeout=timeout)
+        self._client = client or shared_client()
+        self._timeout = timeout
 
     def _get(self, path: str, params: dict[str, str] | None = None) -> Any:
         url = f"{self._base}{path}"
@@ -51,7 +53,7 @@ class TiingoProvider:
         last: Exception | None = None
         for _ in range(2):
             try:
-                resp = self._client.get(url, params=params, headers=headers)
+                resp = self._client.get(url, params=params, headers=headers, timeout=self._timeout)
             except httpx.HTTPError as exc:
                 last = exc
                 continue

@@ -139,7 +139,10 @@ remains possible but is not needed for the free stack.
 GitHub → repository → Settings → Secrets and variables → Actions → **Variables** → add
 `API_URL` = the Render or Cloud Run URL. The `keepalive` workflow pings `/api/v1/health/db`
 every 5 minutes, which keeps the Supabase project from pausing and a Render free instance
-from sleeping.
+from sleeping. GitHub disables scheduled workflows after 60 days without repository
+activity, so also add an outside monitor (e.g. UptimeRobot, free, 5-minute HTTP check of
+the same URL) as a second pinger and down alert. Keeping one Render instance awake uses
+about 744 of the free plan's 750 monthly hours: one free service per Render account.
 
 ## 5. Optional custom domain
 

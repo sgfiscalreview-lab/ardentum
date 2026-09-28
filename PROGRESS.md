@@ -43,12 +43,13 @@ Status as of 2026-09-26.
 | Render Blueprint (`render.yaml`, no card) as the recommended API host; keep-alive every 10 minutes | ✅ | D-028; memory measured at 243 MB peak of 512 MB |
 | Live smoke test of the deployment (`scripts/smoke.py`, daily workflow); keep-alive defaults to the production API | ✅ | checked locally against a production-mode API and a Pages-like server |
 | Legal and compliance review (D-032): Cookie Policy with a clear-settings button, Licences page and generated third-party notices (build fails on undeclared or copyleft licences), Privacy Policy with legal bases, transfers, retention, rights and deletion requests, Terms with age limit and fees/refunds, operator address and registration, age confirmation at sign-in, IP addresses hashed in rate-limit counters, table view for the last chart without one | ✅ | `tests/api/test_ratelimit.py`, E2E legal flow, accessibility checks on the new pages |
+| Audit fixes (D-033): phone layout (header, page grids), CORS on unexpected 500s, error and 404 pages, saved-settings upgrade, request timeout with a clear message, pooled HTTP client, SCS time cap, thin-tail CVaR warning, Content-Security-Policy, preview CORS, uptime-monitor docs | ✅ | `e2e/responsive.spec.ts`, `tests/api/test_unexpected_errors.py`, `src/lib/workspace.test.ts`, CVaR tail test; static build checked in Chromium with the policy applied |
 | Database URLs copied from Supabase's ORM snippets (`?pgbouncer=true`) accepted | ✅ | `tests/data/test_db_url.py`; migrations checked with such a URL on PostgreSQL |
 
 ## Test status
-- Backend: 342 tests passing (SQLite); API suite (82 tests) also passing on PostgreSQL 16; 93% line coverage; ruff clean; mypy --strict clean. Migrations 0001–0005 upgrade, `alembic check` and downgrade cleanly on PostgreSQL.
+- Backend: 345 tests passing (SQLite); API suite (85 tests) also passing on PostgreSQL 16; 93% line coverage; ruff clean; mypy --strict clean. Migrations 0001–0005 upgrade, `alembic check` and downgrade cleanly on PostgreSQL.
 - Frontend: ESLint (incl. React Compiler rules) clean; `tsc --strict` clean; Vitest unit tests passing.
-- End-to-end: 41 Playwright tests (14 workflows incl. open ESG data, composite scores, CVaR frontier, currency hedging, legal pages and account deletion, 27 accessibility checks over 13 pages in light and dark) passing; Playwright starts the API, the web app and a local WikiRate stand-in.
+- End-to-end: 44 Playwright tests (14 workflows incl. open ESG data, composite scores, CVaR frontier, currency hedging, legal pages and account deletion, 27 accessibility checks over 13 pages in light and dark, 3 phone-width layout checks) passing; Playwright starts the API, the web app and a local WikiRate stand-in.
 
 ## Performance (dev container, 14 assets, 10 years daily)
 | Request | Time |

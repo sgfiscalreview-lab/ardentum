@@ -37,6 +37,7 @@ from ardentum.quant.optimisation import (
     _max_return,
     _solve,
     _variance,
+    cvar_tail_warning,
     optimise,
 )
 from ardentum.quant.portfolio import portfolio_volatility
@@ -249,6 +250,8 @@ def mean_cvar_frontier(
         targets[-1] = r_hi - 1e-7 * max(r_hi - r_lo, 1e-6)
 
     t_obs = scen.shape[0]
+    if tail_note := cvar_tail_warning(confidence, t_obs):
+        warnings.append(tail_note)
     w = cp.Variable(comp.n)
     alpha = cp.Variable()
     u = cp.Variable(t_obs, nonneg=True)

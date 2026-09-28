@@ -36,7 +36,17 @@ const baseUrl =
   process.env.NEXT_PUBLIC_API_BASE?.replace(/\/$/, "") ??
   (typeof window === "undefined" ? (process.env.API_URL ?? "http://localhost:8000") : "");
 
-export const api = createClient<paths>({ baseUrl });
+// Longest a single request may take. The free API host can need about a minute to start
+// after being idle; beyond this the request is abandoned with a clear message.
+export const REQUEST_TIMEOUT_MS = 90_000;
+
+function withTimeout(request: Request): Promise<Response> {
+  // Older browsers without these helpers still work, just without the time limit.
+  if (typeof AbortSignal.timeout !== "function" || typeof AbortSignal.any !== "function") return fetch(request);
+  return fetch(request, { signal: AbortSignal.any([request.signal, AbortSignal.timeout(REQUEST_TIMEOUT_MS)]) });
+}
+
+export const api = createClient<paths>({ baseUrl, fetch: withTimeout });
 api.use(authMiddleware);
 
 interface ErrorEnvelope {
@@ -50,9 +60,19 @@ export async function unwrap<T>(
   let result: { data?: T; error?: unknown; response: Response };
   try {
     result = await promise;
-  } catch {
+  } catch (e) {
+    const name = e instanceof Error ? e.name : "";
+    // Cancelled by the caller (e.g. leaving the page): not an error to show.
+    if (name === "AbortError") throw e;
+    if (name === "TimeoutError") {
+      throw new ApiError(
+        `The Ardentum API did not answer within ${REQUEST_TIMEOUT_MS / 1000} seconds. It may be starting up after a quiet period; try again in a minute.`,
+        0,
+        "timeout",
+      );
+    }
     throw new ApiError(
-      "Cannot reach the Ardentum API. Check your connection and that the server is running.",
+      "Cannot reach the Ardentum API. If it has been idle it can take up to a minute to start; check your connection and try again shortly.",
       0,
       "network_error",
     );
@@ -86,7 +106,7 @@ export async function runJob<T>(kind: JobKind, request: unknown, signal?: AbortS
       job = await unwrap(api.GET("/api/v1/jobs/{job_id}", { params: { path: { job_id: job.id }, query: { wait: 20 } }, signal }));
       failures = 0;
     } catch (e) {
-      if (signal?.aborted || !(e instanceof ApiError) || e.type !== "network_error" || ++failures > 3) throw e;
+      if (signal?.aborted || !(e instanceof ApiError) || e.status !== 0 || ++failures > 3) throw e;
       await sleep(1000 * failures);
     }
   }

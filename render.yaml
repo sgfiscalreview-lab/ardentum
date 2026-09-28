@@ -27,9 +27,13 @@ services:
         value: "1"
       - key: ARDENTUM_RATE_LIMIT_STORE
         value: database
-      # Random key for hashing client IP addresses in rate-limit counters (never stored raw)
+      # Random key for hashing client IP addresses in rate-limit counters (never stored raw).
+      # Created when Render syncs this Blueprint; until then each start draws its own key.
       - key: ARDENTUM_RATE_LIMIT_SECRET
         generateValue: true
+      # Cloudflare preview builds (<hash>.<project>.pages.dev) may call the API too.
+      - key: ARDENTUM_CORS_ORIGIN_REGEX
+        value: ^https://[a-z0-9-]+\.ardentum-frontend\.pages\.dev$
       # One worker fits the free plan's 512 MB (about 250 MB at peak).
       - key: WEB_CONCURRENCY
         value: "1"

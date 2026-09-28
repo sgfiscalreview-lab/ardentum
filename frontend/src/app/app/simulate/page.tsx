@@ -76,7 +76,7 @@ export default function SimulatePage() {
         description="Many simulated paths for a portfolio's value under the stated assumptions, summarised as percentile ranges. Each run is reproducible: the seed is shown with every result."
       />
       <SyntheticBanner dataset={ds.data} />
-      <div className="grid gap-4 xl:grid-cols-[20rem_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[20rem_minmax(0,1fr)]">
         <aside className="space-y-4">
           <Card title="Portfolio">
             <PortfolioPicker value={pick} onChange={setPick} />

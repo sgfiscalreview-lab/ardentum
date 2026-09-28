@@ -69,7 +69,7 @@ export default function BacktestPage() {
         description="Replays a strategy through history. At each rebalance the model sees only data up to that date, re-estimates inputs, and trades at that day's close. Performance is measured only after the first estimation window."
       />
       <SyntheticBanner dataset={ds.data} />
-      <div className="grid gap-4 xl:grid-cols-[20rem_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[20rem_minmax(0,1fr)]">
         <aside className="space-y-4">
           <Card title="Strategy">
             <div className="space-y-3">

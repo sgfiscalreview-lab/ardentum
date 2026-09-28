@@ -66,7 +66,7 @@ export default function Home() {
         <p className="mt-2 max-w-2xl text-sm text-ink-2">Screenshots of the application running on the synthetic demo dataset.</p>
         <div className="mt-8 space-y-14">
           {SHOTS.map((s) => (
-            <article key={s.id} className="grid gap-5 lg:grid-cols-[18rem_minmax(0,1fr)] lg:gap-10">
+            <article key={s.id} className="grid grid-cols-1 gap-5 lg:grid-cols-[18rem_minmax(0,1fr)] lg:gap-10">
               <div>
                 <h3 className="text-base font-semibold text-ink">{s.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-ink-2">{s.body}</p>

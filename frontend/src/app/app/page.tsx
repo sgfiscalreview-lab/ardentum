@@ -51,7 +51,7 @@ export default function UniversePage() {
       />
       <SyntheticBanner dataset={ds.data} />
       <ErrorCallout error={datasets.error ?? ds.error} />
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="space-y-4">
           <Card title="Dataset" subtitle="Where prices (and sector/ESG metadata) come from.">
             <div className="grid gap-2 sm:grid-cols-2">

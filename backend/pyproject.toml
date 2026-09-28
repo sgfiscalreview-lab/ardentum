@@ -33,6 +33,7 @@ dev = [
   "scikit-learn>=1.5",
   "respx>=0.21",
   "pyportfolioopt>=1.6.0",
+  "httpx2>=2.13.1",
 ]
 
 [build-system]

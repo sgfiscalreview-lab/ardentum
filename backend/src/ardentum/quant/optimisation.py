@@ -433,7 +433,23 @@ def _compile(
 
 # --------------------------------------------------------------------------- solve
 
+MIN_TAIL_OBSERVATIONS = 10
+
+
+def cvar_tail_warning(confidence: float, observations: int) -> str | None:
+    """Warning when a historical CVaR averages over too few observations to be stable."""
+    tail = (1.0 - confidence) * observations
+    if tail >= MIN_TAIL_OBSERVATIONS:
+        return None
+    return (
+        f"The {confidence:.1%} CVaR averages only about {tail:.1f} of {observations} "
+        "observations, so one or two extreme periods decide it. Lengthen the window, use a "
+        "higher data frequency or lower the confidence level for a steadier estimate."
+    )
+
+
 _SOLVERS: tuple[str, ...] = ("CLARABEL", "SCS")
+SCS_TIME_LIMIT = 20.0  # seconds
 
 
 def _solve(problem: cp.Problem, what: str) -> str:
@@ -442,7 +458,11 @@ def _solve(problem: cp.Problem, what: str) -> str:
     for solver in _SOLVERS:
         try:
             if solver == "SCS":
-                problem.solve(solver=solver, eps=1e-9, max_iters=200_000)
+                # First-order fallback: tight tolerance, but capped so a hard problem fails
+                # with a clear error instead of tying up a small server for minutes.
+                problem.solve(
+                    solver=solver, eps=1e-9, max_iters=100_000, time_limit_secs=SCS_TIME_LIMIT
+                )
             else:
                 problem.solve(solver=solver)
         except (cp.error.SolverError, ArithmeticError, ValueError):
@@ -744,6 +764,10 @@ def optimise(
 
     elif obj is Objective.MIN_CVAR:
         wv, tagged, solver, cvar_diag, checks = _min_cvar(comp, request)
+        if comp.scenarios is not None and (
+            tail_note := cvar_tail_warning(request.cvar_confidence, comp.scenarios.shape[0])
+        ):
+            warnings.append(tail_note)
         raw = wv.value
         shadow_unit = "one-period CVaR"
         extra += cvar_diag

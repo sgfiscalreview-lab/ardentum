@@ -36,7 +36,7 @@ export default function EsgPage() {
         description="ESG settings change the optimisation itself. This page solves the same problem with and without them and reports the difference in return, risk, Sharpe ratio, composition and tracking error."
       />
       <SyntheticBanner dataset={ds.data} />
-      <div className="grid gap-4 xl:grid-cols-[20rem_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[20rem_minmax(0,1fr)]">
         <aside className="space-y-4">
           <Card title="Objective">
             <ObjectivePanel value={state.objective} onChange={setObjective} />

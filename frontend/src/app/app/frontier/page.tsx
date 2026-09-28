@@ -43,7 +43,7 @@ export default function FrontierPage() {
         description="Each point is the lowest-risk portfolio for a given expected return under your constraints, with risk measured as volatility or as CVaR (the average loss on the worst days). Portfolios below the curve are dominated; the frontier is an estimate and moves with the inputs."
       />
       <SyntheticBanner dataset={ds.data} />
-      <div className="grid gap-4 xl:grid-cols-[20rem_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[20rem_minmax(0,1fr)]">
         <aside className="space-y-4">
           <Card title="Risk measure">
             <Tabs<Measure>
