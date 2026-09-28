@@ -2,7 +2,7 @@ name: Keep free tiers awake
 
 # Supabase pauses free projects after 7 days without database activity, and Render's
 # free plan stops the API after 15 idle minutes (the next visitor then waits about a
-# minute). A request to /health/db (which runs SELECT 1) every 10 minutes prevents both;
+# minute). A request to /health/db (which runs SELECT 1) every 5 minutes prevents both;
 # runs are free for public repositories and cost Cloud Run nothing noticeable. The
 # repository variable API_URL (Settings > Secrets and variables > Actions > Variables)
 # overrides the default address below.
@@ -10,7 +10,9 @@ name: Keep free tiers awake
 # the workflow on the Actions tab if that happens.
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    # GitHub starts scheduled runs late under load (10-minute schedules arrive every
+    # 13 to 17 minutes), so ask for every 5 minutes to stay inside Render's 15.
+    - cron: "*/5 * * * *"
   workflow_dispatch:
 
 permissions: {}
