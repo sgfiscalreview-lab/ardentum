@@ -38,6 +38,7 @@ COMPUTE_PATHS = frozenset(
         "/api/v1/analytics",
         "/api/v1/optimise",
         "/api/v1/frontier",
+        "/api/v1/frontier/cvar",
         "/api/v1/esg/impact",
         "/api/v1/montecarlo",
         "/api/v1/backtest",

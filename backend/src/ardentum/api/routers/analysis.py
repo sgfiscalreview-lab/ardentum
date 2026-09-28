@@ -30,6 +30,13 @@ def frontier(req: s.FrontierRequest, service: MarketService) -> s.FrontierRespon
     return analysis.run_frontier(service, req)
 
 
+@router.post("/frontier/cvar", response_model=s.CvarFrontierResponse)
+def cvar_frontier(req: s.CvarFrontierRequest, service: MarketService) -> s.CvarFrontierResponse:
+    """Mean-CVaR efficient frontier (historical expected shortfall), with the mean-variance
+    frontier's portfolios measured by the same CVaR for comparison."""
+    return analysis.run_cvar_frontier(service, req)
+
+
 @router.post("/esg/impact", response_model=s.EsgImpactResponse)
 def esg_impact(req: s.EsgImpactRequest, service: MarketService) -> s.EsgImpactResponse:
     """Effect of ESG constraints on return, risk, Sharpe ratio and composition."""

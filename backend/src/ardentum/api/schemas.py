@@ -51,7 +51,14 @@ class UniverseSelection(RequestModel):
     base_currency: str | None = Field(
         None,
         pattern=r"^[A-Z]{3}$",
-        description="Express all prices in this ISO 4217 currency (unhedged, ECB rates).",
+        description="Express all prices in this ISO 4217 currency (ECB rates).",
+    )
+    currency_hedged: bool = Field(
+        False,
+        description=(
+            "Hedge foreign-currency assets back to the base currency with a rolling "
+            "one-period forward priced from central-bank policy rates (BIS)."
+        ),
     )
 
     @field_validator("tickers")
@@ -194,6 +201,16 @@ class FrontierRequest(RequestModel):
     constraints: ConstraintsIn = Field(default_factory=ConstraintsIn)
     n_points: int = Field(30, ge=5, le=100)
     compare_unconstrained: bool = True
+
+
+class CvarFrontierRequest(RequestModel):
+    universe: UniverseSelection
+    estimation: EstimationSettings = Field(default_factory=EstimationSettings)
+    constraints: ConstraintsIn = Field(default_factory=ConstraintsIn)
+    n_points: int = Field(20, ge=5, le=50)
+    cvar_confidence: float = Field(
+        0.95, ge=0.5, le=0.995, description="Confidence level of the historical CVaR."
+    )
 
 
 class EsgImpactRequest(RequestModel):
@@ -580,6 +597,41 @@ class FrontierResponse(ResponseModel):
     excluded_unscored: list[str]
 
 
+class CvarFrontierPointOut(ResponseModel):
+    expected_return: float
+    volatility: float
+    var: float = Field(description="One-period historical VaR (loss).")
+    cvar: float = Field(description="One-period historical CVaR (average loss beyond VaR).")
+    sharpe_ratio: float | None
+    esg_score: float | None
+    weights: dict[str, float]
+
+
+class CvarFrontierAssetOut(ResponseModel):
+    ticker: str
+    expected_return: float
+    var: float
+    cvar: float
+    sector: str | None
+
+
+class CvarFrontierResponse(ResponseModel):
+    points: list[CvarFrontierPointOut]
+    min_cvar: CvarFrontierPointOut
+    mean_variance_points: list[CvarFrontierPointOut] = Field(
+        description="The mean-variance frontier's portfolios, measured by the same CVaR."
+    )
+    assets: list[CvarFrontierAssetOut]
+    cvar_confidence: float
+    frequency: str = Field(description="Period of VaR and CVaR: daily, weekly or monthly.")
+    observations: int
+    risk_free_rate: float
+    warnings: list[str]
+    estimation: EstimationOut
+    data: DataWindowOut
+    excluded_unscored: list[str]
+
+
 class WeightChangeOut(ResponseModel):
     ticker: str
     name: str
@@ -797,7 +849,14 @@ class ErrorOut(ResponseModel):
 # ----------------------------------------------------------------------------- jobs
 
 JobKind = Literal[
-    "analytics", "optimise", "frontier", "esg_impact", "montecarlo", "backtest", "compare"
+    "analytics",
+    "optimise",
+    "frontier",
+    "cvar_frontier",
+    "esg_impact",
+    "montecarlo",
+    "backtest",
+    "compare",
 ]
 
 
@@ -869,6 +928,16 @@ class OverlayPreviewRequest(RequestModel):
     )
 
 
+class CompositePartOut(ResponseModel):
+    metric_id: int
+    metric_title: str
+    year: int | None
+    raw_value: float | None
+    score: float | None
+    answer_url: str | None
+    status: Literal["scored", "no_company", "no_answer", "not_numeric"]
+
+
 class OverlayEntryOut(ResponseModel):
     ticker: str
     asset_name: str
@@ -880,8 +949,11 @@ class OverlayEntryOut(ResponseModel):
     raw_value: float | None
     score: float | None
     answer_url: str | None
-    status: Literal["scored", "no_company", "no_answer", "not_numeric"]
+    status: Literal["scored", "incomplete", "no_company", "no_answer", "not_numeric"]
     note: str
+    parts: list[CompositePartOut] | None = Field(
+        None, description="Composite overlays: the score from each metric."
+    )
 
 
 class OverlayPreviewOut(ResponseModel):
@@ -895,9 +967,56 @@ class OverlayPreviewOut(ResponseModel):
     attribution: str
 
 
+class CompositeComponentIn(RequestModel):
+    metric_id: int = Field(gt=0)
+    weight: float = Field(gt=0.0, le=100.0, description="Relative weight; normalised to sum to 1.")
+    year: int | None = Field(None, ge=1990, le=2100, description="Latest answer up to this year.")
+    transform: EsgTransformIn = Field(default_factory=EsgTransformIn)
+
+
+class CompositePreviewRequest(RequestModel):
+    dataset_id: str = Field(min_length=1, max_length=64)
+    tickers: list[Ticker] = Field(min_length=1, max_length=200)
+    components: list[CompositeComponentIn] = Field(min_length=2, max_length=6)
+    company_overrides: dict[Ticker, int] = Field(
+        default_factory=dict, description="Ticker -> WikiRate company id, confirmed by the user."
+    )
+
+    @field_validator("components")
+    @classmethod
+    def _distinct(cls, v: list[CompositeComponentIn]) -> list[CompositeComponentIn]:
+        if len({c.metric_id for c in v}) != len(v):
+            raise ValueError("Each metric can appear only once in a composite.")
+        return v
+
+
+class CompositeComponentOut(ResponseModel):
+    metric: OpenMetricOut
+    weight: float = Field(description="Normalised weight (the weights sum to 1).")
+    year: int | None
+    transform: EsgTransformIn
+    scored: int = Field(description="Assets with a score for this metric.")
+
+
+class CompositePreviewOut(ResponseModel):
+    components: list[CompositeComponentOut]
+    entries: list[OverlayEntryOut]
+    scored: int
+    warnings: list[str] = Field(default_factory=list)
+    license: str
+    attribution: str
+
+
 class OverlaySaveIn(RequestModel):
     name: str = Field(min_length=1, max_length=120)
-    preview: OverlayPreviewRequest
+    preview: OverlayPreviewRequest | None = None
+    composite: CompositePreviewRequest | None = None
+
+    @model_validator(mode="after")
+    def _one_kind(self) -> OverlaySaveIn:
+        if (self.preview is None) == (self.composite is None):
+            raise ValueError("Give either a single-metric preview or a composite, not both.")
+        return self
 
 
 class OverlayOut(ResponseModel):
@@ -905,8 +1024,11 @@ class OverlayOut(ResponseModel):
     name: str
     dataset_id: str
     source: str
-    metric: OpenMetricOut
-    transform: EsgTransformIn
+    metric: OpenMetricOut | None = Field(description="Single-metric overlays only.")
+    transform: EsgTransformIn | None = Field(description="Single-metric overlays only.")
+    components: list[CompositeComponentOut] | None = Field(
+        None, description="Composite overlays: the metrics and their weights."
+    )
     year: int | None
     entries: list[OverlayEntryOut]
     scored: int

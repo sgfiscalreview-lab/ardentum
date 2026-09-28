@@ -83,7 +83,7 @@ pooler URL from step 1.3, and grant the Cloud Run service account *Secret Access
 | `ARDENTUM_ENV` | `production` (enforces Supabase auth, PostgreSQL and explicit CORS) |
 | `ARDENTUM_DATABASE_URL` | Supabase transaction-pooler URL (secret) |
 | `ARDENTUM_AUTH_MODE` / `ARDENTUM_SUPABASE_URL` | `supabase` / project URL |
-| `ARDENTUM_CORS_ORIGINS` | `["https://<project>.pages.dev"]` plus any custom domain |
+| `ARDENTUM_CORS_ORIGINS` | `["https://<project>.pages.dev"]` plus any custom domain (a plain comma-separated list also works; trailing slashes are ignored) |
 | `ARDENTUM_CORS_ORIGIN_REGEX` | optional, for preview deployments, e.g. `^https://[a-z0-9-]+\.<project>\.pages\.dev$` |
 | `ARDENTUM_TRUSTED_PROXY_HOPS` | `1` on Cloud Run and Render (client IP for rate limits); `2` behind an extra load balancer |
 | `ARDENTUM_RATE_LIMIT_STORE` | `database`: limits shared by all instances |

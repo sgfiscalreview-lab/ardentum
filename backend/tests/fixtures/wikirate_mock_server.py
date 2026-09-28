@@ -6,6 +6,7 @@ it with ``ARDENTUM_WIKIRATE_BASE_URL=http://localhost:8765``.
 
 from __future__ import annotations
 
+import json
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
@@ -22,6 +23,7 @@ from tests.fixtures.wikirate import (
 )
 
 MID = 826615
+MID2 = 900001  # a second numeric metric, for composite scores
 COMPANIES = [
     company_item(100, "Apple Inc.", ["US0378331005"]),
     company_item(200, "Adidas AG", ["DE000A1EWWW0"], "Germany"),
@@ -32,10 +34,16 @@ COMPANIES = [
 def respond(path: str, query: dict[str, list[str]]) -> bytes | None:
     if path == "/Metrics.json":
         return metrics_payload(
-            metric_item(MID), metric_item(1, value_type="Category", title="Report available")
+            metric_item(MID),
+            metric_item(MID2, title="Women on the board", unit="%"),
+            metric_item(1, value_type="Category", title="Report available"),
         )
     if path == f"/~{MID}.json":
         return metric_card(MID)
+    if path == f"/~{MID2}.json":
+        card = json.loads(metric_card(MID2))
+        card["title"] = "Women on the board"
+        return json.dumps(card).encode()
     if path == "/~300.json":
         return company_card(300, "Puma")
     if path == "/Companies.json":
@@ -56,6 +64,12 @@ def respond(path: str, query: dict[str, list[str]]) -> bytes | None:
             answer_item("Apple Inc.", 2023, "800"),
             answer_item("Adidas AG", 2023, "Unknown"),
             answer_item("Puma", 2023, "400"),
+        )
+    if path == f"/~{MID2}+Answers.json":
+        return answers_payload(
+            answer_item("Apple Inc.", 2023, "40", MID2),
+            answer_item("Adidas AG", 2023, "35", MID2),
+            answer_item("Puma", 2023, "20", MID2),
         )
     return None
 

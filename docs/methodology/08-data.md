@@ -13,6 +13,7 @@ Where Ardentum's data comes from, how it is checked, and how the synthetic demo 
 | **FRED (risk-free rate)** | When a free API key is configured | 3-month Treasury bill yield (DGS3MO), U.S. government data published by the Federal Reserve Bank of St. Louis. |
 | **Fama-French RF (risk-free rate)** | Built in | 1-month Treasury bill return, from the Kenneth French factors file. |
 | **Exchange rates** | Built in | European Central Bank euro reference rates (daily since 1999), served by Frankfurter. Free, no key. |
+| **Central-bank policy rates (currency hedging)** | Built in | Daily policy rates of about 30 central banks from the Bank for International Settlements (BIS, dataset WS_CBPOL). Free, no key; reuse allowed with the BIS cited as the source. |
 
 Every result shows its data source, adjustment basis, licence note, window and number of observations.
 
@@ -41,6 +42,16 @@ Each asset has a quote currency. Results are expressed in one currency: if the s
 $$1 + r_B = (1 + r_L)(1 + r_X).$$
 
 This is the **unhedged** return: a base-currency investor bears both the asset's and the currency's return. Rates are ECB reference rates (published on ECB business days since 4 January 1999); on dates without a published rate the previous rate is used for at most five days. Prices before 1999, or across a longer gap, are rejected rather than guessed.
+
+### Currency-hedged returns
+
+With hedging on, each period the investor sells forward the position's value at the start of the period (the hedge is re-set on every price date of the source data). Covered interest parity prices the forward as $F = X_{t-1}\,(1 + i_B\,\delta)/(1 + i_L\,\delta)$ for a period of $\delta$ years (calendar days / 365) and annual short rates $i_B$ (base) and $i_L$ (local) known at $t-1$. The base-currency return is then
+
+$$r_H = r_L\,(1 + r_X) + \frac{1 + i_B\,\delta}{1 + i_L\,\delta} - 1 .$$
+
+The local return is kept; the exchange rate affects only the period's gain (the $r_L r_X$ term), and the rate difference is the cost or income of hedging, the reason hedged foreign bonds earn roughly the base currency's rates. A constant price earns exactly the carry whatever the exchange rate does; with equal rates and a fixed exchange rate the hedged return equals the local return (automated tests, plus an independent day-by-day recomputation through the API).
+
+Short rates are the issuing central banks' **policy rates** from the BIS, carried forward over up to ten days without a value. They stand in for the money-market rates that price forwards, which differ by small spreads; transaction costs and the forward bid-ask spread are ignored. Currencies whose central bank has no BIS policy-rate series (for example SGD, whose monetary policy works through the exchange rate) cannot be hedged and return a clear error.
 
 ## Uploading data
 

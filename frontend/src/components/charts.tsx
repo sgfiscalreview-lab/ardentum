@@ -408,17 +408,30 @@ function Marker(props: { cx?: number; cy?: number; fill?: string; payload?: Mark
   );
 }
 
+/** Risk measure on the x axis: annualised volatility by default, or e.g. one-period CVaR. */
+export interface RiskAxis {
+  name: string;
+  label: string;
+}
+
+const VOLATILITY_AXIS: RiskAxis = { name: "Volatility", label: "Expected volatility (annualised)" };
+
 export function FrontierChart({
   lines,
   markers,
   height = 380,
+  xAxis = VOLATILITY_AXIS,
 }: {
   lines: FrontierSeries[];
   markers: MarkerPoint[];
   height?: number;
+  xAxis?: RiskAxis;
 }) {
   const all = [...lines.flatMap((l) => l.points), ...markers];
   const xs = niceAxis(0, Math.max(...all.map((p) => p.x)));
+  // Small risk values (e.g. daily CVaR of 1 to 3%) need a decimal on the ticks.
+  const xStep = (xs.ticks[1] ?? xs.max) - (xs.ticks[0] ?? xs.min);
+  const xDecimals = xStep > 0 && xStep < 0.01 ? 1 : 0;
   const ys = niceAxis(Math.min(0, ...all.map((p) => p.y)), Math.max(...all.map((p) => p.y)));
   return (
     <ResponsiveContainer width="100%" height={height}>
@@ -427,14 +440,14 @@ export function FrontierChart({
         <XAxis
           type="number"
           dataKey="x"
-          name="Volatility"
+          name={xAxis.name}
           domain={[xs.min, xs.max]}
           ticks={xs.ticks}
-          tickFormatter={(v: number) => `${(v * 100).toFixed(0)}%`}
+          tickFormatter={(v: number) => `${(v * 100).toFixed(xDecimals)}%`}
           axisLine={AXIS}
           tickLine={false}
           tick={TICK}
-          label={{ value: "Expected volatility (annualised)", position: "insideBottom", offset: -10, fill: "var(--muted)", fontSize: 11 }}
+          label={{ value: xAxis.label, position: "insideBottom", offset: -10, fill: "var(--muted)", fontSize: 11 }}
         />
         <YAxis
           type="number"
@@ -460,7 +473,7 @@ export function FrontierChart({
                 title={p.name ?? p.series}
                 rows={[
                   { label: "Expected return", value: `${(p.y * 100).toFixed(2)}%` },
-                  { label: "Volatility", value: `${(p.x * 100).toFixed(2)}%` },
+                  { label: xAxis.name, value: `${(p.x * 100).toFixed(2)}%` },
                   ...(p.detail ? [{ label: "Note", value: p.detail }] : []),
                 ]}
               />

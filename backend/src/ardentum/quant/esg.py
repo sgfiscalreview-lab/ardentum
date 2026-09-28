@@ -126,3 +126,26 @@ def percentile_scores(values: np.ndarray, higher_is_better: bool = True) -> np.n
         if tie.sum() > 1:
             ranks[tie] = ranks[tie].mean()
     return 100.0 * (ranks - 1.0) / (x.size - 1.0)
+
+
+def composite_scores(component_scores: np.ndarray, weights: np.ndarray) -> np.ndarray:
+    """Weighted average of several 0-100 scores per asset (rows) and metric (columns).
+
+    Weights are positive and normalised to sum to one. An asset missing any component
+    (NaN) gets NaN: averaging over the components it happens to have would silently
+    impute the missing ones with that average, and would compare assets on different
+    measures. With every component present the result is a convex combination, so it
+    stays on 0-100 and increases with each component score.
+    """
+    s = np.asarray(component_scores, dtype=float)
+    w = np.asarray(weights, dtype=float)
+    if s.ndim != 2 or w.ndim != 1 or s.shape[1] != w.size:
+        raise InvalidInputError("Component scores must be a matrix with one column per weight.")
+    if w.size < 1 or not np.isfinite(w).all() or (w <= 0).any():
+        raise InvalidInputError("Composite weights must be positive numbers.")
+    present = ~np.isnan(s)
+    if ((s[present] < ESG_SCORE_MIN) | (s[present] > ESG_SCORE_MAX)).any():
+        raise InvalidInputError("Component scores must be between 0 and 100.")
+    out: np.ndarray = np.where(present, s, 0.0) @ (w / w.sum())
+    out[~present.all(axis=1)] = np.nan
+    return out

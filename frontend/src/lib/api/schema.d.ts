@@ -215,6 +215,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/frontier/cvar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cvar Frontier
+         * @description Mean-CVaR efficient frontier (historical expected shortfall), with the mean-variance
+         *     frontier's portfolios measured by the same CVaR for comparison.
+         */
+        post: operations["cvar_frontier_api_v1_frontier_cvar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/esg/impact": {
         parameters: {
             query?: never;
@@ -490,6 +511,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/esg/open/composite-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview Composite
+         * @description Score each metric as in a single preview, then combine the 0-100 scores with the
+         *     given weights. Assets missing any metric get no composite score.
+         */
+        post: operations["preview_composite_api_v1_esg_open_composite_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/esg/overlays": {
         parameters: {
             query?: never;
@@ -502,7 +544,7 @@ export interface paths {
         put?: never;
         /**
          * Save Overlay
-         * @description Recompute the preview on the server and save it for use in analyses.
+         * @description Recompute the preview (single metric or composite) on the server and save it.
          */
         post: operations["save_overlay_api_v1_esg_overlays_post"];
         delete?: never;
@@ -859,6 +901,90 @@ export interface components {
             /** Drawdown */
             drawdown: number[];
         };
+        /** CompositeComponentIn */
+        CompositeComponentIn: {
+            /** Metric Id */
+            metric_id: number;
+            /**
+             * Weight
+             * @description Relative weight; normalised to sum to 1.
+             */
+            weight: number;
+            /**
+             * Year
+             * @description Latest answer up to this year.
+             */
+            year?: number | null;
+            transform?: components["schemas"]["EsgTransformIn"];
+        };
+        /** CompositeComponentOut */
+        CompositeComponentOut: {
+            metric: components["schemas"]["OpenMetricOut"];
+            /**
+             * Weight
+             * @description Normalised weight (the weights sum to 1).
+             */
+            weight: number;
+            /** Year */
+            year: number | null;
+            transform: components["schemas"]["EsgTransformIn"];
+            /**
+             * Scored
+             * @description Assets with a score for this metric.
+             */
+            scored: number;
+        };
+        /** CompositePartOut */
+        CompositePartOut: {
+            /** Metric Id */
+            metric_id: number;
+            /** Metric Title */
+            metric_title: string;
+            /** Year */
+            year: number | null;
+            /** Raw Value */
+            raw_value: number | null;
+            /** Score */
+            score: number | null;
+            /** Answer Url */
+            answer_url: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "scored" | "no_company" | "no_answer" | "not_numeric";
+        };
+        /** CompositePreviewOut */
+        CompositePreviewOut: {
+            /** Components */
+            components: components["schemas"]["CompositeComponentOut"][];
+            /** Entries */
+            entries: components["schemas"]["OverlayEntryOut"][];
+            /** Scored */
+            scored: number;
+            /** Warnings */
+            warnings: string[];
+            /** License */
+            license: string;
+            /** Attribution */
+            attribution: string;
+        };
+        /** CompositePreviewRequest */
+        CompositePreviewRequest: {
+            /** Dataset Id */
+            dataset_id: string;
+            /** Tickers */
+            tickers: string[];
+            /** Components */
+            components: components["schemas"]["CompositeComponentIn"][];
+            /**
+             * Company Overrides
+             * @description Ticker -> WikiRate company id, confirmed by the user.
+             */
+            company_overrides?: {
+                [key: string]: number;
+            };
+        };
         /** ConstraintDiagnosticOut */
         ConstraintDiagnosticOut: {
             /** Kind */
@@ -932,6 +1058,91 @@ export interface components {
          * @enum {string}
          */
         CovarianceEstimator: "sample" | "ledoit_wolf" | "ledoit_wolf_constant_correlation";
+        /** CvarFrontierAssetOut */
+        CvarFrontierAssetOut: {
+            /** Ticker */
+            ticker: string;
+            /** Expected Return */
+            expected_return: number;
+            /** Var */
+            var: number;
+            /** Cvar */
+            cvar: number;
+            /** Sector */
+            sector: string | null;
+        };
+        /** CvarFrontierPointOut */
+        CvarFrontierPointOut: {
+            /** Expected Return */
+            expected_return: number;
+            /** Volatility */
+            volatility: number;
+            /**
+             * Var
+             * @description One-period historical VaR (loss).
+             */
+            var: number;
+            /**
+             * Cvar
+             * @description One-period historical CVaR (average loss beyond VaR).
+             */
+            cvar: number;
+            /** Sharpe Ratio */
+            sharpe_ratio: number | null;
+            /** Esg Score */
+            esg_score: number | null;
+            /** Weights */
+            weights: {
+                [key: string]: number;
+            };
+        };
+        /** CvarFrontierRequest */
+        CvarFrontierRequest: {
+            universe: components["schemas"]["UniverseSelection"];
+            estimation?: components["schemas"]["EstimationSettings"];
+            constraints?: components["schemas"]["ConstraintsIn"];
+            /**
+             * N Points
+             * @default 20
+             */
+            n_points: number;
+            /**
+             * Cvar Confidence
+             * @description Confidence level of the historical CVaR.
+             * @default 0.95
+             */
+            cvar_confidence: number;
+        };
+        /** CvarFrontierResponse */
+        CvarFrontierResponse: {
+            /** Points */
+            points: components["schemas"]["CvarFrontierPointOut"][];
+            min_cvar: components["schemas"]["CvarFrontierPointOut"];
+            /**
+             * Mean Variance Points
+             * @description The mean-variance frontier's portfolios, measured by the same CVaR.
+             */
+            mean_variance_points: components["schemas"]["CvarFrontierPointOut"][];
+            /** Assets */
+            assets: components["schemas"]["CvarFrontierAssetOut"][];
+            /** Cvar Confidence */
+            cvar_confidence: number;
+            /**
+             * Frequency
+             * @description Period of VaR and CVaR: daily, weekly or monthly.
+             */
+            frequency: string;
+            /** Observations */
+            observations: number;
+            /** Risk Free Rate */
+            risk_free_rate: number;
+            /** Warnings */
+            warnings: string[];
+            estimation: components["schemas"]["EstimationOut"];
+            data: components["schemas"]["DataWindowOut"];
+            /** Excluded Unscored */
+            excluded_unscored: string[];
+        };
         /** DataWindowOut */
         DataWindowOut: {
             /** Dataset Id */
@@ -1295,7 +1506,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "analytics" | "optimise" | "frontier" | "esg_impact" | "montecarlo" | "backtest" | "compare";
+            kind: "analytics" | "optimise" | "frontier" | "cvar_frontier" | "esg_impact" | "montecarlo" | "backtest" | "compare";
             /**
              * Request
              * @description The body of the corresponding POST endpoint.
@@ -1617,9 +1828,14 @@ export interface components {
              * Status
              * @enum {string}
              */
-            status: "scored" | "no_company" | "no_answer" | "not_numeric";
+            status: "scored" | "incomplete" | "no_company" | "no_answer" | "not_numeric";
             /** Note */
             note: string;
+            /**
+             * Parts
+             * @description Composite overlays: the score from each metric.
+             */
+            parts: components["schemas"]["CompositePartOut"][] | null;
         };
         /** OverlayOut */
         OverlayOut: {
@@ -1631,8 +1847,15 @@ export interface components {
             dataset_id: string;
             /** Source */
             source: string;
-            metric: components["schemas"]["OpenMetricOut"];
-            transform: components["schemas"]["EsgTransformIn"];
+            /** @description Single-metric overlays only. */
+            metric: components["schemas"]["OpenMetricOut"] | null;
+            /** @description Single-metric overlays only. */
+            transform: components["schemas"]["EsgTransformIn"] | null;
+            /**
+             * Components
+             * @description Composite overlays: the metrics and their weights.
+             */
+            components: components["schemas"]["CompositeComponentOut"][] | null;
             /** Year */
             year: number | null;
             /** Entries */
@@ -1689,7 +1912,8 @@ export interface components {
         OverlaySaveIn: {
             /** Name */
             name: string;
-            preview: components["schemas"]["OverlayPreviewRequest"];
+            preview?: components["schemas"]["OverlayPreviewRequest"] | null;
+            composite?: components["schemas"]["CompositePreviewRequest"] | null;
         };
         /** OverlaySummaryOut */
         OverlaySummaryOut: {
@@ -2055,9 +2279,15 @@ export interface components {
             esg_overlay_id?: string | null;
             /**
              * Base Currency
-             * @description Express all prices in this ISO 4217 currency (unhedged, ECB rates).
+             * @description Express all prices in this ISO 4217 currency (ECB rates).
              */
             base_currency?: string | null;
+            /**
+             * Currency Hedged
+             * @description Hedge foreign-currency assets back to the base currency with a rolling one-period forward priced from central-bank policy rates (BIS).
+             * @default false
+             */
+            currency_hedged: boolean;
         };
         /** ValidationError */
         ValidationError: {
@@ -2530,6 +2760,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FrontierResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cvar_frontier_api_v1_frontier_cvar_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CvarFrontierRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CvarFrontierResponse"];
                 };
             };
             /** @description Validation Error */
@@ -3111,6 +3376,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OverlayPreviewOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_composite_api_v1_esg_open_composite_preview_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompositePreviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompositePreviewOut"];
                 };
             };
             /** @description Validation Error */

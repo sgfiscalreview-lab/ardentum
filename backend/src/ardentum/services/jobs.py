@@ -48,6 +48,7 @@ KINDS: dict[str, tuple[type[BaseModel], Runner]] = {
     "analytics": (s.AnalyticsRequest, analysis.asset_analytics),
     "optimise": (s.OptimiseRequest, analysis.run_optimise),
     "frontier": (s.FrontierRequest, analysis.run_frontier),
+    "cvar_frontier": (s.CvarFrontierRequest, analysis.run_cvar_frontier),
     "esg_impact": (s.EsgImpactRequest, analysis.run_esg_impact),
     "montecarlo": (s.MonteCarloRequest, analysis.run_montecarlo),
     "backtest": (s.BacktestRequest, analysis.run_backtest_service),

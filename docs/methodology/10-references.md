@@ -18,6 +18,7 @@ Primary sources for the methods used in Ardentum.
 - Diamond, S., & Boyd, S. (2016). CVXPY: A Python-embedded modeling language for convex optimization. *Journal of Machine Learning Research*, 17(83), 1–5.
 - Goulart, P. J., & Chen, Y. (2024). Clarabel: An interior-point solver for conic programs with quadratic objectives. arXiv:2405.12762.
 - Jorion, P. (1986). Bayes-Stein estimation for portfolio analysis. *Journal of Financial and Quantitative Analysis*, 21(3), 279–292.
+- Krokhmal, P., Palmquist, J., & Uryasev, S. (2002). Portfolio optimization with conditional value-at-risk objective and constraints. *Journal of Risk*, 4(2), 43–68.
 - Ledoit, O., & Wolf, M. (2004a). A well-conditioned estimator for large-dimensional covariance matrices. *Journal of Multivariate Analysis*, 88(2), 365–411.
 - Ledoit, O., & Wolf, M. (2004b). Honey, I shrunk the sample covariance matrix. *Journal of Portfolio Management*, 30(4), 110–119.
 - Litterman, R. (1996). Hot spots and hedges. *Journal of Portfolio Management*, 23 (special issue), 52–75.
@@ -35,10 +36,12 @@ Primary sources for the methods used in Ardentum.
 - He, G., & Litterman, R. (1999). The intuition behind Black-Litterman model portfolios. Goldman Sachs Investment Management Research.
 - Idzorek, T. M. (2005). A step-by-step guide to the Black-Litterman model. Zephyr Associates working paper.
 - Rockafellar, R. T., & Uryasev, S. (2000). Optimization of conditional value-at-risk. *Journal of Risk*, 2(3), 21–41.
+- Rockafellar, R. T., & Uryasev, S. (2002). Conditional value-at-risk for general loss distributions. *Journal of Banking & Finance*, 26(7), 1443–1471.
 
 ## Data sources
 
 - Board of Governors of the Federal Reserve System. Market Yield on U.S. Treasury Securities at 3-Month Constant Maturity, Quoted on an Investment Basis (DGS3MO). Retrieved from FRED, Federal Reserve Bank of St. Louis.
+- Bank for International Settlements. Central bank policy rates (WS_CBPOL). BIS Data Portal, https://data.bis.org/topics/CBPOL.
 - European Central Bank. Euro foreign exchange reference rates. Served by Frankfurter (frankfurter.dev).
 - Fama, E. F., & French, K. R. (1993). Common risk factors in the returns on stocks and bonds. *Journal of Financial Economics*, 33(1), 3–56.
 - French, K. R. Data Library: industry portfolios and Fama/French factors. Tuck School of Business, Dartmouth College. https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/data_library.html

@@ -5,8 +5,8 @@
         [--supabase https://<ref>.supabase.co --publishable-key sb_publishable_...]
 
 Checks what can be seen from outside: health, production settings, CORS for the site,
-live data sources (Ken French, ECB rates via Frankfurter, WikiRate, FRED if configured),
-a background calculation, the settings baked into the website at build time, and which
+live data sources (Ken French, ECB rates via Frankfurter, BIS policy rates, WikiRate, FRED
+if configured), a background calculation, the settings baked into the website at build time, and which
 sign-in providers are switched on. Read-only apart from one anonymous background job,
 which expires after a day. Standard library only. Exits 1 if a required check fails;
 warnings are optional items.
@@ -206,6 +206,13 @@ def check_api(rep: Report, api: str, site: str) -> None:
             rep.ok("ECB exchange rates (Frankfurter)", "analytics in EUR succeeded")
         else:
             rep.fail("ECB exchange rates (Frankfurter)", f"HTTP {r.status}: {error_message(r)}")
+            return
+        hedged = {"universe": {**KF_UNIVERSE, "base_currency": "EUR", "currency_hedged": True}}
+        r = request("POST", f"{v1}/analytics", hedged, timeout=180)
+        if r.status == 200:
+            rep.ok("Policy rates for hedging (BIS)", "hedged analytics in EUR succeeded")
+        else:
+            rep.fail("Policy rates for hedging (BIS)", f"HTTP {r.status}: {error_message(r)}")
 
     def wikirate() -> None:
         r = request("GET", f"{v1}/esg/open/metrics?q=greenhouse&limit=5", timeout=120)

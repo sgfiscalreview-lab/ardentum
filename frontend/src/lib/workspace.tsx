@@ -14,7 +14,7 @@ export interface WorkingPortfolio {
   spec?: Record<string, unknown>;
 }
 
-export type PageKey = "analytics" | "optimise" | "frontier" | "esg" | "simulate" | "backtest" | "compare";
+export type PageKey = "analytics" | "optimise" | "frontier" | "frontier_cvar" | "esg" | "simulate" | "backtest" | "compare";
 
 export interface WorkspaceState {
   universe: UniverseSelection;
@@ -41,6 +41,7 @@ export const DEFAULT_STATE: WorkspaceState = {
     start: "2016-01-01",
     end: "2025-12-31",
     frequency: "daily",
+    currency_hedged: false,
   },
   estimation: {
     mean_estimator: "historical",

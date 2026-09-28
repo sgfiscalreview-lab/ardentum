@@ -7,17 +7,32 @@ import { useState } from "react";
 import { Badge, Button, Callout, Card, EmptyState, Field, Input, NumberInput, Select, SkeletonRows, Table, Td, Th } from "@/components/ui";
 import { ErrorCallout, PageHeader, useDataset } from "@/components/workspace";
 import { api, ApiError, unwrap } from "@/lib/api/client";
-import type { EsgTransformIn, OpenCompanyOut, OpenMetricOut, OverlayEntryOut, OverlayPreviewOut } from "@/lib/api/types";
+import type { CompositePreviewOut, CompositePreviewRequest, EsgTransformIn, OpenCompanyOut, OpenMetricOut, OverlayEntryOut, OverlayPreviewOut } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth";
 import { num } from "@/lib/format";
 import { useWorkspace } from "@/lib/workspace";
 
 const STATUS: Record<OverlayEntryOut["status"], { label: string; tone: "good" | "warn" | "neutral" }> = {
   scored: { label: "Scored", tone: "good" },
+  incomplete: { label: "Incomplete", tone: "warn" },
   no_company: { label: "No match", tone: "warn" },
   no_answer: { label: "No data", tone: "neutral" },
   not_numeric: { label: "Not numeric", tone: "neutral" },
 };
+
+const MAX_COMPONENTS = 6;
+
+interface Component {
+  metric: OpenMetricOut;
+  transform: EsgTransformIn;
+  year: number | null;
+  weight: number;
+}
+
+function describe(t: EsgTransformIn): string {
+  const dir = t.higher_is_better ? "higher is better" : "lower is better";
+  return t.method === "linear" ? `fixed scale ${t.lower ?? "range"} to ${t.upper ?? "range"}, ${dir}` : `percentile rank, ${dir}`;
+}
 
 function asError(e: unknown): Error {
   return e instanceof ApiError || e instanceof Error ? e : new Error(String(e));
@@ -37,6 +52,9 @@ export default function EsgDataPage() {
   const [transform, setTransform] = useState<EsgTransformIn>({ method: "percentile", higher_is_better: true, lower: null, upper: null });
   const [overrides, setOverrides] = useState<Record<string, OpenCompanyOut>>({});
   const [preview, setPreview] = useState<OverlayPreviewOut | null>(null);
+  const [components, setComponents] = useState<Component[]>([]);
+  const [composite, setComposite] = useState<CompositePreviewOut | null>(null);
+  const [mode, setMode] = useState<"single" | "composite">("single");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<Error | null>(null);
@@ -84,27 +102,61 @@ export default function EsgDataPage() {
         }),
       );
       setPreview(res);
+      setMode("single");
       if (!name) setName(`${metric.title}`.slice(0, 120));
     });
 
+  const compositeBody = (ov: Record<string, OpenCompanyOut>): CompositePreviewRequest => ({
+    dataset_id: u.dataset_id,
+    tickers: u.tickers,
+    components: components.map((c) => ({ metric_id: c.metric.id, weight: c.weight, year: c.year, transform: c.transform })),
+    company_overrides: Object.fromEntries(Object.entries(ov).map(([t, c]) => [t, c.id])),
+  });
+
+  const runComposite = (ov = overrides) =>
+    act("composite", async () => {
+      if (components.length < 2) return;
+      setSaved(null);
+      setComposite(await unwrap(api.POST("/api/v1/esg/open/composite-preview", { body: compositeBody(ov) })));
+      setMode("composite");
+      setName(`Composite: ${components.map((c) => c.metric.title).join(" + ")}`.slice(0, 120));
+    });
+
+  const addComponent = () => {
+    if (!metric || components.some((c) => c.metric.id === metric.id) || components.length >= MAX_COMPONENTS) return;
+    setComponents([...components, { metric, transform, year, weight: 1 }]);
+  };
+
+  const activeScored = mode === "composite" ? (composite?.scored ?? null) : (preview?.scored ?? null);
+
+  const pickCompany = (ticker: string, c: OpenCompanyOut) => {
+    const next = { ...overrides, [ticker]: c };
+    setOverrides(next);
+    if (mode === "composite") runComposite(next);
+    else runPreview(next);
+  };
+
   const save = () =>
     act("save", async () => {
-      if (!metric || !preview) return;
-      const res = await unwrap(
-        api.POST("/api/v1/esg/overlays", {
-          body: {
-            name: name.trim() || metric.title,
-            preview: {
-              dataset_id: u.dataset_id,
-              tickers: u.tickers,
-              metric_id: metric.id,
-              year,
-              transform,
-              company_overrides: Object.fromEntries(Object.entries(overrides).map(([t, c]) => [t, c.id])),
-            },
+      let body;
+      if (mode === "composite") {
+        if (!composite) return;
+        body = { name: name.trim() || "Composite ESG score", composite: compositeBody(overrides) };
+      } else {
+        if (!metric || !preview) return;
+        body = {
+          name: name.trim() || metric.title,
+          preview: {
+            dataset_id: u.dataset_id,
+            tickers: u.tickers,
+            metric_id: metric.id,
+            year,
+            transform,
+            company_overrides: Object.fromEntries(Object.entries(overrides).map(([t, c]) => [t, c.id])),
           },
-        }),
-      );
+        };
+      }
+      const res = await unwrap(api.POST("/api/v1/esg/overlays", { body }));
       await qc.invalidateQueries({ queryKey: ["esg-overlays"] });
       setUniverse({ esg_overlay_id: res.id });
       setSaved(`Saved “${res.name}” and applied it to the workspace (${res.scored} of ${res.entries.length} assets scored).`);
@@ -211,8 +263,48 @@ export default function EsgDataPage() {
               <Button variant="primary" onClick={() => runPreview()} busy={busy === "preview"} disabled={!metric || !!unsupported || u.tickers.length === 0}>
                 {metric ? `Preview scores for ${u.tickers.length} assets` : "Choose a metric first"}
               </Button>
+              <Button
+                variant="secondary"
+                onClick={addComponent}
+                disabled={!metric || components.some((c) => c.metric.id === metric?.id) || components.length >= MAX_COMPONENTS}
+              >
+                Add to composite
+              </Button>
             </div>
           </Card>
+
+          {components.length > 0 && (
+            <Card title="Composite score" subtitle="A weighted average of several metrics' 0–100 scores. An asset needs a score for every metric.">
+              <ul className="space-y-2">
+                {components.map((c, i) => (
+                  <li key={c.metric.id} className="rounded-md border border-line p-2 text-xs">
+                    <span className="block font-medium text-ink">{c.metric.title}</span>
+                    <span className="block text-muted">
+                      {describe(c.transform)}
+                      {c.year ? `, up to ${c.year}` : ""}
+                    </span>
+                    <span className="mt-1.5 flex items-end gap-2">
+                      <Field label="Weight" htmlFor={`w-${c.metric.id}`} className="w-24">
+                        <NumberInput
+                          id={`w-${c.metric.id}`}
+                          value={c.weight}
+                          min={0.01}
+                          max={100}
+                          onChange={(v) => setComponents(components.map((x, j) => (j === i ? { ...x, weight: v ?? x.weight } : x)))}
+                        />
+                      </Field>
+                      <Button size="sm" variant="ghost" onClick={() => setComponents(components.filter((_, j) => j !== i))}>
+                        Remove
+                      </Button>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <Button className="mt-3" variant="primary" onClick={() => runComposite()} busy={busy === "composite"} disabled={components.length < 2 || !!unsupported || u.tickers.length === 0}>
+                {components.length < 2 ? "Add at least two metrics" : `Preview composite for ${u.tickers.length} assets`}
+              </Button>
+            </Card>
+          )}
 
           <SavedOverlays
             signedIn={status === "signed_in"}
@@ -232,7 +324,9 @@ export default function EsgDataPage() {
         </aside>
 
         <div className="min-w-0 space-y-4">
-          {!preview ? (
+          {mode === "composite" && composite ? (
+            <CompositeView data={composite} onPick={pickCompany} />
+          ) : !preview ? (
             <EmptyState title="No preview yet">
               Pick a metric, choose how values become 0–100 scores, and preview them for the selected assets. Assets are matched automatically by ISIN; others can be matched by hand.
             </EmptyState>
@@ -273,15 +367,7 @@ export default function EsgDataPage() {
                               <span className="block text-[11px] text-muted">{e.matched_by === "isin" ? "matched by ISIN" : "chosen by you"}</span>
                             </>
                           ) : (
-                            <CompanyPicker
-                              ticker={e.ticker}
-                              initial={e.asset_name}
-                              onPick={(c) => {
-                                const next = { ...overrides, [e.ticker]: c };
-                                setOverrides(next);
-                                runPreview(next);
-                              }}
-                            />
+                            <CompanyPicker ticker={e.ticker} initial={e.asset_name} onPick={(c) => pickCompany(e.ticker, c)} />
                           )}
                         </Td>
                         <Td align="right">{e.year ?? "n/a"}</Td>
@@ -306,34 +392,36 @@ export default function EsgDataPage() {
                 </Table>
                 <p className="px-4 py-2 text-[11px] text-muted">{preview.attribution}</p>
               </Card>
-              <Card title="3. Save and use">
-                {status !== "signed_in" ? (
-                  <p className="text-sm text-ink-2">
-                    <Link href="/login?next=/app/esg-data" className="text-accent-ink underline underline-offset-2">
-                      Sign in
-                    </Link>{" "}
-                    to save these scores and use them in optimisation, ESG constraints and backtests.
-                  </p>
-                ) : (
-                  <div className="flex flex-wrap items-end gap-2">
-                    <Field label="Name" htmlFor="ov-name" className="min-w-64 flex-1">
-                      <Input id="ov-name" value={name} maxLength={120} onChange={(e) => setName(e.target.value)} />
-                    </Field>
-                    <Button variant="primary" onClick={save} busy={busy === "save"} disabled={preview.scored === 0}>
-                      Save and use in workspace
-                    </Button>
-                  </div>
-                )}
-                {saved && (
-                  <p className="mt-2 text-sm text-ink-2" role="status">
-                    {saved}
-                  </p>
-                )}
-                <p className="mt-2 text-xs text-muted">
-                  When used, these scores replace the dataset&apos;s own ESG scores for the selected assets. Unscored assets are never given a value: exclude them explicitly in ESG constraints.
-                </p>
-              </Card>
             </>
+          )}
+          {activeScored !== null && (
+            <Card title="3. Save and use">
+            {status !== "signed_in" ? (
+              <p className="text-sm text-ink-2">
+                <Link href="/login?next=/app/esg-data" className="text-accent-ink underline underline-offset-2">
+                  Sign in
+                </Link>{" "}
+                to save these scores and use them in optimisation, ESG constraints and backtests.
+              </p>
+            ) : (
+              <div className="flex flex-wrap items-end gap-2">
+                <Field label="Name" htmlFor="ov-name" className="min-w-64 flex-1">
+                  <Input id="ov-name" value={name} maxLength={120} onChange={(e) => setName(e.target.value)} />
+                </Field>
+                <Button variant="primary" onClick={save} busy={busy === "save"} disabled={activeScored === 0}>
+                  Save and use in workspace
+                </Button>
+              </div>
+            )}
+            {saved && (
+              <p className="mt-2 text-sm text-ink-2" role="status">
+                {saved}
+              </p>
+            )}
+            <p className="mt-2 text-xs text-muted">
+              When used, these scores replace the dataset&apos;s own ESG scores for the selected assets. Unscored assets are never given a value: exclude them explicitly in ESG constraints.
+            </p>
+          </Card>
           )}
         </div>
       </div>
@@ -439,5 +527,83 @@ function SavedOverlays({
         </ul>
       )}
     </Card>
+  );
+}
+
+function CompositeView({ data, onPick }: { data: CompositePreviewOut; onPick: (ticker: string, c: OpenCompanyOut) => void }) {
+  return (
+    <>
+      {data.warnings.length > 0 && (
+        <Callout tone="warning" title="Some metrics could not be scored">
+          {data.warnings.join(" ")}
+        </Callout>
+      )}
+      <Card
+        title="Composite ESG score"
+        subtitle={`${data.components.map((c) => `${c.metric.title} ${(c.weight * 100).toFixed(0)}%`).join(", ")} · ${data.scored} of ${data.entries.length} assets scored`}
+        bodyClassName="p-0"
+      >
+        <Table>
+          <thead>
+            <tr>
+              <Th>Asset</Th>
+              <Th>WikiRate company</Th>
+              {data.components.map((c) => (
+                <Th key={c.metric.id} align="right">
+                  <span className="block max-w-40 truncate" title={c.metric.title}>
+                    {c.metric.title}
+                  </span>
+                  <span className="block text-[11px] font-normal text-muted">weight {(c.weight * 100).toFixed(0)}%</span>
+                </Th>
+              ))}
+              <Th align="right">Composite</Th>
+              <Th>Status</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.entries.map((e) => (
+              <tr key={e.ticker}>
+                <Td>
+                  <span className="font-medium">{e.ticker}</span>
+                  <span className="block text-[11px] text-muted">{e.isin ?? "no ISIN"}</span>
+                </Td>
+                <Td>
+                  {e.company ? (
+                    <>
+                      {e.company}
+                      <span className="block text-[11px] text-muted">{e.matched_by === "isin" ? "matched by ISIN" : "chosen by you"}</span>
+                    </>
+                  ) : (
+                    <CompanyPicker ticker={e.ticker} initial={e.asset_name} onPick={(c) => onPick(e.ticker, c)} />
+                  )}
+                </Td>
+                {data.components.map((c) => {
+                  const part = e.parts?.find((p) => p.metric_id === c.metric.id);
+                  return (
+                    <Td key={c.metric.id} align="right">
+                      {part?.score != null ? part.score.toFixed(0) : "n/a"}
+                      {part?.year != null && <span className="block text-[11px] text-muted">{part.year}</span>}
+                      {part?.answer_url && (
+                        <a href={part.answer_url} target="_blank" rel="noreferrer" className="text-[11px] text-accent-ink underline underline-offset-2">
+                          source
+                        </a>
+                      )}
+                    </Td>
+                  );
+                })}
+                <Td align="right" className="font-medium">
+                  {e.score != null ? e.score.toFixed(0) : "n/a"}
+                </Td>
+                <Td>
+                  <Badge tone={STATUS[e.status].tone}>{STATUS[e.status].label}</Badge>
+                  <span className="block text-[11px] text-muted">{e.note}</span>
+                </Td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+        <p className="px-4 py-2 text-[11px] text-muted">{data.attribution}</p>
+      </Card>
+    </>
   );
 }
