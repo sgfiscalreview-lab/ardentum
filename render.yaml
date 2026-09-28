@@ -27,6 +27,9 @@ services:
         value: "1"
       - key: ARDENTUM_RATE_LIMIT_STORE
         value: database
+      # Random key for hashing client IP addresses in rate-limit counters (never stored raw)
+      - key: ARDENTUM_RATE_LIMIT_SECRET
+        generateValue: true
       # One worker fits the free plan's 512 MB (about 250 MB at peak).
       - key: WEB_CONCURRENCY
         value: "1"

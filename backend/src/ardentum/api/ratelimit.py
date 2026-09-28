@@ -16,6 +16,9 @@ Two stores implement the same ``check`` interface:
 
 from __future__ import annotations
 
+import datetime as dt
+import hashlib
+import hmac
 import logging
 import random
 import threading
@@ -136,3 +139,13 @@ def client_ip(forwarded_for: str | None, peer: str | None, trusted_hops: int) ->
         if len(parts) >= trusted_hops:
             return parts[-trusted_hops]
     return peer or "unknown"
+
+
+def address_key(ip: str, secret: bytes, day: dt.date | None = None) -> str:
+    """Rate-limit key for an IP address: a keyed hash that changes every UTC day.
+
+    The address itself is never stored, and without the key the hash cannot be reversed
+    by trying every IPv4 address; keys from different days cannot be linked."""
+    d = day or dt.datetime.now(dt.UTC).date()
+    digest = hmac.new(secret, f"{d.isoformat()}|{ip}".encode(), hashlib.sha256).hexdigest()
+    return "ip:" + digest[:32]

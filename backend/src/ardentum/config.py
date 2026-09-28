@@ -54,6 +54,10 @@ class Settings(BaseSettings):
     # Proxies in front of the API that append to X-Forwarded-For (Cloud Run / Render: 1).
     # 0 uses the socket address and ignores the header, which clients can forge.
     trusted_proxy_hops: int = Field(0, ge=0, le=5)
+    # Key for hashing client IP addresses in rate-limit counters, so raw addresses are never
+    # stored. Instances that share the database need the same value; when unset, each
+    # process draws a random key at start-up.
+    rate_limit_secret: str | None = None
     log_level: str = "INFO"
 
     @field_validator("cors_origins", mode="before")

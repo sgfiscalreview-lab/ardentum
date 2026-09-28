@@ -42,12 +42,13 @@ Status as of 2026-09-26.
 | Mean-CVaR efficient frontier (historical CVaR, Rockafellar-Uryasev LP), with the mean-variance portfolios measured by the same CVaR; Volatility/CVaR switch on the frontier page | ✅ | `tests/quant/test_cvar_frontier.py` (SciPy HiGHS, brute force, closed form), `tests/api/test_cvar_frontier_api.py`, E2E frontier test |
 | Render Blueprint (`render.yaml`, no card) as the recommended API host; keep-alive every 10 minutes | ✅ | D-028; memory measured at 243 MB peak of 512 MB |
 | Live smoke test of the deployment (`scripts/smoke.py`, daily workflow); keep-alive defaults to the production API | ✅ | checked locally against a production-mode API and a Pages-like server |
+| Legal and compliance review (D-032): Cookie Policy with a clear-settings button, Licences page and generated third-party notices (build fails on undeclared or copyleft licences), Privacy Policy with legal bases, transfers, retention, rights and deletion requests, Terms with age limit and fees/refunds, operator address and registration, age confirmation at sign-in, IP addresses hashed in rate-limit counters, table view for the last chart without one | ✅ | `tests/api/test_ratelimit.py`, E2E legal flow, accessibility checks on the new pages |
 | Database URLs copied from Supabase's ORM snippets (`?pgbouncer=true`) accepted | ✅ | `tests/data/test_db_url.py`; migrations checked with such a URL on PostgreSQL |
 
 ## Test status
-- Backend: 341 tests passing (SQLite); API suite (82 tests) also passing on PostgreSQL 16; 93% line coverage; ruff clean; mypy --strict clean. Migrations 0001–0005 upgrade, `alembic check` and downgrade cleanly on PostgreSQL.
+- Backend: 342 tests passing (SQLite); API suite (82 tests) also passing on PostgreSQL 16; 93% line coverage; ruff clean; mypy --strict clean. Migrations 0001–0005 upgrade, `alembic check` and downgrade cleanly on PostgreSQL.
 - Frontend: ESLint (incl. React Compiler rules) clean; `tsc --strict` clean; Vitest unit tests passing.
-- End-to-end: 35 Playwright tests (14 workflows incl. open ESG data, composite scores, CVaR frontier, currency hedging and account deletion, 21 accessibility checks over 10 pages in light and dark) passing; Playwright starts the API, the web app and a local WikiRate stand-in.
+- End-to-end: 41 Playwright tests (14 workflows incl. open ESG data, composite scores, CVaR frontier, currency hedging, legal pages and account deletion, 27 accessibility checks over 13 pages in light and dark) passing; Playwright starts the API, the web app and a local WikiRate stand-in.
 
 ## Performance (dev container, 14 assets, 10 years daily)
 | Request | Time |

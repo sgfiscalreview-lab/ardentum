@@ -120,7 +120,8 @@ Workers & Pages → Create → Pages → Connect to Git → this repository:
 | `NEXT_OUTPUT` | `export` (static export; automatic when `CF_PAGES=1`, i.e. on Cloudflare Pages) |
 | `NEXT_PUBLIC_API_BASE` | Cloud Run URL, e.g. `https://ardentum-api-xxxxx.a.run.app` |
 | `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | from step 1.2 (the legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY` also works) |
-| `NEXT_PUBLIC_LEGAL_OPERATOR`, `NEXT_PUBLIC_LEGAL_CONTACT_EMAIL`, `NEXT_PUBLIC_LEGAL_GOVERNING_LAW`, `NEXT_PUBLIC_LEGAL_LAST_UPDATED` | shown in the Terms of Service and Privacy Policy |
+| `NEXT_PUBLIC_LEGAL_OPERATOR`, `NEXT_PUBLIC_LEGAL_CONTACT_EMAIL`, `NEXT_PUBLIC_LEGAL_GOVERNING_LAW`, `NEXT_PUBLIC_LEGAL_LAST_UPDATED` | shown in the Terms of Service, Privacy Policy and site footer |
+| `NEXT_PUBLIC_LEGAL_ADDRESS`, `NEXT_PUBLIC_LEGAL_REGISTRATION` | optional postal address and company registration, shown with the operator name |
 | `NODE_VERSION` | `22` |
 
 The build reads `../docs/methodology` for the Research section (the whole repository is

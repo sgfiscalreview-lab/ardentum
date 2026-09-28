@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import os
 from collections.abc import Iterator
 
@@ -12,7 +13,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from ardentum.api.main import create_app
-from ardentum.api.ratelimit import DatabaseRateLimiter, client_ip
+from ardentum.api.ratelimit import DatabaseRateLimiter, address_key, client_ip
 from ardentum.config import Settings
 from ardentum.db.models import Base
 from tests.api.conftest import login, universe
@@ -101,3 +102,14 @@ def test_forged_forwarded_for_does_not_bypass(limited: TestClient) -> None:
     assert codes == [200, 200, 429]
     # Non-compute endpoints are not limited.
     assert limited.get("/api/v1/datasets").status_code == 200
+
+
+def test_address_key_hides_the_address() -> None:
+    day = dt.date(2026, 9, 28)
+    key = address_key("203.0.113.9", b"k1", day)
+    assert key.startswith("ip:")
+    assert "203.0.113.9" not in key
+    assert key == address_key("203.0.113.9", b"k1", day)  # stable within a day
+    assert key != address_key("203.0.113.10", b"k1", day)
+    assert key != address_key("203.0.113.9", b"k2", day)  # depends on the secret
+    assert key != address_key("203.0.113.9", b"k1", day + dt.timedelta(days=1))

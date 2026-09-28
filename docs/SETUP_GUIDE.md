@@ -360,6 +360,8 @@ You will use **Cloud Shell**, a terminal inside the browser with everything inst
    | `NEXT_PUBLIC_LEGAL_CONTACT_EMAIL` | an email address for privacy and legal requests |
    | `NEXT_PUBLIC_LEGAL_GOVERNING_LAW` | e.g. `India`, `England and Wales`, `the State of Delaware, USA` |
    | `NEXT_PUBLIC_LEGAL_LAST_UPDATED` | today's date, `YYYY-MM-DD` |
+   | `NEXT_PUBLIC_LEGAL_ADDRESS` | optional: postal address, required for businesses in the EU and UK |
+   | `NEXT_PUBLIC_LEGAL_REGISTRATION` | optional: company name and number, e.g. `Company no. 12345678` |
 
 7. Click **Save and Deploy**. The first build takes 3 to 5 minutes. When it finishes, open
    the `https://<name>.pages.dev` address. If Cloudflare shows a different address than

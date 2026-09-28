@@ -137,7 +137,7 @@ export default function LoginPage() {
         </Suspense>
       </Card>
       <p className="mt-4 text-center text-xs leading-relaxed text-muted">
-        By signing in you agree to the{" "}
+        By signing in you confirm that you are at least 16 years old, agree to the{" "}
         <Link href="/terms" className="underline underline-offset-2">
           Terms of Service
         </Link>{" "}

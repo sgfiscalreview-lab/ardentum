@@ -35,3 +35,6 @@ next-env.d.ts
 *.sqlite3
 .pgdata/
 cloudrun.env.yaml
+
+# Generated before dev/build (scripts/third-party-licenses.mjs)
+frontend/public/third-party-licenses.txt

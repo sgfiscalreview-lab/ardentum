@@ -150,9 +150,23 @@ test("legal pages are linked from every page and account data can be exported an
   await expect(page.getByRole("heading", { name: "Privacy Policy" })).toBeVisible();
   await page.getByRole("link", { name: "Terms of Service" }).first().click();
   await expect(page.getByRole("heading", { name: "Terms of Service" })).toBeVisible();
+  await page.getByRole("navigation", { name: "Legal" }).getByRole("link", { name: "Licences" }).click();
+  await expect(page.getByRole("heading", { name: "Licences", level: 1 })).toBeVisible();
+  const notices = await page.request.get("/third-party-licenses.txt");
+  expect(notices.ok()).toBe(true);
+  expect(await notices.text()).toContain("react ");
+
+  // The cookie policy lists what is stored and clears the settings on request.
+  await page.goto("/app");
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("ardentum.workspace"))).not.toBeNull();
+  await page.getByRole("navigation", { name: "Legal" }).getByRole("link", { name: "Cookie Policy" }).click();
+  await expect(page.getByRole("heading", { name: "Cookie Policy", level: 1 })).toBeVisible();
+  await page.getByRole("button", { name: "Clear my settings from this browser" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Cleared" })).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem("ardentum.workspace"))).toBeNull();
 
   await page.goto("/login?next=/account");
-  await expect(page.getByText(/By signing in you agree to the/)).toBeVisible();
+  await expect(page.getByText(/By signing in you confirm that you are at least 16 years old/)).toBeVisible();
   await page.getByLabel("Email").fill(`acct-${Date.now()}@example.com`);
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page).toHaveURL(/\/account/);
