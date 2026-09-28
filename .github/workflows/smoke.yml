@@ -10,6 +10,10 @@ on:
   schedule:
     - cron: "41 5 * * *"
   workflow_dispatch:
+    inputs:
+      site_url:
+        description: "Website address to check instead of the default (e.g. one deployment's own address)"
+        required: false
   # On branches only: a run on main would add a check to main's commits, and a failure
   # there (which can come from the live site, not the code) must not look like a broken
   # build or hold up deploys.
@@ -32,7 +36,7 @@ jobs:
     timeout-minutes: 20
     env:
       API_URL: ${{ vars.API_URL || 'https://ardentum-api.onrender.com' }}
-      SITE_URL: ${{ vars.SITE_URL || 'https://ardentum-frontend.pages.dev' }}
+      SITE_URL: ${{ inputs.site_url || vars.SITE_URL || 'https://ardentum-frontend.pages.dev' }}
       SUPABASE_URL: ${{ vars.SUPABASE_URL || 'https://nkfcdwltcmatapijhpli.supabase.co' }}
       SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_CiH4Os2AiFUzLhUNPbR0xg_YlspWU1K' }}
     steps:
