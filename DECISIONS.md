@@ -208,3 +208,15 @@ time. The ESG preference tilt does not apply (as for the mean-variance frontier)
 constraints do. The response also measures the mean-variance frontier's portfolios by the
 same CVaR, which makes the difference between the two risk measures visible; for
 elliptical returns the curves coincide, and the page says so.
+
+## D-030 Composite open-ESG scores
+Overlays can combine 2 to 6 WikiRate metrics. Each is scored by the existing single-metric
+pipeline (ISIN or user-confirmed matching, latest answer up to a year, linear or
+percentile transform with its own direction), then combined as a weighted average with
+positive user weights normalised to one (`quant.esg.composite_scores`). An asset gets a
+composite only with a score for every metric: renormalising over the available metrics
+is implicit imputation and compares companies on different measures, which CLAUDE.md
+rules out. Saved composites keep `kind: composite` in the overlay spec; `metric` and
+`transform` are null on those overlays and `components` lists the metrics and weights.
+Each asset's score provenance names every metric with its weight, year, part score and
+transformation.

@@ -511,6 +511,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/esg/open/composite-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview Composite
+         * @description Score each metric as in a single preview, then combine the 0-100 scores with the
+         *     given weights. Assets missing any metric get no composite score.
+         */
+        post: operations["preview_composite_api_v1_esg_open_composite_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/esg/overlays": {
         parameters: {
             query?: never;
@@ -523,7 +544,7 @@ export interface paths {
         put?: never;
         /**
          * Save Overlay
-         * @description Recompute the preview on the server and save it for use in analyses.
+         * @description Recompute the preview (single metric or composite) on the server and save it.
          */
         post: operations["save_overlay_api_v1_esg_overlays_post"];
         delete?: never;
@@ -879,6 +900,90 @@ export interface components {
             wealth: number[];
             /** Drawdown */
             drawdown: number[];
+        };
+        /** CompositeComponentIn */
+        CompositeComponentIn: {
+            /** Metric Id */
+            metric_id: number;
+            /**
+             * Weight
+             * @description Relative weight; normalised to sum to 1.
+             */
+            weight: number;
+            /**
+             * Year
+             * @description Latest answer up to this year.
+             */
+            year?: number | null;
+            transform?: components["schemas"]["EsgTransformIn"];
+        };
+        /** CompositeComponentOut */
+        CompositeComponentOut: {
+            metric: components["schemas"]["OpenMetricOut"];
+            /**
+             * Weight
+             * @description Normalised weight (the weights sum to 1).
+             */
+            weight: number;
+            /** Year */
+            year: number | null;
+            transform: components["schemas"]["EsgTransformIn"];
+            /**
+             * Scored
+             * @description Assets with a score for this metric.
+             */
+            scored: number;
+        };
+        /** CompositePartOut */
+        CompositePartOut: {
+            /** Metric Id */
+            metric_id: number;
+            /** Metric Title */
+            metric_title: string;
+            /** Year */
+            year: number | null;
+            /** Raw Value */
+            raw_value: number | null;
+            /** Score */
+            score: number | null;
+            /** Answer Url */
+            answer_url: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "scored" | "no_company" | "no_answer" | "not_numeric";
+        };
+        /** CompositePreviewOut */
+        CompositePreviewOut: {
+            /** Components */
+            components: components["schemas"]["CompositeComponentOut"][];
+            /** Entries */
+            entries: components["schemas"]["OverlayEntryOut"][];
+            /** Scored */
+            scored: number;
+            /** Warnings */
+            warnings: string[];
+            /** License */
+            license: string;
+            /** Attribution */
+            attribution: string;
+        };
+        /** CompositePreviewRequest */
+        CompositePreviewRequest: {
+            /** Dataset Id */
+            dataset_id: string;
+            /** Tickers */
+            tickers: string[];
+            /** Components */
+            components: components["schemas"]["CompositeComponentIn"][];
+            /**
+             * Company Overrides
+             * @description Ticker -> WikiRate company id, confirmed by the user.
+             */
+            company_overrides?: {
+                [key: string]: number;
+            };
         };
         /** ConstraintDiagnosticOut */
         ConstraintDiagnosticOut: {
@@ -1723,9 +1828,14 @@ export interface components {
              * Status
              * @enum {string}
              */
-            status: "scored" | "no_company" | "no_answer" | "not_numeric";
+            status: "scored" | "incomplete" | "no_company" | "no_answer" | "not_numeric";
             /** Note */
             note: string;
+            /**
+             * Parts
+             * @description Composite overlays: the score from each metric.
+             */
+            parts: components["schemas"]["CompositePartOut"][] | null;
         };
         /** OverlayOut */
         OverlayOut: {
@@ -1737,8 +1847,15 @@ export interface components {
             dataset_id: string;
             /** Source */
             source: string;
-            metric: components["schemas"]["OpenMetricOut"];
-            transform: components["schemas"]["EsgTransformIn"];
+            /** @description Single-metric overlays only. */
+            metric: components["schemas"]["OpenMetricOut"] | null;
+            /** @description Single-metric overlays only. */
+            transform: components["schemas"]["EsgTransformIn"] | null;
+            /**
+             * Components
+             * @description Composite overlays: the metrics and their weights.
+             */
+            components: components["schemas"]["CompositeComponentOut"][] | null;
             /** Year */
             year: number | null;
             /** Entries */
@@ -1795,7 +1912,8 @@ export interface components {
         OverlaySaveIn: {
             /** Name */
             name: string;
-            preview: components["schemas"]["OverlayPreviewRequest"];
+            preview?: components["schemas"]["OverlayPreviewRequest"] | null;
+            composite?: components["schemas"]["CompositePreviewRequest"] | null;
         };
         /** OverlaySummaryOut */
         OverlaySummaryOut: {
@@ -3252,6 +3370,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OverlayPreviewOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_composite_api_v1_esg_open_composite_preview_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompositePreviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompositePreviewOut"];
                 };
             };
             /** @description Validation Error */

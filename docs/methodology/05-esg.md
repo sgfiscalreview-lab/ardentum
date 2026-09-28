@@ -32,6 +32,16 @@ Assets without a match, an answer or a numeric value get **no score**: nothing i
 
 A single metric is a narrow view of "ESG". Choose one that is material for the assets in question, and read the scores as that metric's ranking only. Demo (synthetic) assets and industry portfolios cannot be matched to companies, so overlays require your own dataset.
 
+### Composite scores from several metrics
+
+A single metric is narrow, so an overlay can also combine two to six metrics. Each metric is matched, dated and transformed to 0-100 exactly as above (each with its own direction, scale and year), then combined per asset with weights $v_k > 0$ that you choose:
+
+$$
+s_i = \sum_k \frac{v_k}{\sum_j v_j}\, s_{ik} .
+$$
+
+This is a convex combination, so the composite stays on 0-100 and rises with every component. An asset receives a composite score **only if it has a score for every metric**. Averaging over the metrics an asset happens to have would silently fill the missing ones with that average, and would compare companies on different measures; such assets are shown as incomplete, with each part and the reason for the gap. Percentile ranks are computed per metric among the companies with values for that metric. The weights are a value judgement, not an estimate: they are shown next to every composite score and recorded in each score's provenance.
+
 ## How ESG changes the optimisation
 
 ESG settings enter the optimisation problem itself.

@@ -54,3 +54,6 @@ export type OverlayPreviewOut = S["OverlayPreviewOut"];
 export type OverlayEntryOut = S["OverlayEntryOut"];
 export type OverlayOut = S["OverlayOut"];
 export type OverlaySummaryOut = S["OverlaySummaryOut"];
+export type CompositeComponentIn = S["CompositeComponentIn"];
+export type CompositePreviewRequest = S["CompositePreviewRequest"];
+export type CompositePreviewOut = S["CompositePreviewOut"];

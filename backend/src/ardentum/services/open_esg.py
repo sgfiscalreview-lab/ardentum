@@ -23,6 +23,7 @@ import json
 import uuid
 from collections.abc import Sequence
 from dataclasses import replace
+from typing import Any
 from urllib.parse import urlencode
 
 import numpy as np
@@ -36,7 +37,7 @@ from ardentum.data.models import AssetInfo, DatasetInfo, EsgRecord
 from ardentum.data.providers import demo, kenfrench, wikirate
 from ardentum.db.models import EsgOverlay, User
 from ardentum.quant.errors import InvalidInputError
-from ardentum.quant.esg import percentile_scores, scale_linear
+from ardentum.quant.esg import composite_scores, percentile_scores, scale_linear
 from ardentum.services.market_data import MarketDataService, NotFoundError
 from ardentum.services.provider_cache import CachedPayload
 
@@ -86,6 +87,14 @@ def describe_transform(t: s.EsgTransformIn) -> str:
     if t.method == "linear":
         return f"linear scale from {t.lower:g} (score 0) to {t.upper:g} (score 100), {direction}"
     return f"percentile rank among matched companies, {direction}"
+
+
+def composite_attribution(metrics: Sequence[s.OpenMetricOut]) -> str:
+    listed = "; ".join(f"“{m.title}” by {m.designer} ({m.url})" for m in metrics)
+    return (
+        f"ESG data from WikiRate.org, licensed CC BY 4.0: {listed}. Scores are Ardentum "
+        "transformations of the published answers, combined with the weights shown."
+    )
 
 
 def attribution(metric: wikirate.OpenMetric) -> str:
@@ -289,6 +298,92 @@ class OpenEsgService:
             attribution=attribution(metric),
         )
 
+    def composite_preview(self, req: s.CompositePreviewRequest) -> s.CompositePreviewOut:
+        """Score every metric separately, then take the weighted average per asset.
+
+        An asset gets a composite score only with a score for every metric; otherwise its
+        parts are shown with the reason (never averaged over the metrics it happens to
+        have, which would impute the missing ones).
+        """
+        parts = [
+            self.preview(
+                s.OverlayPreviewRequest(
+                    dataset_id=req.dataset_id,
+                    tickers=req.tickers,
+                    metric_id=c.metric_id,
+                    year=c.year,
+                    transform=c.transform,
+                    company_overrides=req.company_overrides,
+                )
+            )
+            for c in req.components
+        ]
+        weights = np.array([c.weight for c in req.components])
+        matrix = np.array(
+            [[np.nan if e.score is None else e.score for e in p.entries] for p in parts]
+        ).T  # assets x metrics
+        combined = composite_scores(matrix, weights)
+        entries: list[s.OverlayEntryOut] = []
+        for i, base in enumerate(parts[0].entries):
+            own = [p.entries[i] for p in parts]
+            part_out = [
+                s.CompositePartOut(
+                    metric_id=p.metric.id,
+                    metric_title=p.metric.title,
+                    year=e.year,
+                    raw_value=e.raw_value,
+                    score=e.score,
+                    answer_url=e.answer_url,
+                    status=e.status,
+                )
+                for p, e in zip(parts, own, strict=True)
+            ]
+            score = None if np.isnan(combined[i]) else round(float(combined[i]), 4)
+            missing = [pt.metric_title for pt in part_out if pt.score is None]
+            if base.status == "no_company":
+                status, note = "no_company", base.note
+            elif score is not None:
+                status, note = "scored", f"Weighted average of {len(parts)} metric scores."
+            else:
+                status = "incomplete"
+                note = (
+                    f"Scored on {len(parts) - len(missing)} of {len(parts)} metrics; a composite "
+                    f"needs all of them. Missing: {', '.join(missing)}."
+                )
+            years = [pt.year for pt in part_out if pt.score is not None and pt.year is not None]
+            entries.append(
+                base.model_copy(
+                    update={
+                        "year": max(years) if years else None,
+                        "raw_value": None,
+                        "score": score,
+                        "answer_url": None,
+                        "status": status,
+                        "note": note,
+                        "parts": part_out,
+                    }
+                )
+            )
+        norm = weights / weights.sum()
+        warnings = [f"{p.metric.title}: {w}" for p in parts for w in p.warnings]
+        return s.CompositePreviewOut(
+            components=[
+                s.CompositeComponentOut(
+                    metric=p.metric,
+                    weight=float(wt),
+                    year=c.year,
+                    transform=p.transform,
+                    scored=p.scored,
+                )
+                for p, c, wt in zip(parts, req.components, norm, strict=True)
+            ],
+            entries=entries,
+            scored=sum(1 for e in entries if e.score is not None),
+            warnings=warnings,
+            license=wikirate.LICENSE,
+            attribution=composite_attribution([p.metric for p in parts]),
+        )
+
     # ------------------------------------------------------------------ saved overlays
 
     def _owner(self) -> tuple[Principal, Session]:
@@ -324,6 +419,35 @@ class OpenEsgService:
         session.commit()
         return overlay_out(row)
 
+    def save_composite(self, name: str, req: s.CompositePreviewRequest) -> s.OverlayOut:
+        principal, session = self._owner()
+        preview = self.composite_preview(req)  # recomputed server-side
+        if preview.scored == 0:
+            raise InvalidInputError(
+                "No asset has a score for every metric, so no composite score exists; "
+                "nothing to save."
+            )
+        uid = principal.user_id
+        if session.get(User, uid) is None:
+            session.add(User(id=uid, email=principal.email))
+        row = EsgOverlay(
+            owner_id=uid,
+            name=name.strip(),
+            dataset_id=req.dataset_id,
+            source=SOURCE,
+            spec={
+                "kind": "composite",
+                "components": [c.model_dump(mode="json") for c in preview.components],
+                "company_overrides": req.company_overrides,
+                "attribution": preview.attribution,
+            },
+            entries=[e.model_dump(mode="json") for e in preview.entries],
+            license=preview.license,
+        )
+        session.add(row)
+        session.commit()
+        return overlay_out(row)
+
     def list(self) -> list[s.OverlaySummaryOut]:
         principal, session = self._owner()
         rows = session.scalars(
@@ -336,7 +460,7 @@ class OpenEsgService:
                 id=str(r.id),
                 name=r.name,
                 dataset_id=r.dataset_id,
-                metric_title=str(r.spec["metric"]["title"]),
+                metric_title=overlay_title(r),
                 scored=sum(1 for e in r.entries if e.get("score") is not None),
                 total=len(r.entries),
                 created_at=r.created_at,
@@ -363,15 +487,32 @@ def get_overlay(market: MarketDataService, overlay_id: str) -> EsgOverlay:
     return row
 
 
+def is_composite(r: EsgOverlay) -> bool:
+    return r.spec.get("kind") == "composite"
+
+
+def overlay_title(r: EsgOverlay) -> str:
+    if not is_composite(r):
+        return str(r.spec["metric"]["title"])
+    titles = ", ".join(str(c["metric"]["title"]) for c in r.spec["components"])
+    return f"Composite: {titles}"[:200]
+
+
 def overlay_out(r: EsgOverlay) -> s.OverlayOut:
     entries = [s.OverlayEntryOut.model_validate(e) for e in r.entries]
+    composite = is_composite(r)
     return s.OverlayOut(
         id=str(r.id),
         name=r.name,
         dataset_id=r.dataset_id,
         source=r.source,
-        metric=s.OpenMetricOut.model_validate(r.spec["metric"]),
-        transform=s.EsgTransformIn.model_validate(r.spec["transform"]),
+        metric=None if composite else s.OpenMetricOut.model_validate(r.spec["metric"]),
+        transform=None if composite else s.EsgTransformIn.model_validate(r.spec["transform"]),
+        components=(
+            [s.CompositeComponentOut.model_validate(c) for c in r.spec["components"]]
+            if composite
+            else None
+        ),
         year=r.spec.get("year"),
         entries=entries,
         scored=sum(1 for e in entries if e.score is not None),
@@ -389,8 +530,6 @@ def overlay_assets(
     Assets the overlay does not score have no ESG score (never imputed, and never mixed
     with scores from another source).
     """
-    metric = r.spec["metric"]
-    method = describe_transform(s.EsgTransformIn.model_validate(r.spec["transform"]))
     by_ticker = {e["ticker"]: e for e in r.entries}
     names = set(tickers) | {a.ticker for a in info.assets}
     out = []
@@ -401,12 +540,30 @@ def overlay_assets(
         if e and e.get("score") is not None:
             year = int(e["year"])
             esg = EsgRecord(
-                score=float(e["score"]),
-                source=(
-                    f"WikiRate (CC BY 4.0): {metric['designer']}, {metric['title']}, {year} "
-                    f"answer for {e['company']}; {method}"
-                ),
-                as_of=dt.date(year, 12, 31),
+                score=float(e["score"]), source=_score_source(r, e), as_of=dt.date(year, 12, 31)
             )
         out.append(replace(a, esg=esg))
     return tuple(out)
+
+
+def _score_source(r: EsgOverlay, e: dict[str, Any]) -> str:
+    """Provenance of one asset's overlay score, as shown next to the score."""
+    if not is_composite(r):
+        metric = r.spec["metric"]
+        method = describe_transform(s.EsgTransformIn.model_validate(r.spec["transform"]))
+        return (
+            f"WikiRate (CC BY 4.0): {metric['designer']}, {metric['title']}, {e['year']} "
+            f"answer for {e['company']}; {method}"
+        )
+    comps = {int(c["metric"]["id"]): c for c in r.spec["components"]}
+    pieces = []
+    for p in e.get("parts") or []:
+        c = comps[int(p["metric_id"])]
+        method = describe_transform(s.EsgTransformIn.model_validate(c["transform"]))
+        pieces.append(
+            f"{p['metric_title']} ({float(c['weight']):.0%} weight, {p['year']} answer, "
+            f"score {float(p['score']):.0f}; {method})"
+        )
+    return f"WikiRate (CC BY 4.0) composite for {e['company']}, weighted average of: " + "; ".join(
+        pieces
+    )

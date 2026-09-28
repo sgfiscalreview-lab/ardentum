@@ -921,6 +921,16 @@ class OverlayPreviewRequest(RequestModel):
     )
 
 
+class CompositePartOut(ResponseModel):
+    metric_id: int
+    metric_title: str
+    year: int | None
+    raw_value: float | None
+    score: float | None
+    answer_url: str | None
+    status: Literal["scored", "no_company", "no_answer", "not_numeric"]
+
+
 class OverlayEntryOut(ResponseModel):
     ticker: str
     asset_name: str
@@ -932,8 +942,11 @@ class OverlayEntryOut(ResponseModel):
     raw_value: float | None
     score: float | None
     answer_url: str | None
-    status: Literal["scored", "no_company", "no_answer", "not_numeric"]
+    status: Literal["scored", "incomplete", "no_company", "no_answer", "not_numeric"]
     note: str
+    parts: list[CompositePartOut] | None = Field(
+        None, description="Composite overlays: the score from each metric."
+    )
 
 
 class OverlayPreviewOut(ResponseModel):
@@ -947,9 +960,56 @@ class OverlayPreviewOut(ResponseModel):
     attribution: str
 
 
+class CompositeComponentIn(RequestModel):
+    metric_id: int = Field(gt=0)
+    weight: float = Field(gt=0.0, le=100.0, description="Relative weight; normalised to sum to 1.")
+    year: int | None = Field(None, ge=1990, le=2100, description="Latest answer up to this year.")
+    transform: EsgTransformIn = Field(default_factory=EsgTransformIn)
+
+
+class CompositePreviewRequest(RequestModel):
+    dataset_id: str = Field(min_length=1, max_length=64)
+    tickers: list[Ticker] = Field(min_length=1, max_length=200)
+    components: list[CompositeComponentIn] = Field(min_length=2, max_length=6)
+    company_overrides: dict[Ticker, int] = Field(
+        default_factory=dict, description="Ticker -> WikiRate company id, confirmed by the user."
+    )
+
+    @field_validator("components")
+    @classmethod
+    def _distinct(cls, v: list[CompositeComponentIn]) -> list[CompositeComponentIn]:
+        if len({c.metric_id for c in v}) != len(v):
+            raise ValueError("Each metric can appear only once in a composite.")
+        return v
+
+
+class CompositeComponentOut(ResponseModel):
+    metric: OpenMetricOut
+    weight: float = Field(description="Normalised weight (the weights sum to 1).")
+    year: int | None
+    transform: EsgTransformIn
+    scored: int = Field(description="Assets with a score for this metric.")
+
+
+class CompositePreviewOut(ResponseModel):
+    components: list[CompositeComponentOut]
+    entries: list[OverlayEntryOut]
+    scored: int
+    warnings: list[str] = Field(default_factory=list)
+    license: str
+    attribution: str
+
+
 class OverlaySaveIn(RequestModel):
     name: str = Field(min_length=1, max_length=120)
-    preview: OverlayPreviewRequest
+    preview: OverlayPreviewRequest | None = None
+    composite: CompositePreviewRequest | None = None
+
+    @model_validator(mode="after")
+    def _one_kind(self) -> OverlaySaveIn:
+        if (self.preview is None) == (self.composite is None):
+            raise ValueError("Give either a single-metric preview or a composite, not both.")
+        return self
 
 
 class OverlayOut(ResponseModel):
@@ -957,8 +1017,11 @@ class OverlayOut(ResponseModel):
     name: str
     dataset_id: str
     source: str
-    metric: OpenMetricOut
-    transform: EsgTransformIn
+    metric: OpenMetricOut | None = Field(description="Single-metric overlays only.")
+    transform: EsgTransformIn | None = Field(description="Single-metric overlays only.")
+    components: list[CompositeComponentOut] | None = Field(
+        None, description="Composite overlays: the metrics and their weights."
+    )
     year: int | None
     entries: list[OverlayEntryOut]
     scored: int

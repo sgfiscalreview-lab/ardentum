@@ -44,12 +44,25 @@ def preview_overlay(req: s.OverlayPreviewRequest, service: MarketService) -> s.O
     return OpenEsgService(service).preview(req)
 
 
+@router.post("/open/composite-preview", response_model=s.CompositePreviewOut)
+def preview_composite(
+    req: s.CompositePreviewRequest, service: MarketService
+) -> s.CompositePreviewOut:
+    """Score each metric as in a single preview, then combine the 0-100 scores with the
+    given weights. Assets missing any metric get no composite score."""
+    return OpenEsgService(service).composite_preview(req)
+
+
 @router.post("/overlays", response_model=s.OverlayOut, status_code=status.HTTP_201_CREATED)
 def save_overlay(
     body: s.OverlaySaveIn, service: MarketService, _user: RequiredPrincipal
 ) -> s.OverlayOut:
-    """Recompute the preview on the server and save it for use in analyses."""
-    return OpenEsgService(service).save(body.name, body.preview)
+    """Recompute the preview (single metric or composite) on the server and save it."""
+    svc = OpenEsgService(service)
+    if body.composite is not None:
+        return svc.save_composite(body.name, body.composite)
+    assert body.preview is not None  # guaranteed by the model validator
+    return svc.save(body.name, body.preview)
 
 
 @router.get("/overlays", response_model=list[s.OverlaySummaryOut])

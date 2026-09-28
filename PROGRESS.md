@@ -37,6 +37,7 @@ Status as of 2026-09-26.
 | Plain visual design (founder's list of patterns to avoid), real screenshots on the landing page, skeleton loaders | ✅ | CLAUDE.md UI rules, D-027; axe checks on every page in both themes |
 | Terms of Service, Privacy Policy, account export and deletion | ✅ | `tests/api/test_account.py`, E2E legal/account flow |
 | Founder setup guide (click by click) | ✅ | `docs/SETUP_GUIDE.md` |
+| Composite open-ESG scores: 2-6 WikiRate metrics, each transformed to 0-100, combined with user weights; assets missing any metric stay unscored | ✅ | `tests/quant/test_esg_composite.py`, `tests/api/test_open_esg_composite_api.py`, E2E composite test |
 | Mean-CVaR efficient frontier (historical CVaR, Rockafellar-Uryasev LP), with the mean-variance portfolios measured by the same CVaR; Volatility/CVaR switch on the frontier page | ✅ | `tests/quant/test_cvar_frontier.py` (SciPy HiGHS, brute force, closed form), `tests/api/test_cvar_frontier_api.py`, E2E frontier test |
 | Render Blueprint (`render.yaml`, no card) as the recommended API host; keep-alive every 10 minutes | ✅ | D-028; memory measured at 243 MB peak of 512 MB |
 | Live smoke test of the deployment (`scripts/smoke.py`, daily workflow); keep-alive defaults to the production API | ✅ | checked locally against a production-mode API and a Pages-like server |
