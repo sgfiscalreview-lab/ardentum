@@ -11,8 +11,10 @@ services:
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
     healthCheckPath: /api/v1/health
-    # Deploy a new commit on main only after CI has passed on it.
-    autoDeployTrigger: checksPass
+    # Deploy every commit on main. Changes reach main through pull requests whose CI has
+    # passed; "checksPass" would also wait for the live smoke test, which can fail for
+    # reasons outside the code (e.g. the website host) and then block every deploy.
+    autoDeployTrigger: commit
     buildFilter:
       paths:
         - backend/**

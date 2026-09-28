@@ -193,8 +193,12 @@ on the free plan's CPU share, which the background-job design (D-025) absorbs (h
 every 5 s, stale after 30 s). The free plan sleeps after 15 idle minutes, so the keep-alive
 workflow now runs every 10 minutes (free for a public repository; one always-on service
 fits the 750 free hours a month, so a second free Render service would not). Region
-Singapore, the closest Render region to the Tokyo Supabase project. Deploys wait for CI
-(`autoDeployTrigger: checksPass`) and only follow changes under `backend/`.
+Singapore, the closest Render region to the Tokyo Supabase project. Deploys follow every
+commit on main under `backend/` (`autoDeployTrigger: commit`); `checksPass` was dropped
+because it also waited for the live smoke test, whose failures can come from the website
+host and then blocked all API deploys. Code reaches main only through pull requests
+whose CI passed. The keep-alive is scheduled every 5 minutes because GitHub delays
+scheduled runs (10-minute schedules arrived every 13 to 17 minutes).
 Measured with the production image limited to 512 MB and 0.1 CPU: first start with all
 migrations 59 s, restart (waking from sleep) 58 s, 30-point frontier 2.7 s, default
 simulation 5.9 s, largest allowed simulation 47 s, memory under 180 MB, no OOM.

@@ -14,7 +14,7 @@ if a button name differs slightly, look for the closest match.
 
 | Service | What it does for Ardentum | Cost |
 |---|---|---|
-| GitHub (you already have it) | Holds the code; runs tests; daily keep-alive | Free |
+| GitHub (you already have it) | Holds the code; runs tests; keep-alive every 5 minutes | Free |
 | Supabase | Database and sign-in | Free plan |
 | Google Cloud | The Google sign-in button; the API too if you choose Cloud Run (7B) | Free; a card only for Cloud Run |
 | Render | Runs the API (step 7A) | Free plan, no card |
@@ -375,7 +375,7 @@ Every later push to `main` rebuilds the website automatically. To change a varia
 
 Supabase pauses free projects after a week without activity, and Render's free plan stops
 the API after 15 idle minutes (the next visitor then waits about a minute). A job in the
-repository pings the API's database check every 10 minutes, which prevents both; it is free
+repository pings the API's database check every 5 minutes, which prevents both; it is free
 for public repositories.
 
 1. GitHub repository > **Settings** > **Secrets and variables** > **Actions** >
@@ -522,7 +522,8 @@ The publishable key, project URL and client IDs are public by design and need no
 
 - **Website**: push to `main`; Cloudflare rebuilds automatically.
 - **API on Render**: nothing to do; each new commit on `main` that touches `backend/` is
-  deployed once CI has passed.
+  deployed automatically. If a deploy does not start, open **ardentum-api** > **Manual Deploy** >
+  **Deploy latest commit**.
 - **API on Cloud Run**: in Cloud Shell, `cd ardentum && git pull && gcloud run deploy ardentum-api --source backend --env-vars-file cloudrun.env.yaml` (secrets and other settings are kept). Database migrations run automatically on start.
 - **Screenshots on the landing page**: run the app locally and `npm run screenshots` in
   `frontend/` (see `frontend/scripts/capture-screenshots.mjs`).

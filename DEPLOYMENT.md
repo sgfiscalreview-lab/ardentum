@@ -10,8 +10,8 @@ cost is an optional domain name.
 |---|---|---|
 | Web app (static) | **Cloudflare Pages** (fallback: Netlify) | Static files, unlimited bandwidth, 500 builds/month |
 | API (container) | **Render** free web service via `render.yaml` (no card), or **Google Cloud Run** | Render: 512 MB, small CPU share, sleeps after 15 idle minutes (the keep-alive prevents it). Cloud Run: ~2M requests, 180k vCPU-s, 360k GiB-s per month; card required, budget alert recommended |
-| PostgreSQL + sign-in | **Supabase** | 500 MB database; pauses after 7 idle days (prevented by the daily keep-alive) |
-| Keep-alive | GitHub Actions (`.github/workflows/keepalive.yml`) | `GET /api/v1/health/db` every 10 minutes |
+| PostgreSQL + sign-in | **Supabase** | 500 MB database; pauses after 7 idle days (prevented by the keep-alive) |
+| Keep-alive | GitHub Actions (`.github/workflows/keepalive.yml`) | `GET /api/v1/health/db` every 5 minutes |
 | Data | Built in, no keys | Ken French industries and risk-free rate, ECB FX (Frankfurter), WikiRate open ESG data |
 | Optional keys | FRED (free), WikiRate (free account) | Only needed for FRED's T-bill series, or if WikiRate requires a key |
 | Optional domain | Cloudflare Registrar | About $10/year for a `.com` |
@@ -102,11 +102,11 @@ Keep `--timeout` above 25 s.
 
 **Without a card: Render** (D-028). Dashboard → New → Blueprint → this repository.
 `render.yaml` defines the free Docker service (region Singapore, health check
-`/api/v1/health`, deploys after CI passes, only for changes under `backend/`) and the fixed
+`/api/v1/health`, deploys each commit on `main` that changes `backend/`) and the fixed
 variables; Render asks once for `ARDENTUM_SUPABASE_URL`, `ARDENTUM_CORS_ORIGINS`,
 `ARDENTUM_DATABASE_URL` and `ARDENTUM_SUPABASE_SERVICE_KEY`. Free instances sleep after 15
 idle minutes (the first request then takes about a minute); the keep-alive below pings
-every 10 minutes. Peak memory with one worker is about 250 MB of the 512 MB.
+every 5 minutes. Peak memory with one worker is about 250 MB of the 512 MB.
 
 ## 3. Web app on Cloudflare Pages
 
@@ -137,7 +137,7 @@ remains possible but is not needed for the free stack.
 
 GitHub → repository → Settings → Secrets and variables → Actions → **Variables** → add
 `API_URL` = the Render or Cloud Run URL. The `keepalive` workflow pings `/api/v1/health/db`
-every 10 minutes, which keeps the Supabase project from pausing and a Render free instance
+every 5 minutes, which keeps the Supabase project from pausing and a Render free instance
 from sleeping.
 
 ## 5. Optional custom domain
