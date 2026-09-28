@@ -237,3 +237,29 @@ forwards; the spread, transaction costs and forward bid-ask are ignored and this
 stated in every result's provenance. Rates are cached for 20 hours like FX. Currencies
 without a BIS series (e.g. SGD) cannot be hedged and get a clear error. OECD 3-month
 interbank rates via FRED were the alternative, but they are monthly and need a key.
+
+## D-032 Legal and compliance checklist
+Reviewed the app against a common 20-point checklist. Items that apply were built:
+privacy policy (legal bases, processors including Render and BIS, international
+transfers, retention, rights, how to request deletion, no marketing emails), terms (age
+16+, fees and refunds, licences), a cookie policy listing every browser-storage item,
+operator address and registration (optional settings, shown in the footer), an age
+confirmation at sign-in, third-party notices generated at build time, and a table view for
+the one chart without a text alternative. Data minimisation: rate-limit counters now store
+a keyed, daily-changing HMAC of the IP address instead of the address
+(`ARDENTUM_RATE_LIMIT_SECRET`; Render generates it).
+
+Not built, and why:
+* **Cookie consent banner.** Ardentum sets no cookies and stores only strictly necessary
+  items (session token, theme and workspace choices), which ePrivacy Art. 5(3) and UK PECR
+  reg. 6 exempt from consent. A banner with nothing to refuse would itself be a dark
+  pattern. The cookie policy commits to asking first if non-essential storage is added.
+* **Refund policy page, hidden fees.** The service is free with no payment flow; the terms
+  say so and set conditions for any future paid features.
+* **Fake reviews, unsupported claims.** None exist (no testimonials by design); the landing
+  copy was re-checked against the code and tests.
+* **Unsubscribe links.** No marketing emails are sent; Supabase account emails are
+  transactional.
+The build-time licence check allows LGPL only in build-only packages (sharp's libvips) and
+fails on any other copyleft or undeclared licence, so a dependency change cannot ship one
+unnoticed.

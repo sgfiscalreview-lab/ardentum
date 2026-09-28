@@ -154,7 +154,19 @@ function Results({ data }: { data: CompareResponse }) {
       >
         <TimeSeriesChart dates={dates} series={ps.map((p, i) => ({ key: `s${i}`, name: p.name, values: p.wealth.map((w) => w * 100), color: seriesColor(i) }))} yFormat={(v) => v.toFixed(0)} />
       </ChartFrame>
-      <ChartFrame title="Drawdown" legend={ps.map((p, i) => ({ label: p.name, color: seriesColor(i) }))}>
+      <ChartFrame
+        title="Drawdown"
+        legend={ps.map((p, i) => ({ label: p.name, color: seriesColor(i) }))}
+        table={
+          <DataTable
+            columns={[{ key: "d", label: "Date" }, ...ps.map((p) => ({ key: p.name, label: p.name, align: "right" as const }))]}
+            rows={dates
+              .map((d, i) => ({ d, i }))
+              .filter(({ i }) => i % 21 === 0)
+              .map(({ d, i }) => ({ d, ...Object.fromEntries(ps.map((p) => [p.name, pct(p.drawdown[i], 1)])) }))}
+          />
+        }
+      >
         <TimeSeriesChart dates={dates} series={ps.map((p, i) => ({ key: `s${i}`, name: p.name, values: p.drawdown, color: seriesColor(i) }))} yFormat={(v) => `${(v * 100).toFixed(0)}%`} height={200} />
       </ChartFrame>
       <Card title="Correlation of portfolio returns" bodyClassName="p-0">

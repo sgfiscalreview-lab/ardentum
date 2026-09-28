@@ -6,6 +6,7 @@ Run with ``uvicorn ardentum.api.main:create_app --factory``.
 from __future__ import annotations
 
 import logging
+import secrets
 import time
 import uuid
 from collections.abc import Awaitable, Callable
@@ -25,6 +26,7 @@ from ardentum.api.ratelimit import (
     DatabaseRateLimiter,
     Limiter,
     RateLimiter,
+    address_key,
     client_ip,
 )
 from ardentum.api.routers import analysis, auth, datasets, jobs, meta, open_esg, portfolios
@@ -74,6 +76,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             else RateLimiter(settings.compute_rate_limit, 60.0)
         )
 
+    address_secret = (
+        settings.rate_limit_secret.encode()
+        if settings.rate_limit_secret
+        else secrets.token_bytes(32)
+    )
+
     def _client_key(request: Request) -> str:
         auth = request.headers.get("authorization", "")
         scheme, _, token = auth.partition(" ")
@@ -83,9 +91,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             except AuthError:
                 pass  # invalid tokens are rejected later; limit them by address
         peer = request.client.host if request.client else None
-        return "ip:" + client_ip(
-            request.headers.get("x-forwarded-for"), peer, settings.trusted_proxy_hops
-        )
+        ip = client_ip(request.headers.get("x-forwarded-for"), peer, settings.trusted_proxy_hops)
+        return address_key(ip, address_secret)
 
     @app.middleware("http")
     async def _rate_limit(

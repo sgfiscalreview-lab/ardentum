@@ -326,7 +326,12 @@ def check_site(rep: Report, site: str, api: str, supabase: str | None, key: str 
                 )
 
     def legal() -> None:
-        for path, title in (("/terms", "Terms of Service"), ("/privacy", "Privacy Policy")):
+        for path, title in (
+            ("/terms", "Terms of Service"),
+            ("/privacy", "Privacy Policy"),
+            ("/cookies", "Cookie Policy"),
+            ("/licences", "Licences"),
+        ):
             r = request("GET", base + path)
             if r.status != 200 or title not in r.text:
                 rep.fail(f"Page {path}", f"HTTP {r.status}; heading '{title}' not found")

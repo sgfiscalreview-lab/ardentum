@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "node scripts/third-party-licenses.mjs",
     "dev": "next dev --port 3000",
+    "prebuild": "node scripts/third-party-licenses.mjs",
     "build": "next build",
     "start": "next start --port 3000",
     "lint": "eslint .",
