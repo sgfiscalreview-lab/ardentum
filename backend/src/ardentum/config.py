@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import json
 from enum import StrEnum
 from functools import lru_cache
-from typing import Literal
+from typing import Annotated, Any, Literal
 
-from pydantic import Field, model_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field, field_validator, model_validator
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Environment(StrEnum):
@@ -26,7 +27,10 @@ class Settings(BaseSettings):
 
     env: Environment = Environment.DEVELOPMENT
     database_url: str = "sqlite:///./ardentum-dev.sqlite3"
-    cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
+    # A JSON list (["https://a", "https://b"]) or comma-separated addresses.
+    cors_origins: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: ["http://localhost:3000"]
+    )
     # Optional regex for preview deployments, e.g. r"https://[a-z0-9-]+\.ardentum\.pages\.dev"
     cors_origin_regex: str | None = None
 
@@ -51,6 +55,27 @@ class Settings(BaseSettings):
     # 0 uses the socket address and ignores the header, which clients can forge.
     trusted_proxy_hops: int = Field(0, ge=0, le=5)
     log_level: str = "INFO"
+
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def _parse_origins(cls, v: Any) -> Any:
+        """Accept JSON or comma-separated values; drop spaces and trailing slashes, which a
+        browser's Origin header never has (a mismatch would block every request)."""
+        if isinstance(v, str):
+            text = v.strip()
+            if text.startswith("["):
+                try:
+                    v = json.loads(text)
+                except ValueError as exc:
+                    raise ValueError(
+                        "ARDENTUM_CORS_ORIGINS is not valid JSON; use "
+                        '["https://your-site"] or plain comma-separated addresses.'
+                    ) from exc
+            else:
+                v = text.split(",")
+        if isinstance(v, list):
+            return [o.strip().rstrip("/") for o in v if isinstance(o, str) and o.strip()]
+        return v
 
     @model_validator(mode="after")
     def _production_safety(self) -> Settings:
