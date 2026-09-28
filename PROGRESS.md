@@ -45,9 +45,9 @@ Status as of 2026-09-26.
 | Database URLs copied from Supabase's ORM snippets (`?pgbouncer=true`) accepted | ✅ | `tests/data/test_db_url.py`; migrations checked with such a URL on PostgreSQL |
 
 ## Test status
-- Backend: 302 tests passing (SQLite); API suite (73 tests) also passing on PostgreSQL 16; 93% line coverage; ruff clean; mypy --strict clean. Migrations 0001–0005 upgrade, `alembic check` and downgrade cleanly on PostgreSQL.
+- Backend: 341 tests passing (SQLite); API suite (82 tests) also passing on PostgreSQL 16; 93% line coverage; ruff clean; mypy --strict clean. Migrations 0001–0005 upgrade, `alembic check` and downgrade cleanly on PostgreSQL.
 - Frontend: ESLint (incl. React Compiler rules) clean; `tsc --strict` clean; Vitest unit tests passing.
-- End-to-end: 30 Playwright tests (11 workflows incl. open ESG data and account deletion, 19 accessibility checks over 9 pages in light and dark) passing; Playwright starts the API, the web app and a local WikiRate stand-in.
+- End-to-end: 35 Playwright tests (14 workflows incl. open ESG data, composite scores, CVaR frontier, currency hedging and account deletion, 21 accessibility checks over 10 pages in light and dark) passing; Playwright starts the API, the web app and a local WikiRate stand-in.
 
 ## Performance (dev container, 14 assets, 10 years daily)
 | Request | Time |
