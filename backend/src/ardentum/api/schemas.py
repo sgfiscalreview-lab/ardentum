@@ -51,7 +51,14 @@ class UniverseSelection(RequestModel):
     base_currency: str | None = Field(
         None,
         pattern=r"^[A-Z]{3}$",
-        description="Express all prices in this ISO 4217 currency (unhedged, ECB rates).",
+        description="Express all prices in this ISO 4217 currency (ECB rates).",
+    )
+    currency_hedged: bool = Field(
+        False,
+        description=(
+            "Hedge foreign-currency assets back to the base currency with a rolling "
+            "one-period forward priced from central-bank policy rates (BIS)."
+        ),
     )
 
     @field_validator("tickers")

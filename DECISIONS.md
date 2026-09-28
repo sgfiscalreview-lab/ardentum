@@ -220,3 +220,16 @@ rules out. Saved composites keep `kind: composite` in the overlay spec; `metric`
 `transform` are null on those overlays and `components` lists the metrics and weights.
 Each asset's score provenance names every metric with its weight, year, part score and
 transformation.
+
+## D-031 Currency-hedged returns from BIS policy rates
+D-021 left hedging out for lack of a free source of forward points. Covered interest
+parity prices a forward from the two currencies' short rates, and the BIS publishes daily
+central-bank policy rates for about 30 economies through a free, keyless API whose terms
+allow reuse (including commercial) with the BIS cited. The hedge is a one-period forward
+on the start-of-period value, re-set on every source price date, so
+`r_H = r_L (1 + r_X) + (1 + i_B d)/(1 + i_L d) - 1` with rates known at `t-1` (no
+look-ahead). Policy rates approximate the money-market rates that actually price
+forwards; the spread, transaction costs and forward bid-ask are ignored and this is
+stated in every result's provenance. Rates are cached for 20 hours like FX. Currencies
+without a BIS series (e.g. SGD) cannot be hedged and get a clear error. OECD 3-month
+interbank rates via FRED were the alternative, but they are monthly and need a key.

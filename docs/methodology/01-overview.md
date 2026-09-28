@@ -26,7 +26,7 @@ Ardentum follows one pipeline. Each stage has its own document:
 - Annualisation uses 252 trading days, 52 weeks or 12 months per year.
 - "Expected return" in optimisation is the **arithmetic** annual mean; "CAGR" is the **geometric** growth rate. The first exceeds the second by roughly $\sigma^2/2$.
 - The risk-free rate is an effective annual rate chosen by the user (optionally filled from a public T-bill series; see Data).
-- Results are in one currency; mixed-currency universes are converted unhedged at ECB reference rates.
+- Results are in one currency; mixed-currency universes are converted at ECB reference rates, unhedged or hedged with a rolling one-period forward priced from central-bank policy rates.
 - Every result lists its estimation window, estimators and data source.
 
 ## What Ardentum will not do

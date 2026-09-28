@@ -26,4 +26,4 @@ Legend: **[F]** needs a founder decision/credential · **[E]** engineering
 - [x] Mean-CVaR efficient frontier (D-029).
 - [x] Open ESG overlays from several metrics combined into one composite score (weights chosen by the user; D-030).
 - [x] Multi-currency universes, unhedged conversion at ECB rates (D-021).
-- [ ] Currency-hedged returns (needs a free source of forward points or daily interest differentials).
+- [x] Currency-hedged returns: rolling one-period forward priced by covered interest parity from BIS central-bank policy rates (D-031).

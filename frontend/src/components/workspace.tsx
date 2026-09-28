@@ -161,7 +161,10 @@ export function UniverseSummary() {
         {u.base_currency && (
           <div className="flex justify-between gap-2">
             <dt>Currency</dt>
-            <dd className="text-ink">{u.base_currency}</dd>
+            <dd className="text-ink">
+              {u.base_currency}
+              {u.currency_hedged ? ", hedged" : ""}
+            </dd>
           </div>
         )}
       </dl>

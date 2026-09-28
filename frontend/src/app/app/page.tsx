@@ -139,7 +139,7 @@ export default function UniversePage() {
               </Field>
             </div>
           </Card>
-          <CurrencyCard universe={u} assets={assets} onChange={(c) => setUniverse({ base_currency: c })} />
+          <CurrencyCard universe={u} assets={assets} onChange={setUniverse} />
           <EstimationCard value={state.estimation} universe={u} capsAvailable={ds.data?.has_market_caps ?? false} onChange={setEstimation} />
           <UploadCard />
         </div>
@@ -204,7 +204,7 @@ function TickerEntry({ tickers, onChange }: { tickers: string[]; onChange: (t: s
   );
 }
 
-function CurrencyCard({ universe, assets, onChange }: { universe: UniverseSelection; assets: AssetOut[]; onChange: (c: string | null) => void }) {
+function CurrencyCard({ universe, assets, onChange }: { universe: UniverseSelection; assets: AssetOut[]; onChange: (v: Partial<UniverseSelection>) => void }) {
   const chosen = new Set(universe.tickers);
   const currencies = Array.from(new Set(assets.filter((a) => chosen.has(a.ticker)).map((a) => a.currency))).sort();
   const mixed = currencies.length > 1;
@@ -213,9 +213,13 @@ function CurrencyCard({ universe, assets, onChange }: { universe: UniverseSelect
       <Field
         label="Base currency"
         htmlFor="ccy"
-        hint="Prices in other currencies are converted at daily ECB reference rates (via Frankfurter). Returns are unhedged: they include exchange-rate moves."
+        hint="Prices in other currencies are converted at daily ECB reference rates (via Frankfurter)."
       >
-        <Select id="ccy" value={universe.base_currency ?? ""} onChange={(e) => onChange(e.target.value || null)}>
+        <Select
+          id="ccy"
+          value={universe.base_currency ?? ""}
+          onChange={(e) => onChange(e.target.value ? { base_currency: e.target.value } : { base_currency: null, currency_hedged: false })}
+        >
           <option value="">{mixed ? "Choose a currency…" : `As quoted${currencies[0] ? ` (${currencies[0]})` : ""}`}</option>
           {ECB_CURRENCIES.map((c) => (
             <option key={c} value={c}>
@@ -228,6 +232,23 @@ function CurrencyCard({ universe, assets, onChange }: { universe: UniverseSelect
         <p className="mt-2 text-xs text-warn" role="status">
           The selected assets are priced in {currencies.join(", ")}; choose a base currency to compare them.
         </p>
+      )}
+      {universe.base_currency && (
+        <Field
+          className="mt-3"
+          label="Currency risk"
+          htmlFor="hedge"
+          hint={
+            universe.currency_hedged
+              ? "Each period the foreign position is sold forward at a rate set by the two currencies' central-bank policy rates (BIS). You keep the local return plus or minus the rate difference; only each period's gain stays exposed to the exchange rate."
+              : "Returns include exchange-rate moves, as for an investor who converts and does not hedge."
+          }
+        >
+          <Select id="hedge" value={universe.currency_hedged ? "hedged" : "unhedged"} onChange={(e) => onChange({ currency_hedged: e.target.value === "hedged" })}>
+            <option value="unhedged">Unhedged</option>
+            <option value="hedged">Hedged to {universe.base_currency}</option>
+          </Select>
+        </Field>
       )}
     </Card>
   );

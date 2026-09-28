@@ -179,7 +179,9 @@ def load(
     service: MarketDataService, u: s.UniverseSelection, extra: Sequence[str] = ()
 ) -> LoadedData:
     tickers = list(u.tickers) + [t for t in extra if t not in u.tickers]
-    data = service.load(u.dataset_id, tickers, u.start, u.end, u.frequency, u.base_currency)
+    data = service.load(
+        u.dataset_id, tickers, u.start, u.end, u.frequency, u.base_currency, u.currency_hedged
+    )
     if u.esg_overlay_id is None:
         return data
     overlay = get_overlay(service, u.esg_overlay_id)

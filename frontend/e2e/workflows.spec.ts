@@ -54,6 +54,19 @@ test("ESG constraints fail loudly on unscored assets and report their cost when 
   await expect(page.getByText("ESG-efficient frontier")).toBeVisible();
 });
 
+test("choosing a base currency offers currency hedging", async ({ page }) => {
+  await page.goto("/app");
+  await expect(page.getByLabel("Currency risk")).toHaveCount(0);
+  await page.getByLabel("Base currency").selectOption("EUR");
+  await page.getByLabel("Currency risk").selectOption("hedged");
+  await expect(page.getByText(/sold forward at a rate set by the two currencies' central-bank policy rates/)).toBeVisible();
+  await expect(page.getByText("EUR, hedged")).toBeVisible();
+  // Clearing the base currency also clears hedging.
+  await page.getByLabel("Base currency").selectOption("");
+  await expect(page.getByLabel("Currency risk")).toHaveCount(0);
+  await expect(page.getByText("EUR, hedged")).toHaveCount(0);
+});
+
 test("efficient frontier by volatility and by CVaR (tail loss)", async ({ page }) => {
   await page.goto("/app/frontier");
   await page.getByRole("button", { name: "Trace frontier" }).click();

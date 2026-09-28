@@ -33,12 +33,12 @@ from ardentum.data.models import (
     DatasetKind,
     EsgRecord,
 )
-from ardentum.data.providers import demo, fx, kenfrench
+from ardentum.data.providers import bis, demo, fx, kenfrench
 from ardentum.data.providers.tiingo import TiingoProvider, parse_history
 from ardentum.data.providers.tiingo import provenance as tiingo_provenance
 from ardentum.data.validation import QualityReport, align_prices
 from ardentum.db.models import Dataset
-from ardentum.quant.currency import convert_prices
+from ardentum.quant.currency import convert_prices, convert_prices_hedged
 from ardentum.quant.errors import InsufficientDataError, InvalidInputError
 from ardentum.quant.frequency import Frequency
 from ardentum.quant.optimisation import AssetMetadata
@@ -50,6 +50,7 @@ MIN_OBSERVATIONS = 30
 KF_MAX_AGE = dt.timedelta(days=7)  # the library updates monthly
 TIINGO_MAX_AGE = dt.timedelta(hours=20)  # end-of-day data
 FX_MAX_AGE = dt.timedelta(hours=20)  # ECB publishes once per business day
+RATES_MAX_AGE = dt.timedelta(hours=20)  # BIS policy rates, updated daily
 
 
 class NotFoundError(Exception):
@@ -394,6 +395,20 @@ class MarketDataService:
             _PARSED_CACHE.put(key, rates)
         return rates, got  # type: ignore[return-value]
 
+    def policy_rates(self, currency: str) -> tuple[pd.Series, CachedPayload]:
+        """Daily central-bank policy rates (annual decimals) for a currency (BIS, cached)."""
+        cur = currency.upper()
+        bis.area_for(cur)  # clear error before any network call
+        got = self.cache.get_or_fetch(
+            "bis", f"policy-rate:{cur}", RATES_MAX_AGE, lambda: bis.rates_payload(cur)
+        )
+        key = ("bis", cur, got.fetched_at)
+        rates = _PARSED_CACHE.get(key)
+        if rates is None:
+            rates = bis.parse_rates(got.payload, cur)
+            _PARSED_CACHE.put(key, rates)
+        return rates, got  # type: ignore[return-value]
+
     def _to_base_currency(
         self,
         raw: pd.DataFrame,
@@ -401,6 +416,7 @@ class MarketDataService:
         info: DatasetInfo,
         tickers: list[str],
         base: str | None,
+        hedged: bool = False,
     ) -> tuple[pd.DataFrame, DataProvenance, str]:
         currency = {t: (a.currency if (a := info.asset(t)) else "USD").upper() for t in tickers}
         if base is None:
@@ -410,6 +426,10 @@ class MarketDataService:
                     f"The selected assets are priced in {', '.join(distinct)}; choose a base "
                     "currency so their returns are comparable."
                 )
+            if hedged:
+                raise InvalidInputError(
+                    "Currency hedging needs a base currency; choose one, or use unhedged returns."
+                )
             return raw, provenance, distinct[0]
         base = base.upper()
         by_local: dict[str, list[str]] = {}
@@ -417,25 +437,51 @@ class MarketDataService:
             if currency[t] != base:
                 by_local.setdefault(currency[t], []).append(t)
         if not by_local:
+            if hedged:
+                provenance = _with_note(
+                    provenance,
+                    f"All selected assets are priced in {base}; there is no currency to hedge.",
+                )
             return raw, provenance, base
         out = raw.copy()
         stale = False
         oldest: dt.datetime | None = None
+        base_rates: pd.Series | None = None
+        if hedged:
+            base_rates, got_b = self.policy_rates(base)
+            stale = stale or got_b.stale
         for local, members in by_local.items():
             rates, got = self.fx_rates(local, base)
             stale = stale or got.stale
             oldest = got.fetched_at if oldest is None else min(oldest, got.fetched_at)
+            local_rates: pd.Series | None = None
+            if hedged:
+                local_rates, got_l = self.policy_rates(local)
+                stale = stale or got_l.stale
             for t in members:
-                out[t] = convert_prices(raw[t], rates)
+                if base_rates is not None and local_rates is not None:
+                    out[t] = convert_prices_hedged(raw[t], rates, base_rates, local_rates)
+                else:
+                    out[t] = convert_prices(raw[t], rates)
         assert oldest is not None
-        prov = _with_note(
-            provenance,
+        converted = (
             f"Prices quoted in {', '.join(sorted(by_local))} were converted to {base} at "
-            f"{fx.SOURCE}, retrieved {oldest.date().isoformat()}. Returns are unhedged: "
-            "they include exchange-rate moves.",
+            f"{fx.SOURCE}, retrieved {oldest.date().isoformat()}. "
         )
+        if hedged:
+            note = converted + (
+                "Returns are currency-hedged: each period the position's value is sold forward "
+                "at a rate implied by the two currencies' short interest rates (covered "
+                f"interest parity), using {bis.SOURCE}. The interest-rate difference is the "
+                "cost or income of hedging; only each period's gain stays exposed to the "
+                "exchange rate. Transaction costs and the spread between policy and "
+                "money-market rates are ignored."
+            )
+        else:
+            note = converted + "Returns are unhedged: they include exchange-rate moves."
+        prov = _with_note(provenance, note)
         if stale:
-            prov = _with_note(prov, "The FX source could not be reached; using cached rates.")
+            prov = _with_note(prov, "A rate source could not be reached; using cached rates.")
         return out, prov, base
 
     # ------------------------------------------------------------------ load
@@ -448,12 +494,13 @@ class MarketDataService:
         end: dt.date | None = None,
         frequency: str = "daily",
         base_currency: str | None = None,
+        currency_hedged: bool = False,
     ) -> LoadedData:
         raw, provenance, info = self._raw_prices(dataset_id, list(tickers), start, end)
         if raw.empty:
             raise InsufficientDataError("No prices in the selected date range.")
         raw, provenance, currency = self._to_base_currency(
-            raw, provenance, info, list(tickers), base_currency
+            raw, provenance, info, list(tickers), base_currency, currency_hedged
         )
         aligned, report = align_prices(raw)
         freq = Frequency(frequency)
