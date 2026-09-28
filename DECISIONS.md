@@ -198,3 +198,13 @@ Singapore, the closest Render region to the Tokyo Supabase project. Deploys wait
 Measured with the production image limited to 512 MB and 0.1 CPU: first start with all
 migrations 59 s, restart (waking from sleep) 58 s, 30-point frontier 2.7 s, default
 simulation 5.9 s, largest allowed simulation 47 s, memory under 180 MB, no OOM.
+
+## D-029 Mean-CVaR efficient frontier
+A separate endpoint (`POST /frontier/cvar`, job kind `cvar_frontier`) so the mean-variance
+contract stays unchanged. Each point solves the Rockafellar-Uryasev LP at a target return
+over the estimation window's historical scenarios; CVaR stays one-period (the data's
+frequency) and is not annualised, since tail losses do not scale with the square root of
+time. The ESG preference tilt does not apply (as for the mean-variance frontier), but ESG
+constraints do. The response also measures the mean-variance frontier's portfolios by the
+same CVaR, which makes the difference between the two risk measures visible; for
+elliptical returns the curves coincide, and the page says so.

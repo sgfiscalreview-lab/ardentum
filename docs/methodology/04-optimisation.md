@@ -65,6 +65,18 @@ $$
 
 which Ardentum reproduces to within $10^{-5}$ relative error (automated test). The capital market line runs from $r_f$ through the maximum-Sharpe portfolio.
 
+## Mean-CVaR efficient frontier
+
+Replacing variance by historical CVaR gives the mean-CVaR frontier (Rockafellar and Uryasev 2002; Krokhmal, Palmquist and Uryasev 2002). For each target $m$ on a grid from the minimum-CVaR portfolio's expected return to the highest attainable return,
+
+$$
+\min_{w,\alpha,u}\ \alpha + \frac{1}{(1-\beta)T}\sum_{t=1}^{T} u_t \quad\text{s.t.}\quad u_t \ge -r_t^\top w - \alpha,\ u_t \ge 0,\ \mu^\top w \ge m,\ w \in \mathcal C .
+$$
+
+The optimal value is a convex, nondecreasing function of $m$, so only the efficient branch above the minimum-CVaR portfolio is shown. As with minimum CVaR, the tail measure is per data period and historical; expected returns are the same annualised estimates used elsewhere. The page also measures the mean-variance frontier's portfolios by the same CVaR: for elliptical (e.g. normal) returns the two frontiers coincide, so a gap between them is a picture of the fat tails and skew that volatility ignores.
+
+Validation: every point equals an independent solution of the same linear programme by SciPy's HiGHS solver; no portfolio on a brute-force grid over the simplex with at least the same expected return has lower CVaR; each point's reported CVaR and VaR equal the closed-form historical values of its weights; returns increase and CVaR never decreases along the frontier; and no mean-variance portfolio has lower CVaR than the mean-CVaR frontier at or below its return.
+
 ## Solving and verification
 
 Problems are solved with CVXPY (Diamond & Boyd, 2016) using the Clarabel interior-point solver (Goulart & Chen, 2024), with SCS as a fallback. After solving, Ardentum:

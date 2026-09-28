@@ -215,6 +215,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/frontier/cvar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cvar Frontier
+         * @description Mean-CVaR efficient frontier (historical expected shortfall), with the mean-variance
+         *     frontier's portfolios measured by the same CVaR for comparison.
+         */
+        post: operations["cvar_frontier_api_v1_frontier_cvar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/esg/impact": {
         parameters: {
             query?: never;
@@ -932,6 +953,91 @@ export interface components {
          * @enum {string}
          */
         CovarianceEstimator: "sample" | "ledoit_wolf" | "ledoit_wolf_constant_correlation";
+        /** CvarFrontierAssetOut */
+        CvarFrontierAssetOut: {
+            /** Ticker */
+            ticker: string;
+            /** Expected Return */
+            expected_return: number;
+            /** Var */
+            var: number;
+            /** Cvar */
+            cvar: number;
+            /** Sector */
+            sector: string | null;
+        };
+        /** CvarFrontierPointOut */
+        CvarFrontierPointOut: {
+            /** Expected Return */
+            expected_return: number;
+            /** Volatility */
+            volatility: number;
+            /**
+             * Var
+             * @description One-period historical VaR (loss).
+             */
+            var: number;
+            /**
+             * Cvar
+             * @description One-period historical CVaR (average loss beyond VaR).
+             */
+            cvar: number;
+            /** Sharpe Ratio */
+            sharpe_ratio: number | null;
+            /** Esg Score */
+            esg_score: number | null;
+            /** Weights */
+            weights: {
+                [key: string]: number;
+            };
+        };
+        /** CvarFrontierRequest */
+        CvarFrontierRequest: {
+            universe: components["schemas"]["UniverseSelection"];
+            estimation?: components["schemas"]["EstimationSettings"];
+            constraints?: components["schemas"]["ConstraintsIn"];
+            /**
+             * N Points
+             * @default 20
+             */
+            n_points: number;
+            /**
+             * Cvar Confidence
+             * @description Confidence level of the historical CVaR.
+             * @default 0.95
+             */
+            cvar_confidence: number;
+        };
+        /** CvarFrontierResponse */
+        CvarFrontierResponse: {
+            /** Points */
+            points: components["schemas"]["CvarFrontierPointOut"][];
+            min_cvar: components["schemas"]["CvarFrontierPointOut"];
+            /**
+             * Mean Variance Points
+             * @description The mean-variance frontier's portfolios, measured by the same CVaR.
+             */
+            mean_variance_points: components["schemas"]["CvarFrontierPointOut"][];
+            /** Assets */
+            assets: components["schemas"]["CvarFrontierAssetOut"][];
+            /** Cvar Confidence */
+            cvar_confidence: number;
+            /**
+             * Frequency
+             * @description Period of VaR and CVaR: daily, weekly or monthly.
+             */
+            frequency: string;
+            /** Observations */
+            observations: number;
+            /** Risk Free Rate */
+            risk_free_rate: number;
+            /** Warnings */
+            warnings: string[];
+            estimation: components["schemas"]["EstimationOut"];
+            data: components["schemas"]["DataWindowOut"];
+            /** Excluded Unscored */
+            excluded_unscored: string[];
+        };
         /** DataWindowOut */
         DataWindowOut: {
             /** Dataset Id */
@@ -1295,7 +1401,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "analytics" | "optimise" | "frontier" | "esg_impact" | "montecarlo" | "backtest" | "compare";
+            kind: "analytics" | "optimise" | "frontier" | "cvar_frontier" | "esg_impact" | "montecarlo" | "backtest" | "compare";
             /**
              * Request
              * @description The body of the corresponding POST endpoint.
@@ -2530,6 +2636,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FrontierResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cvar_frontier_api_v1_frontier_cvar_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CvarFrontierRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CvarFrontierResponse"];
                 };
             };
             /** @description Validation Error */

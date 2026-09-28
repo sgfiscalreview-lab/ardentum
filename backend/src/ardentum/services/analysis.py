@@ -32,7 +32,14 @@ from ardentum.quant.black_litterman import BlackLittermanSpec, View
 from ardentum.quant.errors import InvalidInputError
 from ardentum.quant.estimation import MarketEstimates, MeanEstimator, estimate, risk_free_arithmetic
 from ardentum.quant.explain import explain, resampled_weight_intervals
-from ardentum.quant.frontier import FrontierPoint, efficient_frontier, esg_sharpe_frontier
+from ardentum.quant.frontier import (
+    CvarFrontierPoint,
+    FrontierPoint,
+    efficient_frontier,
+    esg_sharpe_frontier,
+    mean_cvar_frontier,
+    portfolio_var_cvar,
+)
 from ardentum.quant.metrics import (
     MetricValue,
     PerformanceSummary,
@@ -560,6 +567,77 @@ def run_frontier(service: MarketDataService, req: s.FrontierRequest) -> s.Fronti
         risk_free_rate=rf,
         risk_free_rate_arithmetic=est.risk_free_arithmetic(rf),
         warnings=list(ef.warnings),
+        estimation=estimation_out(est, req.estimation),
+        data=data_window(data),
+        excluded_unscored=unscored,
+    )
+
+
+def _cvar_point_out(p: CvarFrontierPoint, tickers: Sequence[str]) -> s.CvarFrontierPointOut:
+    return s.CvarFrontierPointOut(
+        expected_return=_finite(p.expected_return),
+        volatility=_finite(p.volatility),
+        var=_finite(p.var),
+        cvar=_finite(p.cvar),
+        sharpe_ratio=_opt(p.sharpe_ratio),
+        esg_score=_opt(p.esg_score),
+        weights={t: float(w) for t, w in zip(tickers, p.weights, strict=True) if abs(w) > 1e-9},
+    )
+
+
+def run_cvar_frontier(
+    service: MarketDataService, req: s.CvarFrontierRequest
+) -> s.CvarFrontierResponse:
+    data = load(service, req.universe)
+    est = estimates_for(service, data, req.estimation)
+    cons, unscored = build_constraints(req.constraints, data, data.tickers)
+    meta = data.metadata()
+    rf = req.estimation.risk_free_rate
+    beta = req.cvar_confidence
+    fr = mean_cvar_frontier(est, cons, rf, meta, req.n_points, beta)
+    # The mean-variance frontier's portfolios, measured by the same historical CVaR.
+    mv = efficient_frontier(est, cons, rf, meta, req.n_points)
+    mv_points = []
+    for p in mv.points:
+        var, cvar = portfolio_var_cvar(est, p.weights, beta)
+        mv_points.append(
+            _cvar_point_out(
+                CvarFrontierPoint(
+                    p.expected_return,
+                    p.volatility,
+                    var,
+                    cvar,
+                    p.sharpe_ratio,
+                    p.esg_score,
+                    p.weights,
+                ),
+                est.tickers,
+            )
+        )
+    m = fr.min_cvar
+    var, cvar = portfolio_var_cvar(est, m.weights, beta)
+    min_point = CvarFrontierPoint(
+        m.expected_return, m.volatility, var, cvar, m.sharpe_ratio, m.esg_score, m.weights
+    )
+    return s.CvarFrontierResponse(
+        points=[_cvar_point_out(p, est.tickers) for p in fr.points],
+        min_cvar=_cvar_point_out(min_point, est.tickers),
+        mean_variance_points=mv_points,
+        assets=[
+            s.CvarFrontierAssetOut(
+                ticker=t,
+                expected_return=_finite(float(fr.asset_expected_returns[i])),
+                var=_finite(float(fr.asset_var[i])),
+                cvar=_finite(float(fr.asset_cvar[i])),
+                sector=data.asset(t).sector,
+            )
+            for i, t in enumerate(est.tickers)
+        ],
+        cvar_confidence=beta,
+        frequency=data.frequency.value,
+        observations=fr.observations,
+        risk_free_rate=rf,
+        warnings=list(dict.fromkeys([*fr.warnings, *mv.warnings])),
         estimation=estimation_out(est, req.estimation),
         data=data_window(data),
         excluded_unscored=unscored,

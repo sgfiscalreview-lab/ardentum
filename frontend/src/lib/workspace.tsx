@@ -14,7 +14,7 @@ export interface WorkingPortfolio {
   spec?: Record<string, unknown>;
 }
 
-export type PageKey = "analytics" | "optimise" | "frontier" | "esg" | "simulate" | "backtest" | "compare";
+export type PageKey = "analytics" | "optimise" | "frontier" | "frontier_cvar" | "esg" | "simulate" | "backtest" | "compare";
 
 export interface WorkspaceState {
   universe: UniverseSelection;

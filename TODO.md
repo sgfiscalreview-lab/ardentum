@@ -23,7 +23,7 @@ Legend: **[F]** needs a founder decision/credential · **[E]** engineering
 - [x] Shared rate limiting across instances via PostgreSQL (D-024).
 - [x] Background jobs with long-polling for long calculations (D-025).
 - [x] Black–Litterman views (D-022); minimum-CVaR optimisation (D-023).
-- [ ] Mean-CVaR efficient frontier.
+- [x] Mean-CVaR efficient frontier (D-029).
 - [ ] Open ESG overlays from several metrics combined into one composite score (weights chosen by the user).
 - [x] Multi-currency universes, unhedged conversion at ECB rates (D-021).
 - [ ] Currency-hedged returns (needs a free source of forward points or daily interest differentials).

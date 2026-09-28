@@ -54,6 +54,21 @@ test("ESG constraints fail loudly on unscored assets and report their cost when 
   await expect(page.getByText("ESG-efficient frontier")).toBeVisible();
 });
 
+test("efficient frontier by volatility and by CVaR (tail loss)", async ({ page }) => {
+  await page.goto("/app/frontier");
+  await page.getByRole("button", { name: "Trace frontier" }).click();
+  await expect(page.getByText("Risk–return space")).toBeVisible();
+  await page.getByRole("tab", { name: "CVaR (tail loss)" }).click();
+  await page.getByLabel("CVaR confidence").selectOption("0.975");
+  await page.getByRole("button", { name: "Trace frontier" }).click();
+  await expect(page.getByText("Return against tail loss")).toBeVisible();
+  await expect(page.getByText(/average loss in the worst 2.5% of days/).first()).toBeVisible();
+  await expect(page.getByText("Mean-variance portfolios, measured by CVaR").first()).toBeVisible();
+  // Each mode keeps its own result.
+  await page.getByRole("tab", { name: "Volatility" }).click();
+  await expect(page.getByText("Risk–return space")).toBeVisible();
+});
+
 test("Monte Carlo is reproducible with a seed", async ({ page }) => {
   await page.goto("/app/simulate");
   await page.getByLabel("Paths").fill("1000");

@@ -196,6 +196,16 @@ class FrontierRequest(RequestModel):
     compare_unconstrained: bool = True
 
 
+class CvarFrontierRequest(RequestModel):
+    universe: UniverseSelection
+    estimation: EstimationSettings = Field(default_factory=EstimationSettings)
+    constraints: ConstraintsIn = Field(default_factory=ConstraintsIn)
+    n_points: int = Field(20, ge=5, le=50)
+    cvar_confidence: float = Field(
+        0.95, ge=0.5, le=0.995, description="Confidence level of the historical CVaR."
+    )
+
+
 class EsgImpactRequest(RequestModel):
     universe: UniverseSelection
     estimation: EstimationSettings = Field(default_factory=EstimationSettings)
@@ -580,6 +590,41 @@ class FrontierResponse(ResponseModel):
     excluded_unscored: list[str]
 
 
+class CvarFrontierPointOut(ResponseModel):
+    expected_return: float
+    volatility: float
+    var: float = Field(description="One-period historical VaR (loss).")
+    cvar: float = Field(description="One-period historical CVaR (average loss beyond VaR).")
+    sharpe_ratio: float | None
+    esg_score: float | None
+    weights: dict[str, float]
+
+
+class CvarFrontierAssetOut(ResponseModel):
+    ticker: str
+    expected_return: float
+    var: float
+    cvar: float
+    sector: str | None
+
+
+class CvarFrontierResponse(ResponseModel):
+    points: list[CvarFrontierPointOut]
+    min_cvar: CvarFrontierPointOut
+    mean_variance_points: list[CvarFrontierPointOut] = Field(
+        description="The mean-variance frontier's portfolios, measured by the same CVaR."
+    )
+    assets: list[CvarFrontierAssetOut]
+    cvar_confidence: float
+    frequency: str = Field(description="Period of VaR and CVaR: daily, weekly or monthly.")
+    observations: int
+    risk_free_rate: float
+    warnings: list[str]
+    estimation: EstimationOut
+    data: DataWindowOut
+    excluded_unscored: list[str]
+
+
 class WeightChangeOut(ResponseModel):
     ticker: str
     name: str
@@ -797,7 +842,14 @@ class ErrorOut(ResponseModel):
 # ----------------------------------------------------------------------------- jobs
 
 JobKind = Literal[
-    "analytics", "optimise", "frontier", "esg_impact", "montecarlo", "backtest", "compare"
+    "analytics",
+    "optimise",
+    "frontier",
+    "cvar_frontier",
+    "esg_impact",
+    "montecarlo",
+    "backtest",
+    "compare",
 ]
 
 
