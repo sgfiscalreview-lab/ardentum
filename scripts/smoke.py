@@ -53,7 +53,8 @@ def request(
     timeout: float = 60,
 ) -> Response:
     data = json.dumps(body).encode() if body is not None else None
-    h = {"User-Agent": UA, **(headers or {})}
+    # Marked as monitoring so the check is left out of the public usage counts.
+    h = {"User-Agent": UA, "X-Ardentum-Monitor": "1", **(headers or {})}
     if data is not None:
         h["Content-Type"] = "application/json"
     req = urllib.request.Request(url, data=data, headers=h, method=method)

@@ -41,6 +41,8 @@ export function SiteFooter() {
     { href: "/cookies", label: "Cookie Policy" },
     { href: "/licences", label: "Licences" },
     { href: "/research", label: "Methodology" },
+    { href: "/tour", label: "Guided tour" },
+    { href: "/usage", label: "Usage" },
   ];
   return (
     <footer className="mt-16 border-t border-line">
@@ -64,7 +66,7 @@ export function SiteFooter() {
             </p>
           )}
         </div>
-        <nav aria-label="Legal" className="flex shrink-0 flex-wrap gap-x-4 gap-y-2">
+        <nav aria-label="Footer" className="flex shrink-0 flex-wrap gap-x-4 gap-y-2">
           {links.map((l) => (
             <Link key={l.href} href={l.href} className="underline-offset-2 hover:underline">
               {l.label}

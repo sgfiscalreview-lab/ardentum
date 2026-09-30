@@ -102,13 +102,15 @@ def evaluate(net: pd.Series, rf: pd.Series, bench: pd.Series) -> dict[str, float
     ex = (net - rf.loc[net.index]).to_numpy()
     ex_b = (bench - rf.loc[bench.index]).to_numpy()
     _, p = stats.jkm_test(ex, ex_b)
+    _, _, p_robust = stats.robust_sharpe_test(ex, ex_b)
     return {
         "months": len(ex),
         "mean_excess_annual": float(ex.mean() * 12),
         "volatility_annual": float(ex.std(ddof=1) * np.sqrt(12)),
         "sharpe": stats.sharpe(ex),
         "sharpe_minus_1n": stats.sharpe(ex) - stats.sharpe(ex_b),
-        "p_value_vs_1n": p,
+        "p_value_vs_1n": p,  # Jobson-Korkie-Memmel, as in DeMiguel et al. (2009)
+        "p_value_vs_1n_robust": p_robust,  # HAC, after Ledoit and Wolf (2008)
         "certainty_equivalent": stats.certainty_equivalent(ex),
         "max_drawdown": stats.max_drawdown(net.to_numpy()),
     }

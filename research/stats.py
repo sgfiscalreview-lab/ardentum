@@ -45,6 +45,52 @@ def jkm_test(a: np.ndarray, b: np.ndarray) -> tuple[float, float]:
     return float(z), float(2 * (1 - stats.norm.cdf(abs(z))))
 
 
+def newey_west_lags(t: int) -> int:
+    """Newey and West (1994) rule of thumb for the number of autocovariance lags."""
+    return int(4 * (t / 100) ** (2 / 9))
+
+
+def robust_sharpe_test(
+    a: np.ndarray, b: np.ndarray, lags: int | None = None, periods_per_year: int = 12
+) -> tuple[float, float, float]:
+    """Difference of Sharpe ratios with a heteroskedasticity- and autocorrelation-robust
+    (HAC) standard error, following Ledoit and Wolf (2008, section 3.1).
+
+    The Jobson-Korkie-Memmel test assumes independent, normal returns; this one does not.
+    The difference is a function of the first and second moments of the two series; its
+    variance comes from the delta method with a Newey-West (Bartlett kernel) estimate of the
+    long-run covariance of those moments. Ledoit and Wolf use a quadratic-spectral kernel
+    with prewhitening or a bootstrap; the Bartlett kernel is a simpler, standard choice.
+
+    Returns (annualised difference a minus b, its standard error, two-sided p-value).
+    """
+    t = len(a)
+    lags = newey_west_lags(t) if lags is None else lags
+    mu_a, mu_b = a.mean(), b.mean()
+    g_a, g_b = (a**2).mean(), (b**2).mean()
+    var_a, var_b = g_a - mu_a**2, g_b - mu_b**2
+    diff = mu_a / math.sqrt(var_a) - mu_b / math.sqrt(var_b)
+    grad = np.array(
+        [
+            g_a / var_a**1.5,
+            -g_b / var_b**1.5,
+            -0.5 * mu_a / var_a**1.5,
+            0.5 * mu_b / var_b**1.5,
+        ]
+    )
+    y = np.column_stack([a - mu_a, b - mu_b, a**2 - g_a, b**2 - g_b])
+    psi = y.T @ y / t
+    for j in range(1, lags + 1):
+        gamma = y[j:].T @ y[:-j] / t
+        psi += (1 - j / (lags + 1)) * (gamma + gamma.T)
+    se = math.sqrt(max(float(grad @ psi @ grad), 0.0) / t)
+    scale = math.sqrt(periods_per_year)
+    if se == 0.0:
+        return float(diff * scale), 0.0, 1.0
+    p = 2 * (1 - stats.norm.cdf(abs(diff / se)))
+    return float(diff * scale), float(se * scale), float(p)
+
+
 def certainty_equivalent(
     excess: np.ndarray, gamma: float = 1.0, periods_per_year: int = 12
 ) -> float:

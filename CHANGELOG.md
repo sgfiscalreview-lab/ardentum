@@ -43,16 +43,20 @@ First public release. The full release notes are in
   calculation.
 - Terms of Service, Privacy Policy, Cookie Policy and Licences pages; IP addresses are
   hashed in rate-limit counters.
+- A guided tour of eight steps on the demo data, with no sign-in.
+- Public, anonymous usage counts (calculations, saves and exports per day, nothing about
+  who), shown on the Usage page.
 - Accessible (WCAG 2.1 AA checks in light and dark themes) and usable at phone width.
 
 ### Research
 - Three reproducible studies built on the engine (`research/`): the 1/N puzzle out
   of sample, dollar hedging for euro and sterling investors, and promised versus
-  realised Sharpe ratios. A workflow reruns them on the latest public data.
+  realised Sharpe ratios, with robust (HAC) Sharpe-ratio tests. A workflow reruns them
+  on the latest public data.
 
 ### Quality
 - About 350 backend tests (known answers, SciPy, scikit-learn, PyPortfolioOpt, brute
-  force, KKT conditions, look-ahead invariance), API tests on PostgreSQL, and 44
+  force, KKT conditions, look-ahead invariance), API tests on PostgreSQL, and 52
   end-to-end browser tests.
 
 [1.0.0]: https://github.com/sgfiscalreview-lab/ardentum/releases/tag/v1.0.0

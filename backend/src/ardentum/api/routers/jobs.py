@@ -11,6 +11,7 @@ from starlette.concurrency import run_in_threadpool
 
 from ardentum.api import schemas as s
 from ardentum.api.deps import OptionalPrincipal, SettingsDep
+from ardentum.services import usage
 from ardentum.services.jobs import TERMINAL, JobService
 
 router = APIRouter(tags=["jobs"])
@@ -18,7 +19,12 @@ MAX_WAIT = 25.0  # below common proxy/request timeouts
 
 
 def _service(request: Request, settings: SettingsDep, principal: OptionalPrincipal) -> JobService:
-    return JobService(settings, request.app.state.sessionmaker, principal)
+    return JobService(
+        settings,
+        request.app.state.sessionmaker,
+        principal,
+        count_usage=usage.MONITOR_HEADER not in request.headers,
+    )
 
 
 @router.post("/jobs", response_model=s.JobOut, status_code=status.HTTP_202_ACCEPTED)

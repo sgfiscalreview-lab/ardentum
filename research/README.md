@@ -15,8 +15,16 @@ calculation and writes tables, figures and JSON to `research/results/`.
 ```bash
 uv run --project backend --with matplotlib python -m research.run_all
 ```
-(or Actions tab > Research studies > Run workflow). Needs internet access for the first run;
-raw downloads are cached in `research/data/raw/`.
+(or Actions tab > Research studies > Run workflow; it also runs when the study code changes
+and commits the results). Needs internet access for the first run; raw downloads are
+cached in `research/data/raw/`. Tests: `uv run --project backend --with matplotlib python -m
+pytest -q research/tests`.
+
+## Results
+
+`results/<study>/results.json` holds every number, `summary.csv` or `portfolios.csv` the
+tables, and the PNG files the figures. `results/run_metadata.json` records the data
+samples and when the run happened.
 
 ## Data
 * Kenneth R. French Data Library (Tuck School of Business, Dartmouth): 12 Industry
@@ -26,7 +34,11 @@ raw downloads are cached in `research/data/raw/`.
 
 ## Method notes
 * No look-ahead: every portfolio uses only data available at its formation date.
-* Statistical test of Sharpe differences: Jobson and Korkie (1981) with Memmel's (2003)
-  correction, as in DeMiguel, Garlappi and Uppal (2009).
+* Statistical tests of Sharpe differences: Jobson and Korkie (1981) with Memmel's (2003)
+  correction, as in DeMiguel, Garlappi and Uppal (2009), and a HAC version of Ledoit and
+  Wolf (2008), which stays valid when returns have fat tails or autocorrelation.
+* Promised versus delivered: the delivered Sharpe ratio is computed over all out-of-sample
+  months together, with Lo's (2002) standard error, and compared with equal weights over
+  the same months.
 * Currency hedge: one-month forward re-set monthly, priced by covered interest parity from
   policy rates (a proxy for the interbank rates that price real forwards).

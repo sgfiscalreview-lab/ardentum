@@ -32,7 +32,7 @@ from ardentum.api.errors import classify
 from ardentum.config import Settings
 from ardentum.db.models import Job
 from ardentum.quant.errors import InvalidInputError
-from ardentum.services import analysis
+from ardentum.services import analysis, usage
 from ardentum.services.market_data import MarketDataService, NotFoundError
 
 log = logging.getLogger("ardentum.jobs")
@@ -85,11 +85,16 @@ def validate_request(kind: str, payload: dict[str, Any]) -> BaseModel:
 
 class JobService:
     def __init__(
-        self, settings: Settings, factory: sessionmaker[Session], principal: Principal | None
+        self,
+        settings: Settings,
+        factory: sessionmaker[Session],
+        principal: Principal | None,
+        count_usage: bool = True,
     ) -> None:
         self.settings = settings
         self.factory = factory
         self.principal = principal
+        self.count_usage = count_usage  # anonymous usage statistics (services/usage.py)
 
     # ---------------------------------------------------------------- create / read
 
@@ -198,11 +203,13 @@ class JobService:
         stop = threading.Event()
         threading.Thread(target=self._heartbeat, args=(job_id, stop), daemon=True).start()
         values: dict[str, Any]
+        kind_done = ""
         try:
             with self.factory() as session:
                 job = session.get(Job, job_id)
                 assert job is not None
                 principal = Principal(job.owner_id, None) if job.owner_id else None
+                kind_done = job.kind
                 model, run = KINDS[job.kind]
                 service = MarketDataService(self.settings, session, principal)
                 result = run(service, model.model_validate(job.request))
@@ -220,11 +227,15 @@ class JobService:
             stop.set()
         try:
             with self.factory() as session, session.begin():
-                session.execute(
+                updated = session.execute(
                     update(Job)
                     .where(Job.id == job_id, Job.status == "running")
                     .values(finished_at=_now(), **values)
-                )
+                    .returning(Job.id)
+                ).first()
+                # Counted in the same transaction, so a finished job is never seen uncounted.
+                if updated is not None and values["status"] == "succeeded" and self.count_usage:
+                    usage.increment_quietly(session, kind_done)
         finally:
             done.set()
             with _LOCAL_LOCK:

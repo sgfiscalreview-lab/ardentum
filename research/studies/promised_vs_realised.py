@@ -99,6 +99,7 @@ def run(industries: pd.DataFrame, factors: pd.DataFrame, out: Path) -> dict:  # 
             opt = np.concatenate(delivered)
             eq = np.concatenate([equal[y] for y in years])  # 1/N over exactly the same months
             _, p_vs_1n = stats.jkm_test(opt, eq)
+            _, _, p_vs_1n_robust = stats.robust_sharpe_test(opt, eq)
             pr = np.array(promised)
             results[f"{label}, {lookback}m window"] = {
                 "portfolios": len(pr),
@@ -108,8 +109,12 @@ def run(industries: pd.DataFrame, factors: pd.DataFrame, out: Path) -> dict:  # 
                 "delivered_sharpe": stats.sharpe(opt),
                 "delivered_sharpe_standard_error": stats.sharpe_standard_error(opt),
                 "promise_minus_delivered": float(pr.mean()) - stats.sharpe(opt),
+                # Treats the average promise as a fixed number; a rough scale for the gap.
+                "gap_in_standard_errors": (float(pr.mean()) - stats.sharpe(opt))
+                / stats.sharpe_standard_error(opt),
                 "equal_weight_sharpe_same_months": stats.sharpe(eq),
                 "p_value_delivered_vs_equal_weight": p_vs_1n,
+                "p_value_delivered_vs_equal_weight_robust": p_vs_1n_robust,
                 "corr_promised_vs_next_12_months": float(
                     pd.Series(pr).corr(pd.Series(np.array(realised)))
                 ),

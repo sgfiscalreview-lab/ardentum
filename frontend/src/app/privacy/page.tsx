@@ -29,6 +29,9 @@ export default function PrivacyPage() {
             <strong className="text-ink">Technical data.</strong> Server logs record each request&apos;s method, path, status, duration and a random request id; they do not record your IP address. To limit how many calculations one client can run per minute, the API counts requests per account when you are signed in and otherwise per IP address. The address is stored only as a keyed hash that changes every day and cannot be turned back into the address. The hosting providers may keep their own access logs.
           </li>
           <li>
+            <strong className="text-ink">Usage counts.</strong> Each time a calculation, save or export finishes successfully, the server adds one to a daily total for that kind of action. Only the date, the kind and the total are stored, with nothing about who, from where or on what device, so they are not personal data. The totals are published on the <Link href="/usage" className={link}>Usage</Link> page.
+          </li>
+          <li>
             <strong className="text-ink">Browser storage.</strong> Your browser keeps your workspace settings, your theme choice and, when you are signed in, your session tokens. Ardentum sets no cookies and uses no analytics, advertising or tracking scripts. The <Link href="/cookies" className={link}>Cookie Policy</Link> lists each item.
           </li>
         </ul>
@@ -64,6 +67,7 @@ export default function PrivacyPage() {
           <li>Account data and content: until you delete them or your account.</li>
           <li>Background calculation results: 24 hours.</li>
           <li>Rate-limit counters: a few minutes.</li>
+          <li>Daily usage totals (no personal data): indefinitely.</li>
           <li>Hosting providers&apos; logs: for the period set by each provider.</li>
         </ul>
         <p>Deleted data can remain in the database provider&apos;s backups until those backups expire.</p>

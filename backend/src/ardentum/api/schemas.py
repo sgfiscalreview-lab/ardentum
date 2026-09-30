@@ -827,6 +827,31 @@ class AccountExportOut(ResponseModel):
     esg_overlays: list[dict[str, Any]]
 
 
+class UsageEventOut(ResponseModel):
+    event: str = Field(
+        description="analytics, optimise, frontier, cvar_frontier, esg_impact, "
+        "montecarlo, backtest, compare, portfolio_saved, portfolio_exported or "
+        "dataset_uploaded."
+    )
+    total: int
+    last_30_days: int
+
+
+class UsageMonthOut(ResponseModel):
+    month: str = Field(description="YYYY-MM (UTC).")
+    calculations: int
+
+
+class UsageOut(ResponseModel):
+    """Anonymous counts of completed calculations and saves (no personal data)."""
+
+    since: dt.date | None = Field(description="First day with a count; null before any use.")
+    as_of: dt.date
+    total_calculations: int
+    events: list[UsageEventOut]
+    months: list[UsageMonthOut]
+
+
 class MetaOut(ResponseModel):
     version: str
     environment: str

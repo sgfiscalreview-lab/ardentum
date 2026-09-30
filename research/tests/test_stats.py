@@ -93,3 +93,47 @@ def test_sharpe_standard_error_matches_simulation() -> None:
     # Known answer: zero mean gives sqrt(12 / T).
     x = np.array([0.01, -0.01] * 60)
     assert stats.sharpe_standard_error(x) == pytest.approx(math.sqrt(12 / 120))
+
+
+def test_robust_test_matches_jobson_korkie_for_independent_normal_returns() -> None:
+    # With no autocorrelation allowed (lags=0) and normal data, both tests estimate the
+    # same asymptotic variance, so their p-values agree closely in a long sample.
+    rng = np.random.default_rng(21)
+    cov = np.array([[0.0016, 0.0010], [0.0010, 0.0025]])
+    a, b = rng.multivariate_normal([0.008, 0.004], cov, 20_000).T
+    _, p_jk = stats.jkm_test(a, b)
+    diff, se, p_robust = stats.robust_sharpe_test(a, b, lags=0)
+    assert diff == pytest.approx(stats.sharpe(a) - stats.sharpe(b), rel=1e-3)
+    assert se > 0
+    assert p_robust == pytest.approx(p_jk, abs=0.02)
+
+
+def test_robust_test_identical_series() -> None:
+    x = np.random.default_rng(2).normal(0.005, 0.04, 240)
+    diff, se, p = stats.robust_sharpe_test(x, x)
+    assert diff == 0.0
+    assert se == pytest.approx(0.0, abs=1e-12)
+    assert p == 1.0
+
+
+def test_robust_test_size_with_fat_tails_and_autocorrelation() -> None:
+    # Equal true Sharpe ratios, Student-t shocks and AR(1) dependence: rejections at 5%
+    # stay near 5% (loose bounds: 800 trials).
+    rng = np.random.default_rng(9)
+    rejections = 0
+    trials, t = 800, 480
+    for _ in range(trials):
+        shocks = rng.standard_t(5, size=(t, 2)) * 0.03
+        shocks[:, 1] = 0.6 * shocks[:, 0] + 0.8 * shocks[:, 1]
+        x = np.empty_like(shocks)
+        x[0] = shocks[0]
+        for i in range(1, t):
+            x[i] = 0.2 * x[i - 1] + shocks[i]
+        a, b = 0.005 + x[:, 0], 0.005 + x[:, 1]
+        rejections += stats.robust_sharpe_test(a, b)[2] < 0.05
+    assert 0.02 < rejections / trials < 0.09
+
+
+def test_newey_west_lags() -> None:
+    assert stats.newey_west_lags(100) == 4
+    assert stats.newey_west_lags(680) == 6

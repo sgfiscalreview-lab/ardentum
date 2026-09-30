@@ -58,6 +58,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Usage Counts
+         * @description Public, anonymous usage statistics: completed calculations and saves per kind.
+         */
+        get: operations["usage_counts_api_v1_usage_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/dev-login": {
         parameters: {
             query?: never;
@@ -2289,6 +2309,50 @@ export interface components {
              */
             currency_hedged: boolean;
         };
+        /** UsageEventOut */
+        UsageEventOut: {
+            /**
+             * Event
+             * @description analytics, optimise, frontier, cvar_frontier, esg_impact, montecarlo, backtest, compare, portfolio_saved, portfolio_exported or dataset_uploaded.
+             */
+            event: string;
+            /** Total */
+            total: number;
+            /** Last 30 Days */
+            last_30_days: number;
+        };
+        /** UsageMonthOut */
+        UsageMonthOut: {
+            /**
+             * Month
+             * @description YYYY-MM (UTC).
+             */
+            month: string;
+            /** Calculations */
+            calculations: number;
+        };
+        /**
+         * UsageOut
+         * @description Anonymous counts of completed calculations and saves (no personal data).
+         */
+        UsageOut: {
+            /**
+             * Since
+             * @description First day with a count; null before any use.
+             */
+            since: string | null;
+            /**
+             * As Of
+             * Format: date
+             */
+            as_of: string;
+            /** Total Calculations */
+            total_calculations: number;
+            /** Events */
+            events: components["schemas"]["UsageEventOut"][];
+            /** Months */
+            months: components["schemas"]["UsageMonthOut"][];
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -2408,6 +2472,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MetaOut"];
+                };
+            };
+        };
+    };
+    usage_counts_api_v1_usage_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsageOut"];
                 };
             };
         };

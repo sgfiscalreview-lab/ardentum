@@ -34,6 +34,7 @@ from ardentum.api.routers import analysis, auth, datasets, jobs, meta, open_esg,
 from ardentum.config import Environment, Settings, get_settings
 from ardentum.db.models import Base
 from ardentum.db.session import make_engine
+from ardentum.services import usage
 
 API_PREFIX = "/api/v1"
 # A caller-supplied request id is echoed and logged only if it looks like one.
@@ -124,6 +125,20 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     headers={"Retry-After": str(int(wait) + 1)},
                 )
         return await call_next(request)
+
+    @app.middleware("http")
+    async def _count_usage(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
+        response = await call_next(request)
+        event = usage.event_for(request.method, request.url.path)
+        if (
+            event is not None
+            and 200 <= response.status_code < 300
+            and usage.MONITOR_HEADER not in request.headers
+        ):
+            await run_in_threadpool(usage.record, factory, event)
+        return response
 
     @app.middleware("http")
     async def _context(
