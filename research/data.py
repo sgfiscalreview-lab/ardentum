@@ -38,7 +38,9 @@ def _month_end(codes: pd.Index) -> pd.DatetimeIndex:
 
 def monthly_industries() -> pd.DataFrame:
     """Monthly value-weighted returns (decimal) of the 12 US industries, indexed by month end."""
-    text = kenfrench.unzip_text(_cached(f"{KF_INDUSTRIES}.zip", lambda: kenfrench.download(KF_INDUSTRIES)))
+    text = kenfrench.unzip_text(
+        _cached(f"{KF_INDUSTRIES}.zip", lambda: kenfrench.download(KF_INDUSTRIES))
+    )
     table = kenfrench.find_table(kenfrench.parse_tables(text), "value weighted")
     frame = table.frame[table.frame.index > 100000]  # monthly YYYYMM codes only
     df = frame / 100.0
@@ -49,7 +51,9 @@ def monthly_industries() -> pd.DataFrame:
 
 def monthly_factors() -> pd.DataFrame:
     """Monthly US market (Mkt-RF + RF) and one-month T-bill (RF) returns, decimal."""
-    text = kenfrench.unzip_text(_cached(f"{KF_FACTORS}.zip", lambda: kenfrench.download(KF_FACTORS)))
+    text = kenfrench.unzip_text(
+        _cached(f"{KF_FACTORS}.zip", lambda: kenfrench.download(KF_FACTORS))
+    )
     t = kenfrench.parse_tables(text)[0]
     frame = t.frame[t.frame.index > 100000]
     cols = {c.upper(): c for c in frame.columns}

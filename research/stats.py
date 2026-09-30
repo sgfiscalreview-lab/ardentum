@@ -35,7 +35,9 @@ def jkm_test(a: np.ndarray, b: np.ndarray) -> tuple[float, float]:
     return float(z), float(2 * (1 - stats.norm.cdf(abs(z))))
 
 
-def certainty_equivalent(excess: np.ndarray, gamma: float = 1.0, periods_per_year: int = 12) -> float:
+def certainty_equivalent(
+    excess: np.ndarray, gamma: float = 1.0, periods_per_year: int = 12
+) -> float:
     """Annualised certainty-equivalent excess return mu - gamma/2 * sigma^2 (DeMiguel et al.)."""
     per = excess.mean() - gamma / 2 * excess.var(ddof=1)
     return float(per * periods_per_year)

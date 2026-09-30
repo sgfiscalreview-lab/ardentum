@@ -23,20 +23,30 @@ from ardentum.quant.currency import hedged_returns
 from research import plotting, stats
 
 INVESTORS = {"EUR": "euro", "GBP": "sterling"}
-CRISES = {"2008 financial crisis": ("2007-10-31", "2009-03-31"), "2020 Covid crash": ("2020-01-31", "2020-03-31"), "2022 rate shock": ("2021-12-31", "2022-09-30")}
+CRISES = {
+    "2008 financial crisis": ("2007-10-31", "2009-03-31"),
+    "2020 Covid crash": ("2020-01-31", "2020-03-31"),
+    "2022 rate shock": ("2021-12-31", "2022-09-30"),
+}
 
 
-def investor_returns(us: pd.Series, fx: pd.Series, base_rate: pd.Series, usd_rate: pd.Series) -> pd.DataFrame:
+def investor_returns(
+    us: pd.Series, fx: pd.Series, base_rate: pd.Series, usd_rate: pd.Series
+) -> pd.DataFrame:
     """Monthly returns of a US asset in the investor's currency: unhedged and hedged."""
     idx = us.index.intersection(fx.index).intersection(base_rate.index).intersection(usd_rate.index)
     us = us.loc[idx]
     fx_ret = fx.loc[idx].pct_change()
     start_base = base_rate.loc[idx].shift(1)  # rate known at the start of each month
     start_usd = usd_rate.loc[idx].shift(1)
-    frame = pd.DataFrame({"us": us, "fx": fx_ret, "rb": start_base, "rl": start_usd}).dropna()
-    unhedged = (1 + frame["us"]) * (1 + frame["fx"]) - 1
-    hedged = hedged_returns(frame["us"], frame["fx"], frame["rb"], frame["rl"])
-    return pd.DataFrame({"local_usd": frame["us"], "currency": frame["fx"], "unhedged": unhedged, "hedged": hedged})
+    # hedged_returns takes the period length from the date gaps, so it runs on the full
+    # aligned index; the first month (no starting rate or exchange rate) is dropped after.
+    unhedged = (1 + us) * (1 + fx_ret) - 1
+    hedged = hedged_returns(us, fx_ret, start_base, start_usd)
+    frame = pd.DataFrame(
+        {"local_usd": us, "currency": fx_ret, "unhedged": unhedged, "hedged": hedged}
+    )
+    return frame.dropna()
 
 
 def min_variance_hedge_ratio(frame: pd.DataFrame) -> float:
@@ -46,8 +56,16 @@ def min_variance_hedge_ratio(frame: pd.DataFrame) -> float:
     return float(-np.cov(u, d, ddof=1)[0, 1] / d.var(ddof=1))
 
 
-def run(industries: pd.DataFrame, factors: pd.DataFrame, fx: dict[str, pd.Series], rates: dict[str, pd.Series], out: Path) -> dict:  # type: ignore[type-arg]
-    assets = pd.concat([factors[["MKT"]].rename(columns={"MKT": "US market"}), industries], axis=1).dropna()
+def run(
+    industries: pd.DataFrame,
+    factors: pd.DataFrame,
+    fx: dict[str, pd.Series],
+    rates: dict[str, pd.Series],
+    out: Path,
+) -> dict:  # type: ignore[type-arg]
+    assets = pd.concat(
+        [factors[["MKT"]].rename(columns={"MKT": "US market"}), industries], axis=1
+    ).dropna()
     results: dict[str, dict] = {}  # type: ignore[type-arg]
     market_frames: dict[str, pd.DataFrame] = {}
     for ccy, label in INVESTORS.items():
@@ -74,17 +92,29 @@ def run(industries: pd.DataFrame, factors: pd.DataFrame, fx: dict[str, pd.Series
         crises = {}
         for c, (a, b) in CRISES.items():
             sel = (m.index > pd.Timestamp(a)) & (m.index <= pd.Timestamp(b))
-            crises[c] = {k: float(np.prod(1 + m.loc[sel, k]) - 1) for k in ("local_usd", "unhedged", "hedged", "currency")}
+            crises[c] = {
+                k: float(np.prod(1 + m.loc[sel, k]) - 1)
+                for k in ("local_usd", "unhedged", "hedged", "currency")
+            }
         rolling = {}
         for end in range(m.index[0].year + 5, m.index[-1].year + 1):
             window = m[(m.index.year > end - 5) & (m.index.year <= end)]
             if len(window) >= 48:
                 rolling[str(end)] = min_variance_hedge_ratio(window)
-        results[label] = {"assets": per_asset, "crises_us_market": crises, "rolling_5y_hedge_ratio_us_market": rolling, "sample": [str(m.index[0].date()), str(m.index[-1].date())]}
+        results[label] = {
+            "assets": per_asset,
+            "crises_us_market": crises,
+            "rolling_5y_hedge_ratio_us_market": rolling,
+            "sample": [str(m.index[0].date()), str(m.index[-1].date())],
+        }
 
     out.mkdir(parents=True, exist_ok=True)
     (out / "results.json").write_text(json.dumps(results, indent=2))
-    rows = [{"investor": inv, "asset": a, **v} for inv, r in results.items() for a, v in r["assets"].items()]
+    rows = [
+        {"investor": inv, "asset": a, **v}
+        for inv, r in results.items()
+        for a, v in r["assets"].items()
+    ]
     pd.DataFrame(rows).to_csv(out / "summary.csv", index=False)
 
     # Figure 1: volatility hedged vs unhedged, US market and industries, euro investor.
@@ -92,11 +122,25 @@ def run(industries: pd.DataFrame, factors: pd.DataFrame, fx: dict[str, pd.Series
     names = list(euro)
     fig, ax = plotting.figure()
     x = np.arange(len(names))
-    ax.bar(x - 0.19, [euro[n]["volatility_unhedged"] for n in names], width=0.38, color=plotting.SERIES[0], label="Unhedged")
-    ax.bar(x + 0.19, [euro[n]["volatility_hedged"] for n in names], width=0.38, color=plotting.SERIES[1], label="Hedged")
+    ax.bar(
+        x - 0.19,
+        [euro[n]["volatility_unhedged"] for n in names],
+        width=0.38,
+        color=plotting.SERIES[0],
+        label="Unhedged",
+    )
+    ax.bar(
+        x + 0.19,
+        [euro[n]["volatility_hedged"] for n in names],
+        width=0.38,
+        color=plotting.SERIES[1],
+        label="Hedged",
+    )
     ax.set_xticks(x, names, rotation=45, ha="right", fontsize=7)
     ax.set_ylabel("Annual volatility (euro terms)", fontsize=8)
-    ax.set_title("Does hedging the dollar reduce risk for a euro investor?", fontsize=9, color=plotting.INK)
+    ax.set_title(
+        "Does hedging the dollar reduce risk for a euro investor?", fontsize=9, color=plotting.INK
+    )
     ax.legend(fontsize=7, frameon=False)
     plotting.save(fig, out / "fig1_volatility_euro.png")
 
@@ -104,11 +148,21 @@ def run(industries: pd.DataFrame, factors: pd.DataFrame, fx: dict[str, pd.Series
     fig, ax = plotting.figure()
     for i, (label, r) in enumerate(results.items()):
         roll = r["rolling_5y_hedge_ratio_us_market"]
-        ax.plot([int(k) for k in roll], list(roll.values()), color=plotting.SERIES[i], marker="o", markersize=2.5, linewidth=1.1, label=f"{label} investor")
+        ax.plot(
+            [int(k) for k in roll],
+            list(roll.values()),
+            color=plotting.SERIES[i],
+            marker="o",
+            markersize=2.5,
+            linewidth=1.1,
+            label=f"{label} investor",
+        )
     ax.axhline(1, color=plotting.INK, linewidth=0.6, linestyle="--")
     ax.axhline(0, color=plotting.INK, linewidth=0.6)
     ax.set_ylabel("Risk-minimising hedge ratio (1 = fully hedged)", fontsize=8)
-    ax.set_title("How much of the dollar to hedge, rolling 5-year estimate", fontsize=9, color=plotting.INK)
+    ax.set_title(
+        "How much of the dollar to hedge, rolling 5-year estimate", fontsize=9, color=plotting.INK
+    )
     ax.legend(fontsize=7, frameon=False)
     plotting.save(fig, out / "fig2_hedge_ratio.png")
     return results

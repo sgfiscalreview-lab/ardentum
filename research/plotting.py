@@ -7,7 +7,7 @@ from pathlib import Path
 import matplotlib
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
+import matplotlib.pyplot as plt
 
 SERIES = ["#1f4f82", "#b06a1f", "#2f7068", "#9e3a2c", "#677629", "#5a6472", "#8a6a4a", "#4a82b4"]
 INK = "#1d1e20"
