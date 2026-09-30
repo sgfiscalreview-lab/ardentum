@@ -263,6 +263,14 @@ def check_api(rep: Report, api: str, site: str) -> None:
         else:
             rep.fail("Background job", f"status {job['status']} after {took}: {job.get('error')}")
 
+    def usage() -> None:
+        r = request("GET", f"{v1}/usage")
+        if r.status != 200:
+            rep.fail("Usage counts", f"HTTP {r.status}: {error_message(r)}")
+            return
+        u = r.json()
+        rep.ok("Usage counts", f"{u['total_calculations']} calculations counted since {u['since']}")
+
     rep.check("API health", health)
     if rep.rows and rep.rows[-1][:2] == ("FAIL", "API health"):
         return  # nothing else can work
@@ -277,6 +285,7 @@ def check_api(rep: Report, api: str, site: str) -> None:
         ("WikiRate open ESG data", wikirate),
         ("Optimisation", optimise),
         ("Background job", background_job),
+        ("Usage counts", usage),
     ]:
         rep.check(name, fn)
 
@@ -345,6 +354,17 @@ def check_site(rep: Report, site: str, api: str, supabase: str | None, key: str 
             else:
                 rep.ok(f"Page {path}", "legal details filled in")
 
+    def public_pages() -> None:
+        for path, heading in (
+            ("/tour", "Ardentum in eight steps"),
+            ("/usage", "How much Ardentum is used"),
+        ):
+            r = request("GET", base + path)
+            if r.status == 200 and heading in r.text:
+                rep.ok(f"Page {path}", "loads")
+            else:
+                rep.fail(f"Page {path}", f"HTTP {r.status}; heading '{heading}' not found")
+
     def screenshots() -> None:
         r = request("GET", base + "/screenshots/optimise-light.png")
         if r.status == 200:
@@ -354,6 +374,7 @@ def check_site(rep: Report, site: str, api: str, supabase: str | None, key: str 
 
     rep.check("Website", pages)
     rep.check("Legal pages", legal)
+    rep.check("Tour and usage pages", public_pages)
     rep.check("Screenshots", screenshots)
 
 
