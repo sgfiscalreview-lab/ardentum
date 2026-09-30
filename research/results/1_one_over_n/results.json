@@ -8,17 +8,19 @@
         "sharpe": 0.5025675606750165,
         "sharpe_minus_1n": 0.0,
         "p_value_vs_1n": 1.0,
+        "p_value_vs_1n_robust": 1.0,
         "certainty_equivalent": 0.0649922671532675,
         "max_drawdown": -0.495465639846573
       },
       "1970-2004": {
         "months": 420,
-        "mean_excess_annual": 0.06517928571428572,
+        "mean_excess_annual": 0.0651792857142857,
         "volatility_annual": 0.1530430689726846,
-        "sharpe": 0.42588851721157667,
+        "sharpe": 0.42588851721157656,
         "sharpe_minus_1n": 0.0,
         "p_value_vs_1n": 1.0,
-        "certainty_equivalent": 0.05346819523399676,
+        "p_value_vs_1n_robust": 1.0,
+        "certainty_equivalent": 0.05346819523399675,
         "max_drawdown": -0.4579392191736126
       },
       "2005-latest": {
@@ -28,6 +30,7 @@
         "sharpe": 0.6271567732623924,
         "sharpe_minus_1n": 0.0,
         "p_value_vs_1n": 1.0,
+        "p_value_vs_1n_robust": 1.0,
         "certainty_equivalent": 0.08358652858249806,
         "max_drawdown": -0.4954656398465731
       },
@@ -43,161 +46,173 @@
     "Minimum variance (sample)": {
       "full": {
         "months": 680,
-        "mean_excess_annual": 0.0703698632839689,
-        "volatility_annual": 0.1263150050128466,
-        "sharpe": 0.5570982107534419,
-        "sharpe_minus_1n": 0.05453065007842539,
-        "p_value_vs_1n": 0.4578132694156105,
-        "certainty_equivalent": 0.06239212303827116,
-        "max_drawdown": -0.39926760939406847
+        "mean_excess_annual": 0.0703698632839732,
+        "volatility_annual": 0.12631500501284593,
+        "sharpe": 0.557098210753479,
+        "sharpe_minus_1n": 0.05453065007846247,
+        "p_value_vs_1n": 0.45781326941530676,
+        "p_value_vs_1n_robust": 0.42898761777802275,
+        "certainty_equivalent": 0.06239212303827555,
+        "max_drawdown": -0.3992676093940616
       },
       "1970-2004": {
         "months": 420,
-        "mean_excess_annual": 0.06345127843123975,
-        "volatility_annual": 0.1301274189386642,
-        "sharpe": 0.48760882947465234,
-        "sharpe_minus_1n": 0.06172031226307567,
-        "p_value_vs_1n": 0.5101041386295442,
-        "certainty_equivalent": 0.05498470585142044,
-        "max_drawdown": -0.39926760939406847
+        "mean_excess_annual": 0.06345127843124611,
+        "volatility_annual": 0.13012741893866298,
+        "sharpe": 0.4876088294747058,
+        "sharpe_minus_1n": 0.06172031226312924,
+        "p_value_vs_1n": 0.510104138629178,
+        "p_value_vs_1n_robust": 0.5100559958861641,
+        "certainty_equivalent": 0.05498470585142695,
+        "max_drawdown": -0.3992676093940616
       },
       "2005-latest": {
         "months": 260,
-        "mean_excess_annual": 0.08154603881530059,
-        "volatility_annual": 0.12007722381739122,
-        "sharpe": 0.6791132924534684,
-        "sharpe_minus_1n": 0.05195651919107602,
-        "p_value_vs_1n": 0.6591891219454524,
-        "certainty_equivalent": 0.07433676897545466,
+        "mean_excess_annual": 0.08154603881530156,
+        "volatility_annual": 0.12007722381739158,
+        "sharpe": 0.6791132924534744,
+        "sharpe_minus_1n": 0.05195651919108202,
+        "p_value_vs_1n": 0.6591891219454142,
+        "p_value_vs_1n_robust": 0.6095963279548957,
+        "certainty_equivalent": 0.07433676897545559,
         "max_drawdown": -0.35307058803943336
       },
-      "annual_turnover": 1.2349462382327563,
+      "annual_turnover": 1.2349462382327152,
       "held_rebalances": 0,
       "tangency_fallbacks": 0,
       "crisis_returns": {
-        "2008 financial crisis": -0.31132064890556677,
-        "2020 Covid crash": -0.20623905593698277,
-        "2022 rate shock": -0.12480315875039727
+        "2008 financial crisis": -0.311320648905567,
+        "2020 Covid crash": -0.2062390559369831,
+        "2022 rate shock": -0.12480315875039616
       }
     },
     "Minimum variance (shrinkage)": {
       "full": {
         "months": 680,
-        "mean_excess_annual": 0.07197096772590064,
-        "volatility_annual": 0.12569040033847168,
-        "sharpe": 0.5726051276158721,
-        "sharpe_minus_1n": 0.07003756694085561,
-        "p_value_vs_1n": 0.28891654293083047,
-        "certainty_equivalent": 0.06407192935727798,
-        "max_drawdown": -0.3922717435348875
+        "mean_excess_annual": 0.0719709677259026,
+        "volatility_annual": 0.125690400338472,
+        "sharpe": 0.5726051276158863,
+        "sharpe_minus_1n": 0.07003756694086982,
+        "p_value_vs_1n": 0.28891654293073366,
+        "p_value_vs_1n_robust": 0.2525687860127943,
+        "certainty_equivalent": 0.06407192935727991,
+        "max_drawdown": -0.39227174353488514
       },
       "1970-2004": {
         "months": 420,
-        "mean_excess_annual": 0.06508080862206539,
-        "volatility_annual": 0.1294617310772627,
-        "sharpe": 0.5027030619822718,
-        "sharpe_minus_1n": 0.0768145447706951,
-        "p_value_vs_1n": 0.3551553810429726,
-        "certainty_equivalent": 0.05670063871530466,
-        "max_drawdown": -0.3922717435348875
+        "mean_excess_annual": 0.06508080862206836,
+        "volatility_annual": 0.12946173107726308,
+        "sharpe": 0.5027030619822931,
+        "sharpe_minus_1n": 0.07681454477071653,
+        "p_value_vs_1n": 0.3551553810428407,
+        "p_value_vs_1n_robust": 0.3472923784731876,
+        "certainty_equivalent": 0.05670063871530756,
+        "max_drawdown": -0.39227174353488514
       },
       "2005-latest": {
         "months": 260,
-        "mean_excess_annual": 0.08310122473978832,
-        "volatility_annual": 0.1195223117573898,
-        "sharpe": 0.6952779235768953,
-        "sharpe_minus_1n": 0.06812115031450294,
-        "p_value_vs_1n": 0.5300140078678133,
-        "certainty_equivalent": 0.07595843323587298,
-        "max_drawdown": -0.3616972278039713
+        "mean_excess_annual": 0.0831012247397887,
+        "volatility_annual": 0.11952231175739006,
+        "sharpe": 0.6952779235768969,
+        "sharpe_minus_1n": 0.0681211503145045,
+        "p_value_vs_1n": 0.5300140078678073,
+        "p_value_vs_1n_robust": 0.4655769963591836,
+        "certainty_equivalent": 0.07595843323587333,
+        "max_drawdown": -0.36169722780397373
       },
-      "annual_turnover": 1.0793687434501595,
+      "annual_turnover": 1.0793687434502455,
       "held_rebalances": 0,
       "tangency_fallbacks": 0,
       "crisis_returns": {
-        "2008 financial crisis": -0.3197546067137066,
-        "2020 Covid crash": -0.2006527975091127,
-        "2022 rate shock": -0.14060481934151903
+        "2008 financial crisis": -0.31975460671370837,
+        "2020 Covid crash": -0.20065279750911258,
+        "2022 rate shock": -0.14060481934151803
       }
     },
     "Maximum Sharpe (sample)": {
       "full": {
         "months": 680,
-        "mean_excess_annual": 0.07527470875549577,
-        "volatility_annual": 0.16357448318122136,
-        "sharpe": 0.4601861322838489,
-        "sharpe_minus_1n": -0.0423814283911676,
-        "p_value_vs_1n": 0.5831252242609073,
-        "certainty_equivalent": 0.06189640298149394,
-        "max_drawdown": -0.4450177929991167
+        "mean_excess_annual": 0.07527470876286455,
+        "volatility_annual": 0.16357448318168352,
+        "sharpe": 0.4601861323275972,
+        "sharpe_minus_1n": -0.042381428347419314,
+        "p_value_vs_1n": 0.5831252246542669,
+        "p_value_vs_1n_robust": 0.5657668416585624,
+        "certainty_equivalent": 0.061896402988787104,
+        "max_drawdown": -0.44501779299912225
       },
       "1970-2004": {
         "months": 420,
-        "mean_excess_annual": 0.059900972554191675,
-        "volatility_annual": 0.170889530113159,
-        "sharpe": 0.35052453192730215,
-        "sharpe_minus_1n": -0.07536398528427452,
-        "p_value_vs_1n": 0.43801904577583173,
-        "certainty_equivalent": 0.04529935680304353,
-        "max_drawdown": -0.4450177929991167
+        "mean_excess_annual": 0.05990097255815613,
+        "volatility_annual": 0.17088953011353464,
+        "sharpe": 0.3505245319497306,
+        "sharpe_minus_1n": -0.07536398526184596,
+        "p_value_vs_1n": 0.438019045915095,
+        "p_value_vs_1n_robust": 0.4037052146038844,
+        "certainty_equivalent": 0.045299356806943795,
+        "max_drawdown": -0.44501779299912225
       },
       "2005-latest": {
         "months": 260,
-        "mean_excess_annual": 0.10010920569606391,
-        "volatility_annual": 0.15105740508844104,
-        "sharpe": 0.6627229273364784,
-        "sharpe_minus_1n": 0.03556615407408603,
-        "p_value_vs_1n": 0.7785184932862976,
-        "certainty_equivalent": 0.08870003588003722,
-        "max_drawdown": -0.41782443121998125
+        "mean_excess_annual": 0.10010920570893199,
+        "volatility_annual": 0.1510574050889432,
+        "sharpe": 0.662722927419462,
+        "sharpe_minus_1n": 0.03556615415706965,
+        "p_value_vs_1n": 0.7785184927880626,
+        "p_value_vs_1n_robust": 0.7801187605016298,
+        "certainty_equivalent": 0.08870003589282946,
+        "max_drawdown": -0.4178244312182331
       },
-      "annual_turnover": 3.296441052648437,
+      "annual_turnover": 3.2964410524648375,
       "held_rebalances": 0,
       "tangency_fallbacks": 4,
       "crisis_returns": {
-        "2008 financial crisis": -0.3899785043664913,
-        "2020 Covid crash": -0.18217616541501735,
-        "2022 rate shock": -0.3135601736316139
+        "2008 financial crisis": -0.38997850436391845,
+        "2020 Covid crash": -0.18217616541499626,
+        "2022 rate shock": -0.3135601736278746
       }
     },
     "Maximum Sharpe (shrinkage)": {
       "full": {
         "months": 680,
-        "mean_excess_annual": 0.07078093913657246,
-        "volatility_annual": 0.14804295547328528,
-        "sharpe": 0.4781108220265506,
-        "sharpe_minus_1n": -0.024456738648465925,
-        "p_value_vs_1n": 0.7255157002550869,
-        "certainty_equivalent": 0.0598225808039399,
-        "max_drawdown": -0.4322369993749331
+        "mean_excess_annual": 0.07078093913893763,
+        "volatility_annual": 0.1480429554742571,
+        "sharpe": 0.47811082203938826,
+        "sharpe_minus_1n": -0.02445673863562825,
+        "p_value_vs_1n": 0.7255157003954498,
+        "p_value_vs_1n_robust": 0.7235063345827688,
+        "certainty_equivalent": 0.059822580806161194,
+        "max_drawdown": -0.4322369993767854
       },
       "1970-2004": {
         "months": 420,
-        "mean_excess_annual": 0.057496556997231094,
-        "volatility_annual": 0.15775716019896863,
-        "sharpe": 0.3644624239224039,
-        "sharpe_minus_1n": -0.061426093289172756,
-        "p_value_vs_1n": 0.48678915288428115,
-        "certainty_equivalent": 0.04505289620020957,
-        "max_drawdown": -0.4322369993749331
+        "mean_excess_annual": 0.05749655700013602,
+        "volatility_annual": 0.15775716020013375,
+        "sharpe": 0.3644624239381261,
+        "sharpe_minus_1n": -0.061426093273450444,
+        "p_value_vs_1n": 0.48678915300297176,
+        "p_value_vs_1n_robust": 0.4923454838723118,
+        "certainty_equivalent": 0.045052896202930695,
+        "max_drawdown": -0.4322369993767854
       },
       "2005-latest": {
         "months": 260,
-        "mean_excess_annual": 0.09224032566935467,
-        "volatility_annual": 0.13089399517996808,
-        "sharpe": 0.704694860467297,
-        "sharpe_minus_1n": 0.07753808720490463,
-        "p_value_vs_1n": 0.4807102574428348,
-        "certainty_equivalent": 0.08367370668226791,
-        "max_drawdown": -0.40160910102045455
+        "mean_excess_annual": 0.0922403256708479,
+        "volatility_annual": 0.13089399518059724,
+        "sharpe": 0.7046948604753178,
+        "sharpe_minus_1n": 0.07753808721292543,
+        "p_value_vs_1n": 0.48071025739295026,
+        "p_value_vs_1n_robust": 0.4144250876400446,
+        "certainty_equivalent": 0.0836737066836788,
+        "max_drawdown": -0.40160910100747815
       },
-      "annual_turnover": 2.736190946418174,
+      "annual_turnover": 2.736190946505434,
       "held_rebalances": 0,
       "tangency_fallbacks": 26,
       "crisis_returns": {
-        "2008 financial crisis": -0.3810910415943001,
-        "2020 Covid crash": -0.20314332119903544,
-        "2022 rate shock": -0.22579599279473983
+        "2008 financial crisis": -0.3810910415808786,
+        "2020 Covid crash": -0.20314332119885592,
+        "2022 rate shock": -0.2257959927859573
       }
     },
     "Minimum CVaR 90% (tail risk)": {
@@ -207,7 +222,8 @@
         "volatility_annual": 0.13050632195559367,
         "sharpe": 0.5208185985632151,
         "sharpe_minus_1n": 0.018251037888198596,
-        "p_value_vs_1n": 0.8131030642938526,
+        "p_value_vs_1n": 0.8131030642938524,
+        "p_value_vs_1n_robust": 0.8023470661207504,
         "certainty_equivalent": 0.05945416966936351,
         "max_drawdown": -0.42819766600187736
       },
@@ -216,10 +232,11 @@
         "mean_excess_annual": 0.05863023641738343,
         "volatility_annual": 0.13387625806106052,
         "sharpe": 0.43794349548254,
-        "sharpe_minus_1n": 0.012054978270963357,
-        "p_value_vs_1n": 0.9036653995922697,
+        "sharpe_minus_1n": 0.012054978270963468,
+        "p_value_vs_1n": 0.9036653995922692,
+        "p_value_vs_1n_robust": 0.9053030542664742,
         "certainty_equivalent": 0.049668810181167596,
-        "max_drawdown": -0.41351439152027336
+        "max_drawdown": -0.41351439152027325
       },
       "2005-latest": {
         "months": 260,
@@ -227,7 +244,8 @@
         "volatility_annual": 0.12500192660742745,
         "sharpe": 0.6644507467231063,
         "sharpe_minus_1n": 0.03729397346071395,
-        "p_value_vs_1n": 0.7589736838833299,
+        "p_value_vs_1n": 0.7589736838833301,
+        "p_value_vs_1n_robust": 0.7211583629068268,
         "certainty_equivalent": 0.07524488264834776,
         "max_drawdown": -0.4281976660018775
       },
@@ -247,20 +265,22 @@
         "months": 680,
         "mean_excess_annual": 0.07512565721017156,
         "volatility_annual": 0.15247944689773058,
-        "sharpe": 0.4926936629076249,
+        "sharpe": 0.49269366290762484,
         "sharpe_minus_1n": 0.0,
         "p_value_vs_1n": 1.0,
+        "p_value_vs_1n_robust": 1.0,
         "certainty_equivalent": 0.06350066634705265,
         "max_drawdown": -0.49675494579667623
       },
       "1970-2004": {
         "months": 420,
-        "mean_excess_annual": 0.06368440413392852,
+        "mean_excess_annual": 0.06368440413392851,
         "volatility_annual": 0.15311040252371616,
-        "sharpe": 0.4159378009868667,
+        "sharpe": 0.41593780098686667,
         "sharpe_minus_1n": 0.0,
         "p_value_vs_1n": 1.0,
-        "certainty_equivalent": 0.05196300645344133,
+        "p_value_vs_1n_robust": 1.0,
+        "certainty_equivalent": 0.05196300645344131,
         "max_drawdown": -0.45934535873318094
       },
       "2005-latest": {
@@ -270,6 +290,7 @@
         "sharpe": 0.6174783661196337,
         "sharpe_minus_1n": 0.0,
         "p_value_vs_1n": 1.0,
+        "p_value_vs_1n_robust": 1.0,
         "certainty_equivalent": 0.08211690198307381,
         "max_drawdown": -0.49675494579667645
       },
@@ -285,161 +306,173 @@
     "Minimum variance (sample)": {
       "full": {
         "months": 680,
-        "mean_excess_annual": 0.06406164062209316,
-        "volatility_annual": 0.12629073547953532,
-        "sharpe": 0.5072552660244344,
-        "sharpe_minus_1n": 0.014561603116809485,
-        "p_value_vs_1n": 0.8423470213022284,
-        "certainty_equivalent": 0.05608696568811218,
-        "max_drawdown": -0.40851989564453495
+        "mean_excess_annual": 0.06406164062209765,
+        "volatility_annual": 0.12629073547953468,
+        "sharpe": 0.5072552660244725,
+        "sharpe_minus_1n": 0.014561603116847621,
+        "p_value_vs_1n": 0.8423470213018194,
+        "p_value_vs_1n_robust": 0.8328749654891885,
+        "certainty_equivalent": 0.05608696568811677,
+        "max_drawdown": -0.4085198956445273
       },
       "1970-2004": {
         "months": 420,
-        "mean_excess_annual": 0.05732403619715874,
-        "volatility_annual": 0.13001688776153397,
-        "sharpe": 0.44089684951002406,
-        "sharpe_minus_1n": 0.024959048523157334,
-        "p_value_vs_1n": 0.7894369717467749,
-        "certainty_equivalent": 0.04887184064556108,
-        "max_drawdown": -0.40851989564453495
+        "mean_excess_annual": 0.05732403619716575,
+        "volatility_annual": 0.13001688776153272,
+        "sharpe": 0.4408968495100822,
+        "sharpe_minus_1n": 0.02495904852321551,
+        "p_value_vs_1n": 0.7894369717462952,
+        "p_value_vs_1n_robust": 0.7907871408695686,
+        "certainty_equivalent": 0.04887184064556825,
+        "max_drawdown": -0.4085198956445273
       },
       "2005-latest": {
         "months": 260,
-        "mean_excess_annual": 0.07494546315467951,
-        "volatility_annual": 0.1202075629443932,
-        "sharpe": 0.6234671206947978,
-        "sharpe_minus_1n": 0.005988754575164124,
-        "p_value_vs_1n": 0.9592889343769577,
-        "certainty_equivalent": 0.06772053406016439,
-        "max_drawdown": -0.3637260667934308
+        "mean_excess_annual": 0.07494546315467998,
+        "volatility_annual": 0.12020756294439366,
+        "sharpe": 0.6234671206947993,
+        "sharpe_minus_1n": 0.005988754575165567,
+        "p_value_vs_1n": 0.9592889343769477,
+        "p_value_vs_1n_robust": 0.9527445179493903,
+        "certainty_equivalent": 0.0677205340601648,
+        "max_drawdown": -0.3637260667934311
       },
-      "annual_turnover": 1.2349462382327563,
+      "annual_turnover": 1.2349462382327152,
       "held_rebalances": 0,
       "tangency_fallbacks": 0,
       "crisis_returns": {
-        "2008 financial crisis": -0.32308663546199534,
-        "2020 Covid crash": -0.20954480716392376,
-        "2022 rate shock": -0.12957018074932813
+        "2008 financial crisis": -0.3230866354619957,
+        "2020 Covid crash": -0.20954480716392454,
+        "2022 rate shock": -0.12957018074932658
       }
     },
     "Minimum variance (shrinkage)": {
       "full": {
         "months": 680,
-        "mean_excess_annual": 0.06643893428173292,
-        "volatility_annual": 0.1256307321643859,
-        "sharpe": 0.5288430078939489,
-        "sharpe_minus_1n": 0.036149344986323995,
-        "p_value_vs_1n": 0.5828818694958597,
-        "certainty_equivalent": 0.05854739384965308,
-        "max_drawdown": -0.39972803980471594
+        "mean_excess_annual": 0.06643893428173443,
+        "volatility_annual": 0.12563073216438625,
+        "sharpe": 0.5288430078939594,
+        "sharpe_minus_1n": 0.0361493449863346,
+        "p_value_vs_1n": 0.5828818694957494,
+        "p_value_vs_1n_robust": 0.5548870513472064,
+        "certainty_equivalent": 0.05854739384965456,
+        "max_drawdown": -0.3997280398047153
       },
       "1970-2004": {
         "months": 420,
-        "mean_excess_annual": 0.05948115503397565,
-        "volatility_annual": 0.12931235394748528,
-        "sharpe": 0.45998045212394323,
-        "sharpe_minus_1n": 0.044042651137076505,
-        "p_value_vs_1n": 0.5950540028865188,
-        "certainty_equivalent": 0.0511203125922558,
-        "max_drawdown": -0.39972803980471594
+        "mean_excess_annual": 0.059481155033978564,
+        "volatility_annual": 0.12931235394748555,
+        "sharpe": 0.45998045212396466,
+        "sharpe_minus_1n": 0.04404265113709799,
+        "p_value_vs_1n": 0.5950540028863385,
+        "p_value_vs_1n_robust": 0.591101016998719,
+        "certainty_equivalent": 0.051120312592258674,
+        "max_drawdown": -0.3997280398047153
       },
       "2005-latest": {
         "months": 260,
-        "mean_excess_annual": 0.07767842383580234,
-        "volatility_annual": 0.11961802946983738,
-        "sharpe": 0.6493872552497577,
-        "sharpe_minus_1n": 0.03190888913012402,
-        "p_value_vs_1n": 0.7676881611986224,
-        "certainty_equivalent": 0.07052418734867888,
-        "max_drawdown": -0.36963882406551196
+        "mean_excess_annual": 0.07767842383580155,
+        "volatility_annual": 0.11961802946983786,
+        "sharpe": 0.6493872552497486,
+        "sharpe_minus_1n": 0.031908889130114915,
+        "p_value_vs_1n": 0.7676881611986888,
+        "p_value_vs_1n_robust": 0.7310923284917008,
+        "certainty_equivalent": 0.07052418734867805,
+        "max_drawdown": -0.3696388240655165
       },
-      "annual_turnover": 1.0793687434501595,
+      "annual_turnover": 1.0793687434502455,
       "held_rebalances": 0,
       "tangency_fallbacks": 0,
       "crisis_returns": {
-        "2008 financial crisis": -0.3285139378540689,
-        "2020 Covid crash": -0.2034055900253935,
-        "2022 rate shock": -0.1444240120996666
+        "2008 financial crisis": -0.3285139378540729,
+        "2020 Covid crash": -0.20340559002539327,
+        "2022 rate shock": -0.14442401209966738
       }
     },
     "Maximum Sharpe (sample)": {
       "full": {
         "months": 680,
-        "mean_excess_annual": 0.05873778806815513,
-        "volatility_annual": 0.16457701291164528,
-        "sharpe": 0.3569015321701644,
-        "sharpe_minus_1n": -0.1357921307374605,
-        "p_value_vs_1n": 0.07952223697428584,
-        "certainty_equivalent": 0.04519499147869521,
-        "max_drawdown": -0.45621165670109487
+        "mean_excess_annual": 0.05873778807656713,
+        "volatility_annual": 0.16457701291291138,
+        "sharpe": 0.35690153221853155,
+        "sharpe_minus_1n": -0.1357921306890933,
+        "p_value_vs_1n": 0.079522237084511,
+        "p_value_vs_1n_robust": 0.06988243819841111,
+        "certainty_equivalent": 0.045194991486898824,
+        "max_drawdown": -0.4562116567011011
       },
       "1970-2004": {
         "months": 420,
-        "mean_excess_annual": 0.04211728945271538,
-        "volatility_annual": 0.17175171022839456,
-        "sharpe": 0.2452219509005646,
-        "sharpe_minus_1n": -0.17071585008630213,
-        "p_value_vs_1n": 0.08024920384021694,
-        "certainty_equivalent": 0.02736796446952617,
-        "max_drawdown": -0.45621165670109487
+        "mean_excess_annual": 0.04211728945705633,
+        "volatility_annual": 0.1717517102296279,
+        "sharpe": 0.2452219509240783,
+        "sharpe_minus_1n": -0.17071585006278836,
+        "p_value_vs_1n": 0.08024920388390289,
+        "p_value_vs_1n_robust": 0.06220931415790565,
+        "certainty_equivalent": 0.027367964473655294,
+        "max_drawdown": -0.4562116567011011
       },
       "2005-latest": {
         "months": 260,
-        "mean_excess_annual": 0.0855862858315578,
-        "volatility_annual": 0.15227866092935766,
-        "sharpe": 0.5620372894614658,
-        "sharpe_minus_1n": -0.05544107665816789,
-        "p_value_vs_1n": 0.6613527793226326,
-        "certainty_equivalent": 0.07399189054433866,
-        "max_drawdown": -0.4291360979517562
+        "mean_excess_annual": 0.08558628584654605,
+        "volatility_annual": 0.1522786609305375,
+        "sharpe": 0.5620372895555376,
+        "sharpe_minus_1n": -0.05544107656409614,
+        "p_value_vs_1n": 0.661352779867078,
+        "p_value_vs_1n_robust": 0.6686169913455293,
+        "certainty_equivalent": 0.07399189055914723,
+        "max_drawdown": -0.42913609794985674
       },
-      "annual_turnover": 3.296441052648437,
+      "annual_turnover": 3.2964410524648375,
       "held_rebalances": 0,
       "tangency_fallbacks": 4,
       "crisis_returns": {
-        "2008 financial crisis": -0.40551342585723693,
-        "2020 Covid crash": -0.18629542265066734,
-        "2022 rate shock": -0.31842662460447
+        "2008 financial crisis": -0.4055134258542733,
+        "2020 Covid crash": -0.18629542265064059,
+        "2022 rate shock": -0.31842662460104754
       }
     },
     "Maximum Sharpe (shrinkage)": {
       "full": {
         "months": 680,
-        "mean_excess_annual": 0.0569844566264663,
-        "volatility_annual": 0.14856781107577655,
-        "sharpe": 0.38355856638018004,
-        "sharpe_minus_1n": -0.10913509652744485,
-        "p_value_vs_1n": 0.11881299637646658,
-        "certainty_equivalent": 0.045948259382542475,
-        "max_drawdown": -0.447200810521043
+        "mean_excess_annual": 0.05698445662839223,
+        "volatility_annual": 0.1485678110767604,
+        "sharpe": 0.38355856639060343,
+        "sharpe_minus_1n": -0.10913509651702141,
+        "p_value_vs_1n": 0.11881299641443843,
+        "p_value_vs_1n_robust": 0.1163480671210455,
+        "certainty_equivalent": 0.045948259384322246,
+        "max_drawdown": -0.4472008105242967
       },
       "1970-2004": {
         "months": 420,
-        "mean_excess_annual": 0.042119971884595056,
-        "volatility_annual": 0.15824470983740052,
-        "sharpe": 0.26616985760771483,
-        "sharpe_minus_1n": -0.1497679433791519,
-        "p_value_vs_1n": 0.09233823138843822,
-        "certainty_equivalent": 0.029599277788833513,
-        "max_drawdown": -0.447200810521043
+        "mean_excess_annual": 0.042119971887546695,
+        "volatility_annual": 0.15824470983860414,
+        "sharpe": 0.26616985762434275,
+        "sharpe_minus_1n": -0.14976794336252391,
+        "p_value_vs_1n": 0.09233823142922626,
+        "p_value_vs_1n_robust": 0.09666138921512846,
+        "certainty_equivalent": 0.02959927779159469,
+        "max_drawdown": -0.4472008105242967
       },
       "2005-latest": {
         "months": 260,
-        "mean_excess_annual": 0.08099631659410444,
-        "volatility_annual": 0.13143973347551996,
-        "sharpe": 0.6162239868600283,
-        "sharpe_minus_1n": -0.001254379259605365,
-        "p_value_vs_1n": 0.9908920483944854,
-        "certainty_equivalent": 0.0723581148260466,
-        "max_drawdown": -0.41306003685607173
+        "mean_excess_annual": 0.08099631659437345,
+        "volatility_annual": 0.13143973347613208,
+        "sharpe": 0.6162239868592053,
+        "sharpe_minus_1n": -0.0012543792604283732,
+        "p_value_vs_1n": 0.9908920483884398,
+        "p_value_vs_1n_robust": 0.9895488512648518,
+        "certainty_equivalent": 0.07235811482623514,
+        "max_drawdown": -0.4130600368429147
       },
-      "annual_turnover": 2.736190946418174,
+      "annual_turnover": 2.736190946505434,
       "held_rebalances": 0,
       "tangency_fallbacks": 26,
       "crisis_returns": {
-        "2008 financial crisis": -0.3943003581817318,
-        "2020 Covid crash": -0.20673468145090312,
-        "2022 rate shock": -0.23157709208991772
+        "2008 financial crisis": -0.394300358168154,
+        "2020 Covid crash": -0.20673468145104734,
+        "2022 rate shock": -0.2315770920795276
       }
     },
     "Minimum CVaR 90% (tail risk)": {
@@ -448,20 +481,22 @@
         "mean_excess_annual": 0.06099148034170454,
         "volatility_annual": 0.13207921032032813,
         "sharpe": 0.4617795654121762,
-        "sharpe_minus_1n": -0.03091409749544871,
-        "p_value_vs_1n": 0.6880723003992721,
+        "sharpe_minus_1n": -0.030914097495448656,
+        "p_value_vs_1n": 0.6880723003992735,
+        "p_value_vs_1n_robust": 0.6730744584971933,
         "certainty_equivalent": 0.052269021442283806,
-        "max_drawdown": -0.447838713874788
+        "max_drawdown": -0.44783871387478813
       },
       "1970-2004": {
         "months": 420,
         "mean_excess_annual": 0.05172008583121346,
         "volatility_annual": 0.1355732915094766,
         "sharpe": 0.3814917027930844,
-        "sharpe_minus_1n": -0.034446098193782304,
-        "p_value_vs_1n": 0.729349838308867,
+        "sharpe_minus_1n": -0.03444609819378225,
+        "p_value_vs_1n": 0.7293498383088672,
+        "p_value_vs_1n_robust": 0.7359207193287067,
         "certainty_equivalent": 0.042530027145856686,
-        "max_drawdown": -0.42648610910276297
+        "max_drawdown": -0.42648610910276286
       },
       "2005-latest": {
         "months": 260,
@@ -469,7 +504,8 @@
         "volatility_annual": 0.12636836322087575,
         "sharpe": 0.6011658809280472,
         "sharpe_minus_1n": -0.016312485191586457,
-        "p_value_vs_1n": 0.8925121382260439,
+        "p_value_vs_1n": 0.8925121382260441,
+        "p_value_vs_1n_robust": 0.8757059541144541,
         "certainty_equivalent": 0.06798386678555164,
         "max_drawdown": -0.44783871387478813
       },
@@ -492,17 +528,19 @@
         "sharpe": 0.5025675606750165,
         "sharpe_minus_1n": 0.0,
         "p_value_vs_1n": 1.0,
+        "p_value_vs_1n_robust": 1.0,
         "certainty_equivalent": 0.0649922671532675,
         "max_drawdown": -0.495465639846573
       },
       "1970-2004": {
         "months": 420,
-        "mean_excess_annual": 0.06517928571428572,
+        "mean_excess_annual": 0.0651792857142857,
         "volatility_annual": 0.1530430689726846,
-        "sharpe": 0.42588851721157667,
+        "sharpe": 0.42588851721157656,
         "sharpe_minus_1n": 0.0,
         "p_value_vs_1n": 1.0,
-        "certainty_equivalent": 0.05346819523399676,
+        "p_value_vs_1n_robust": 1.0,
+        "certainty_equivalent": 0.05346819523399675,
         "max_drawdown": -0.4579392191736126
       },
       "2005-latest": {
@@ -512,6 +550,7 @@
         "sharpe": 0.6271567732623924,
         "sharpe_minus_1n": 0.0,
         "p_value_vs_1n": 1.0,
+        "p_value_vs_1n_robust": 1.0,
         "certainty_equivalent": 0.08358652858249806,
         "max_drawdown": -0.4954656398465731
       },
@@ -527,161 +566,173 @@
     "Minimum variance (sample)": {
       "full": {
         "months": 680,
-        "mean_excess_annual": 0.07075032623724695,
-        "volatility_annual": 0.12585143607637062,
-        "sharpe": 0.5621733723746577,
-        "sharpe_minus_1n": 0.05960581169964119,
-        "p_value_vs_1n": 0.42589412662276893,
-        "certainty_equivalent": 0.06283103425600456,
-        "max_drawdown": -0.36410677893363397
+        "mean_excess_annual": 0.07075032623724523,
+        "volatility_annual": 0.12585143607636962,
+        "sharpe": 0.5621733723746486,
+        "sharpe_minus_1n": 0.05960581169963208,
+        "p_value_vs_1n": 0.4258941266228349,
+        "p_value_vs_1n_robust": 0.3918221010419578,
+        "certainty_equivalent": 0.06283103425600296,
+        "max_drawdown": -0.3641067789336323
       },
       "1970-2004": {
         "months": 420,
-        "mean_excess_annual": 0.062325440614598784,
-        "volatility_annual": 0.13008929320587884,
-        "sharpe": 0.47909738825287296,
-        "sharpe_minus_1n": 0.05320887104129629,
-        "p_value_vs_1n": 0.584658851889776,
-        "certainty_equivalent": 0.05386382851119622,
-        "max_drawdown": -0.36410677893363397
+        "mean_excess_annual": 0.06232544061459546,
+        "volatility_annual": 0.13008929320587756,
+        "sharpe": 0.4790973882528523,
+        "sharpe_minus_1n": 0.05320887104127575,
+        "p_value_vs_1n": 0.5846588518899156,
+        "p_value_vs_1n_robust": 0.5811241060858141,
+        "certainty_equivalent": 0.05386382851119306,
+        "max_drawdown": -0.3641067789336323
       },
       "2005-latest": {
         "months": 260,
-        "mean_excess_annual": 0.08435975685844782,
-        "volatility_annual": 0.11882744842158172,
-        "sharpe": 0.7099349348910718,
-        "sharpe_minus_1n": 0.08277816162867946,
-        "p_value_vs_1n": 0.4738041935496051,
-        "certainty_equivalent": 0.077299775609256,
-        "max_drawdown": -0.34892787797884794
+        "mean_excess_annual": 0.08435975685844871,
+        "volatility_annual": 0.11882744842158116,
+        "sharpe": 0.7099349348910826,
+        "sharpe_minus_1n": 0.08277816162869023,
+        "p_value_vs_1n": 0.4738041935495503,
+        "p_value_vs_1n_robust": 0.4007722420944497,
+        "certainty_equivalent": 0.07729977560925694,
+        "max_drawdown": -0.34892787797884595
       },
-      "annual_turnover": 0.6824891701593452,
+      "annual_turnover": 0.6824891701593394,
       "held_rebalances": 0,
       "tangency_fallbacks": 0,
       "crisis_returns": {
-        "2008 financial crisis": -0.30511115285594514,
-        "2020 Covid crash": -0.18542196692852797,
-        "2022 rate shock": -0.13676927578494102
+        "2008 financial crisis": -0.30511115285594326,
+        "2020 Covid crash": -0.18542196692851776,
+        "2022 rate shock": -0.13676927578494003
       }
     },
     "Minimum variance (shrinkage)": {
       "full": {
         "months": 680,
-        "mean_excess_annual": 0.07168211161020224,
-        "volatility_annual": 0.12543067645915118,
-        "sharpe": 0.5714878818623516,
-        "sharpe_minus_1n": 0.06892032118733504,
-        "p_value_vs_1n": 0.3262404465549529,
-        "certainty_equivalent": 0.0638156843117021,
-        "max_drawdown": -0.364178669207868
+        "mean_excess_annual": 0.07168211161020187,
+        "volatility_annual": 0.12543067645915076,
+        "sharpe": 0.5714878818623506,
+        "sharpe_minus_1n": 0.06892032118733404,
+        "p_value_vs_1n": 0.32624044655496043,
+        "p_value_vs_1n_robust": 0.2906519269416252,
+        "certainty_equivalent": 0.06381568431170179,
+        "max_drawdown": -0.36417866920787034
       },
       "1970-2004": {
         "months": 420,
-        "mean_excess_annual": 0.0635629685298507,
+        "mean_excess_annual": 0.06356296852984894,
         "volatility_annual": 0.12937231052564904,
-        "sharpe": 0.4913181829372125,
-        "sharpe_minus_1n": 0.06542966572563585,
-        "p_value_vs_1n": 0.4730028255043477,
-        "certainty_equivalent": 0.055194371164478215,
-        "max_drawdown": -0.364178669207868
+        "sharpe": 0.49131818293719887,
+        "sharpe_minus_1n": 0.06542966572562231,
+        "p_value_vs_1n": 0.4730028255044414,
+        "p_value_vs_1n_robust": 0.4665229858435467,
+        "certainty_equivalent": 0.05519437116447645,
+        "max_drawdown": -0.36417866920787034
       },
       "2005-latest": {
         "months": 260,
-        "mean_excess_annual": 0.08479765043230858,
-        "volatility_annual": 0.1189349359694195,
-        "sharpe": 0.7129751215749737,
-        "sharpe_minus_1n": 0.08581834831258128,
-        "p_value_vs_1n": 0.4297715743713342,
-        "certainty_equivalent": 0.07772489093528362,
-        "max_drawdown": -0.35346339178480013
+        "mean_excess_annual": 0.08479765043231047,
+        "volatility_annual": 0.11893493596941829,
+        "sharpe": 0.7129751215749968,
+        "sharpe_minus_1n": 0.08581834831260438,
+        "p_value_vs_1n": 0.42977157437120606,
+        "p_value_vs_1n_robust": 0.3597345902501716,
+        "certainty_equivalent": 0.07772489093528565,
+        "max_drawdown": -0.3534633917847996
       },
-      "annual_turnover": 0.6423725802884452,
+      "annual_turnover": 0.6423725802884394,
       "held_rebalances": 0,
       "tangency_fallbacks": 0,
       "crisis_returns": {
-        "2008 financial crisis": -0.31026926767643415,
-        "2020 Covid crash": -0.18429478078415862,
-        "2022 rate shock": -0.15200366153589118
+        "2008 financial crisis": -0.3102692676764335,
+        "2020 Covid crash": -0.18429478078415817,
+        "2022 rate shock": -0.15200366153588984
       }
     },
     "Maximum Sharpe (sample)": {
       "full": {
         "months": 680,
-        "mean_excess_annual": 0.07543751269012194,
-        "volatility_annual": 0.1667941788768333,
-        "sharpe": 0.45227904953342324,
-        "sharpe_minus_1n": -0.05028851114159327,
-        "p_value_vs_1n": 0.5390426722207788,
-        "certainty_equivalent": 0.06152736363652341,
-        "max_drawdown": -0.47334208889541884
+        "mean_excess_annual": 0.07543751269007427,
+        "volatility_annual": 0.16679417887687298,
+        "sharpe": 0.4522790495330297,
+        "sharpe_minus_1n": -0.05028851114198679,
+        "p_value_vs_1n": 0.5390426722172881,
+        "p_value_vs_1n_robust": 0.4981696180448716,
+        "certainty_equivalent": 0.06152736363646912,
+        "max_drawdown": -0.4733420888952069
       },
       "1970-2004": {
         "months": 420,
-        "mean_excess_annual": 0.05951540980698307,
-        "volatility_annual": 0.17451662362834333,
-        "sharpe": 0.3410300323809217,
-        "sharpe_minus_1n": -0.08485848483065495,
-        "p_value_vs_1n": 0.40583898833777576,
-        "certainty_equivalent": 0.04428738384566465,
-        "max_drawdown": -0.47334208889541884
+        "mean_excess_annual": 0.05951540980732166,
+        "volatility_annual": 0.17451662362838014,
+        "sharpe": 0.34103003238279,
+        "sharpe_minus_1n": -0.08485848482878655,
+        "p_value_vs_1n": 0.4058389883469553,
+        "p_value_vs_1n_robust": 0.39124906747443977,
+        "certainty_equivalent": 0.044287383845996814,
+        "max_drawdown": -0.4733420888952069
       },
       "2005-latest": {
         "months": 260,
-        "mean_excess_annual": 0.10115783273211548,
-        "volatility_annual": 0.15353857609203667,
-        "sharpe": 0.658843108402137,
-        "sharpe_minus_1n": 0.031686335139744615,
-        "p_value_vs_1n": 0.8162054937334569,
-        "certainty_equivalent": 0.08937078555793043,
-        "max_drawdown": -0.47237683122678875
+        "mean_excess_annual": 0.10115783273144385,
+        "volatility_annual": 0.15353857609209623,
+        "sharpe": 0.6588431083975071,
+        "sharpe_minus_1n": 0.03168633513511476,
+        "p_value_vs_1n": 0.8162054937602004,
+        "p_value_vs_1n_robust": 0.7842470858916166,
+        "certainty_equivalent": 0.08937078555724964,
+        "max_drawdown": -0.4723768312266833
       },
-      "annual_turnover": 1.940504605991829,
+      "annual_turnover": 1.940504605938033,
       "held_rebalances": 0,
       "tangency_fallbacks": 0,
       "crisis_returns": {
-        "2008 financial crisis": -0.4142161256446225,
-        "2020 Covid crash": -0.17631399574536477,
-        "2022 rate shock": -0.24451831923364686
+        "2008 financial crisis": -0.41421612564448407,
+        "2020 Covid crash": -0.17631399574536744,
+        "2022 rate shock": -0.24451831923300205
       }
     },
     "Maximum Sharpe (shrinkage)": {
       "full": {
         "months": 680,
-        "mean_excess_annual": 0.06542840910628009,
-        "volatility_annual": 0.1419398238963316,
-        "sharpe": 0.460958787394769,
-        "sharpe_minus_1n": -0.041608773280247535,
-        "p_value_vs_1n": 0.5468821826646075,
-        "certainty_equivalent": 0.05535495230241927,
-        "max_drawdown": -0.46646310119419243
+        "mean_excess_annual": 0.06542840910636356,
+        "volatility_annual": 0.14193982389607712,
+        "sharpe": 0.4609587873961837,
+        "sharpe_minus_1n": -0.041608773278832833,
+        "p_value_vs_1n": 0.5468821826786918,
+        "p_value_vs_1n_robust": 0.500490887259962,
+        "certainty_equivalent": 0.05535495230253888,
+        "max_drawdown": -0.4664631011941248
       },
       "1970-2004": {
         "months": 420,
-        "mean_excess_annual": 0.05175786398859363,
-        "volatility_annual": 0.14744685165396226,
-        "sharpe": 0.3510272576729024,
-        "sharpe_minus_1n": -0.07486125953867429,
-        "p_value_vs_1n": 0.37877822435308506,
-        "certainty_equivalent": 0.040887576957260856,
-        "max_drawdown": -0.46646310119419243
+        "mean_excess_annual": 0.051757863988690936,
+        "volatility_annual": 0.14744685165369678,
+        "sharpe": 0.3510272576741944,
+        "sharpe_minus_1n": -0.07486125953738215,
+        "p_value_vs_1n": 0.3787782243617328,
+        "p_value_vs_1n_robust": 0.3592591374965688,
+        "certainty_equivalent": 0.04088757695739731,
+        "max_drawdown": -0.4664631011941248
       },
       "2005-latest": {
         "months": 260,
-        "mean_excess_annual": 0.08751159737331202,
-        "volatility_annual": 0.13259143783828944,
-        "sharpe": 0.6600094153895706,
-        "sharpe_minus_1n": 0.0328526421271782,
-        "p_value_vs_1n": 0.7794063545801042,
-        "certainty_equivalent": 0.07872135267929953,
-        "max_drawdown": -0.4486550220938741
+        "mean_excess_annual": 0.08751159737337318,
+        "volatility_annual": 0.13259143783805336,
+        "sharpe": 0.660009415391207,
+        "sharpe_minus_1n": 0.03285264212881467,
+        "p_value_vs_1n": 0.7794063545697347,
+        "p_value_vs_1n_robust": 0.7357840791572097,
+        "certainty_equivalent": 0.078721352679392,
+        "max_drawdown": -0.44865502209426456
       },
-      "annual_turnover": 1.6526965448971893,
+      "annual_turnover": 1.6526965450017272,
       "held_rebalances": 0,
       "tangency_fallbacks": 6,
       "crisis_returns": {
-        "2008 financial crisis": -0.4100680528117884,
-        "2020 Covid crash": -0.17953788240283985,
-        "2022 rate shock": -0.19093899260801794
+        "2008 financial crisis": -0.4100680528125663,
+        "2020 Covid crash": -0.17953788240275848,
+        "2022 rate shock": -0.19093899260873082
       }
     },
     "Minimum CVaR 90% (tail risk)": {
@@ -691,7 +742,8 @@
         "volatility_annual": 0.12821196971768664,
         "sharpe": 0.49391783334740247,
         "sharpe_minus_1n": -0.008649727327614043,
-        "p_value_vs_1n": 0.9089236329483057,
+        "p_value_vs_1n": 0.9089236329483059,
+        "p_value_vs_1n_robust": 0.9022137274663473,
         "certainty_equivalent": 0.05510702370271807,
         "max_drawdown": -0.3734628220909282
       },
@@ -700,8 +752,9 @@
         "mean_excess_annual": 0.051639712519853574,
         "volatility_annual": 0.13210328726456463,
         "sharpe": 0.3909040689989355,
-        "sharpe_minus_1n": -0.034984448212641184,
-        "p_value_vs_1n": 0.7226183733718834,
+        "sharpe_minus_1n": -0.03498444821264107,
+        "p_value_vs_1n": 0.7226183733718838,
+        "p_value_vs_1n_robust": 0.7263306928636171,
         "certainty_equivalent": 0.042914073266801536,
         "max_drawdown": -0.3539259207366987
       },
@@ -712,6 +765,7 @@
         "sharpe": 0.6753784695907123,
         "sharpe_minus_1n": 0.04822169632831996,
         "p_value_vs_1n": 0.6787889839701897,
+        "p_value_vs_1n_robust": 0.6124101672851165,
         "certainty_equivalent": 0.07479693208125482,
         "max_drawdown": -0.3734628220909283
       },
@@ -731,20 +785,22 @@
         "months": 680,
         "mean_excess_annual": 0.07512565721017156,
         "volatility_annual": 0.15247944689773058,
-        "sharpe": 0.4926936629076249,
+        "sharpe": 0.49269366290762484,
         "sharpe_minus_1n": 0.0,
         "p_value_vs_1n": 1.0,
+        "p_value_vs_1n_robust": 1.0,
         "certainty_equivalent": 0.06350066634705265,
         "max_drawdown": -0.49675494579667623
       },
       "1970-2004": {
         "months": 420,
-        "mean_excess_annual": 0.06368440413392852,
+        "mean_excess_annual": 0.06368440413392851,
         "volatility_annual": 0.15311040252371616,
-        "sharpe": 0.4159378009868667,
+        "sharpe": 0.41593780098686667,
         "sharpe_minus_1n": 0.0,
         "p_value_vs_1n": 1.0,
-        "certainty_equivalent": 0.05196300645344133,
+        "p_value_vs_1n_robust": 1.0,
+        "certainty_equivalent": 0.05196300645344131,
         "max_drawdown": -0.45934535873318094
       },
       "2005-latest": {
@@ -754,6 +810,7 @@
         "sharpe": 0.6174783661196337,
         "sharpe_minus_1n": 0.0,
         "p_value_vs_1n": 1.0,
+        "p_value_vs_1n_robust": 1.0,
         "certainty_equivalent": 0.08211690198307381,
         "max_drawdown": -0.49675494579667645
       },
@@ -769,161 +826,173 @@
     "Minimum variance (sample)": {
       "full": {
         "months": 680,
-        "mean_excess_annual": 0.06720135913159947,
-        "volatility_annual": 0.1256641283906249,
-        "sharpe": 0.5347696275161765,
-        "sharpe_minus_1n": 0.04207596460855162,
-        "p_value_vs_1n": 0.5731981648029973,
-        "certainty_equivalent": 0.059305622549511744,
-        "max_drawdown": -0.3692192813005416
+        "mean_excess_annual": 0.06720135913159785,
+        "volatility_annual": 0.1256641283906241,
+        "sharpe": 0.534769627516167,
+        "sharpe_minus_1n": 0.04207596460854213,
+        "p_value_vs_1n": 0.5731981648030806,
+        "p_value_vs_1n_robust": 0.5445882388044376,
+        "certainty_equivalent": 0.05930562254951022,
+        "max_drawdown": -0.36921928130054016
       },
       "1970-2004": {
         "months": 420,
-        "mean_excess_annual": 0.058566485079069835,
-        "volatility_annual": 0.12981337437464638,
-        "sharpe": 0.45115909944721655,
-        "sharpe_minus_1n": 0.035221298460349826,
-        "p_value_vs_1n": 0.7168988933389524,
-        "certainty_equivalent": 0.05014072899580378,
-        "max_drawdown": -0.3692192813005416
+        "mean_excess_annual": 0.05856648507906672,
+        "volatility_annual": 0.12981337437464532,
+        "sharpe": 0.4511590994471961,
+        "sharpe_minus_1n": 0.03522129846032945,
+        "p_value_vs_1n": 0.716898893339105,
+        "p_value_vs_1n_robust": 0.7145433608499796,
+        "certainty_equivalent": 0.05014072899580081,
+        "max_drawdown": -0.36921928130054016
       },
       "2005-latest": {
         "months": 260,
-        "mean_excess_annual": 0.08115000183183968,
-        "volatility_annual": 0.11879058301696763,
-        "sharpe": 0.6831349739250668,
-        "sharpe_minus_1n": 0.06565660780543314,
-        "p_value_vs_1n": 0.5691651088958647,
-        "certainty_equivalent": 0.07409440052508413,
-        "max_drawdown": -0.3532734023815651
+        "mean_excess_annual": 0.08115000183184046,
+        "volatility_annual": 0.11879058301696728,
+        "sharpe": 0.6831349739250754,
+        "sharpe_minus_1n": 0.06565660780544169,
+        "p_value_vs_1n": 0.5691651088958161,
+        "p_value_vs_1n_robust": 0.5036597558965616,
+        "certainty_equivalent": 0.07409440052508495,
+        "max_drawdown": -0.353273402381563
       },
-      "annual_turnover": 0.6824891701593452,
+      "annual_turnover": 0.6824891701593394,
       "held_rebalances": 0,
       "tangency_fallbacks": 0,
       "crisis_returns": {
-        "2008 financial crisis": -0.3099328653644009,
-        "2020 Covid crash": -0.18664958021316613,
-        "2022 rate shock": -0.14087354574342648
+        "2008 financial crisis": -0.3099328653643989,
+        "2020 Covid crash": -0.18664958021316047,
+        "2022 rate shock": -0.1408735457434256
       }
     },
     "Minimum variance (shrinkage)": {
       "full": {
         "months": 680,
-        "mean_excess_annual": 0.06833353622062564,
-        "volatility_annual": 0.12523767436941152,
-        "sharpe": 0.5456308300572823,
-        "sharpe_minus_1n": 0.052937167149657405,
-        "p_value_vs_1n": 0.4498983258046074,
-        "certainty_equivalent": 0.06049129867989626,
-        "max_drawdown": -0.36861198497666214
+        "mean_excess_annual": 0.06833353622062532,
+        "volatility_annual": 0.1252376743694111,
+        "sharpe": 0.5456308300572815,
+        "sharpe_minus_1n": 0.05293716714965668,
+        "p_value_vs_1n": 0.4498983258046141,
+        "p_value_vs_1n_robust": 0.4163406904618394,
+        "certainty_equivalent": 0.06049129867989599,
+        "max_drawdown": -0.3686119849766637
       },
       "1970-2004": {
         "months": 420,
-        "mean_excess_annual": 0.0599060011440074,
-        "volatility_annual": 0.12909263695055792,
-        "sharpe": 0.4640543609543835,
-        "sharpe_minus_1n": 0.04811655996751679,
-        "p_value_vs_1n": 0.5969918774376726,
-        "certainty_equivalent": 0.05157354668658312,
-        "max_drawdown": -0.36861198497666214
+        "mean_excess_annual": 0.05990600114400552,
+        "volatility_annual": 0.12909263695055798,
+        "sharpe": 0.4640543609543688,
+        "sharpe_minus_1n": 0.04811655996750214,
+        "p_value_vs_1n": 0.5969918774377851,
+        "p_value_vs_1n_robust": 0.5920246353880003,
+        "certainty_equivalent": 0.051573546686581234,
+        "max_drawdown": -0.3686119849766637
       },
       "2005-latest": {
         "months": 260,
-        "mean_excess_annual": 0.08194724672900897,
-        "volatility_annual": 0.11888575965829844,
-        "sharpe": 0.6892940497208565,
-        "sharpe_minus_1n": 0.07181568360122281,
-        "p_value_vs_1n": 0.5080181676477431,
-        "certainty_equivalent": 0.07488033480424362,
-        "max_drawdown": -0.35720630611465565
+        "mean_excess_annual": 0.08194724672901114,
+        "volatility_annual": 0.11888575965829724,
+        "sharpe": 0.6892940497208818,
+        "sharpe_minus_1n": 0.07181568360124813,
+        "p_value_vs_1n": 0.5080181676475901,
+        "p_value_vs_1n_robust": 0.44256127631165443,
+        "certainty_equivalent": 0.07488033480424594,
+        "max_drawdown": -0.35720630611465465
       },
-      "annual_turnover": 0.6423725802884452,
+      "annual_turnover": 0.6423725802884394,
       "held_rebalances": 0,
       "tangency_fallbacks": 0,
       "crisis_returns": {
-        "2008 financial crisis": -0.3144287325249223,
-        "2020 Covid crash": -0.18540326579716127,
-        "2022 rate shock": -0.15552704819816088
+        "2008 financial crisis": -0.3144287325249212,
+        "2020 Covid crash": -0.1854032657971607,
+        "2022 rate shock": -0.15552704819815943
       }
     },
     "Maximum Sharpe (sample)": {
       "full": {
         "months": 680,
-        "mean_excess_annual": 0.06564207938923831,
-        "volatility_annual": 0.1672270273639396,
-        "sharpe": 0.39253271689378366,
-        "sharpe_minus_1n": -0.10016094601384123,
-        "p_value_vs_1n": 0.2208199269002249,
-        "certainty_equivalent": 0.051659640048748415,
-        "max_drawdown": -0.47736866890224106
+        "mean_excess_annual": 0.06564207938946727,
+        "volatility_annual": 0.1672270273640101,
+        "sharpe": 0.39253271689498725,
+        "sharpe_minus_1n": -0.10016094601263759,
+        "p_value_vs_1n": 0.2208199269057496,
+        "p_value_vs_1n_robust": 0.17889595950693926,
+        "certainty_equivalent": 0.05165964004896558,
+        "max_drawdown": -0.4773686689020641
       },
       "1970-2004": {
         "months": 420,
-        "mean_excess_annual": 0.0493229634445531,
-        "volatility_annual": 0.17490892742383463,
-        "sharpe": 0.28199225831986846,
-        "sharpe_minus_1n": -0.13394554266699826,
-        "p_value_vs_1n": 0.1895848091197272,
-        "certainty_equivalent": 0.03402639699827498,
-        "max_drawdown": -0.47617599309949243
+        "mean_excess_annual": 0.049322963445250584,
+        "volatility_annual": 0.1749089274239448,
+        "sharpe": 0.2819922583236786,
+        "sharpe_minus_1n": -0.1339455426631881,
+        "p_value_vs_1n": 0.1895848091313712,
+        "p_value_vs_1n_robust": 0.17999863385353398,
+        "certainty_equivalent": 0.0340263969989532,
+        "max_drawdown": -0.47617599309926795
       },
       "2005-latest": {
         "months": 260,
-        "mean_excess_annual": 0.0920037282229606,
-        "volatility_annual": 0.1540351964265918,
-        "sharpe": 0.5972902970056366,
-        "sharpe_minus_1n": -0.020188069113997065,
-        "p_value_vs_1n": 0.8820126397071604,
-        "certainty_equivalent": 0.08014030735387123,
-        "max_drawdown": -0.47736866890224094
+        "mean_excess_annual": 0.09200372822243268,
+        "volatility_annual": 0.15403519642660765,
+        "sharpe": 0.5972902970021479,
+        "sharpe_minus_1n": -0.02018806911748583,
+        "p_value_vs_1n": 0.8820126396873178,
+        "p_value_vs_1n_robust": 0.8618665467824083,
+        "certainty_equivalent": 0.08014030735334088,
+        "max_drawdown": -0.4773686689020642
       },
-      "annual_turnover": 1.940504605991829,
+      "annual_turnover": 1.940504605938033,
       "held_rebalances": 0,
       "tangency_fallbacks": 0,
       "crisis_returns": {
-        "2008 financial crisis": -0.4242254509762259,
-        "2020 Covid crash": -0.1784820085086667,
-        "2022 rate shock": -0.249309309895267
+        "2008 financial crisis": -0.4242254509760205,
+        "2020 Covid crash": -0.17848200850673768,
+        "2022 rate shock": -0.24930930989487232
       }
     },
     "Maximum Sharpe (shrinkage)": {
       "full": {
         "months": 680,
-        "mean_excess_annual": 0.05705479354658981,
-        "volatility_annual": 0.1421866352789496,
-        "sharpe": 0.4012669224126202,
-        "sharpe_minus_1n": -0.09142674049500471,
-        "p_value_vs_1n": 0.18559807841928144,
-        "certainty_equivalent": 0.04694627392061529,
-        "max_drawdown": -0.47480618179159995
+        "mean_excess_annual": 0.05705479354612461,
+        "volatility_annual": 0.1421866352785568,
+        "sharpe": 0.4012669224104571,
+        "sharpe_minus_1n": -0.09142674049716776,
+        "p_value_vs_1n": 0.18559807841033082,
+        "p_value_vs_1n_robust": 0.14132368639745074,
+        "certainty_equivalent": 0.04694627392020595,
+        "max_drawdown": -0.47480618179152567
       },
       "1970-2004": {
         "months": 420,
-        "mean_excess_annual": 0.042293502375778634,
-        "volatility_annual": 0.1475424085259822,
-        "sharpe": 0.28665319211141077,
-        "sharpe_minus_1n": -0.12928460887545595,
-        "p_value_vs_1n": 0.12895231291382503,
-        "certainty_equivalent": 0.03140912121895472,
-        "max_drawdown": -0.47480618179159995
+        "mean_excess_annual": 0.04229350237470979,
+        "volatility_annual": 0.14754240852553355,
+        "sharpe": 0.2866531921050381,
+        "sharpe_minus_1n": -0.12928460888182858,
+        "p_value_vs_1n": 0.12895231289691056,
+        "p_value_vs_1n_robust": 0.11663696972656079,
+        "certainty_equivalent": 0.03140912121795207,
+        "max_drawdown": -0.47480618179152567
       },
       "2005-latest": {
         "months": 260,
-        "mean_excess_annual": 0.08089995620713095,
-        "volatility_annual": 0.13307054482262765,
-        "sharpe": 0.6079478844470357,
-        "sharpe_minus_1n": -0.009530481672597957,
-        "p_value_vs_1n": 0.935158656092629,
-        "certainty_equivalent": 0.07204607125743547,
-        "max_drawdown": -0.45707714927672916
+        "mean_excess_annual": 0.08089995620764089,
+        "volatility_annual": 0.1330705448223084,
+        "sharpe": 0.6079478844523265,
+        "sharpe_minus_1n": -0.009530481667307189,
+        "p_value_vs_1n": 0.9351586561285943,
+        "p_value_vs_1n_robust": 0.9218569882424625,
+        "certainty_equivalent": 0.0720460712579879,
+        "max_drawdown": -0.45707714927728527
       },
-      "annual_turnover": 1.6526965448971893,
+      "annual_turnover": 1.6526965450017272,
       "held_rebalances": 0,
       "tangency_fallbacks": 6,
       "crisis_returns": {
-        "2008 financial crisis": -0.423227753313696,
-        "2020 Covid crash": -0.1809762206577139,
-        "2022 rate shock": -0.1958145998382541
+        "2008 financial crisis": -0.42322775331465556,
+        "2020 Covid crash": -0.18097622065741448,
+        "2022 rate shock": -0.1958145998390325
       }
     },
     "Minimum CVaR 90% (tail risk)": {
@@ -932,8 +1001,9 @@
         "mean_excess_annual": 0.05801559092782136,
         "volatility_annual": 0.1293489756548408,
         "sharpe": 0.4485199100658681,
-        "sharpe_minus_1n": -0.044173752841756786,
-        "p_value_vs_1n": 0.5575633520555869,
+        "sharpe_minus_1n": -0.04417375284175673,
+        "p_value_vs_1n": 0.5575633520555883,
+        "p_value_vs_1n_robust": 0.5295374522857057,
         "certainty_equivalent": 0.049650012176343065,
         "max_drawdown": -0.3840132463164978
       },
@@ -942,8 +1012,9 @@
         "mean_excess_annual": 0.046917399382059466,
         "volatility_annual": 0.13328924562336728,
         "sharpe": 0.35199688589005146,
-        "sharpe_minus_1n": -0.06394091509681527,
+        "sharpe_minus_1n": -0.06394091509681521,
         "p_value_vs_1n": 0.5149781332949748,
+        "p_value_vs_1n_robust": 0.5227164230457988,
         "certainty_equivalent": 0.0380343878826363,
         "max_drawdown": -0.3643423011469542
       },
@@ -954,6 +1025,7 @@
         "sharpe": 0.6184684155921669,
         "sharpe_minus_1n": 0.0009900494725332276,
         "p_value_vs_1n": 0.9931856403976649,
+        "p_value_vs_1n_robust": 0.9916154535018347,
         "certainty_equivalent": 0.06840440883086023,
         "max_drawdown": -0.38401324631649747
       },
