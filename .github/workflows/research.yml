@@ -1,0 +1,33 @@
+name: Research studies
+
+# Runs the three studies in research/ on the real public data (French Data Library, ECB,
+# BIS) and commits the results (tables, figures, JSON) to the branch it ran on.
+# Actions tab > Research studies > Run workflow.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: research-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+      - run: uv python install 3.12 && uv sync --frozen --project backend
+      - name: Run the studies
+        run: uv run --project backend --with matplotlib python -m research.run_all
+      - name: Commit results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research/results
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -m "Research results: rerun on the latest public data"
+          git push
