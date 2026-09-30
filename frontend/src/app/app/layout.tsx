@@ -1,5 +1,6 @@
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 
+import { TourBar } from "@/components/tour-bar";
 import { MobileStepNav, StepNav, UniverseSummary } from "@/components/workspace";
 
 export default function WorkspaceLayout({ children }: { children: ReactNode }) {
@@ -11,6 +12,9 @@ export default function WorkspaceLayout({ children }: { children: ReactNode }) {
       </aside>
       <main className="min-w-0 flex-1 px-4 py-5 lg:px-6">
         <MobileStepNav />
+        <Suspense fallback={null}>
+          <TourBar />
+        </Suspense>
         {children}
       </main>
     </div>

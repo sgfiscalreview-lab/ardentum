@@ -9,6 +9,7 @@ from typing import Any
 from sqlalchemy import (
     JSON,
     BigInteger,
+    Date,
     DateTime,
     ForeignKey,
     Index,
@@ -112,6 +113,19 @@ class RateLimitCounter(Base):
 
     key: Mapped[str] = mapped_column(String(80), primary_key=True)
     window: Mapped[int] = mapped_column(BigInteger, primary_key=True)  # epoch // window length
+    count: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class UsageCount(Base):
+    """Completed calculations and saves per UTC day and kind, published as usage statistics.
+
+    Deliberately anonymous: no user, address, device or content is stored, only a count.
+    """
+
+    __tablename__ = "usage_counts"
+
+    day: Mapped[dt.date] = mapped_column(Date, primary_key=True)
+    event: Mapped[str] = mapped_column(String(32), primary_key=True)
     count: Mapped[int] = mapped_column(Integer, default=0)
 
 

@@ -53,6 +53,14 @@ export function date(d: string | null | undefined): string {
   });
 }
 
+/** "2026-10" as "Oct 2026". */
+export function month(m: string | null | undefined): string {
+  if (!m) return DASH;
+  const [y, mo] = m.split("-").map(Number);
+  if (!y || !mo) return m;
+  return new Date(Date.UTC(y, mo - 1, 1)).toLocaleDateString("en-GB", { month: "short", year: "numeric", timeZone: "UTC" });
+}
+
 export function humanise(s: string): string {
   const t = s.replace(/_/g, " ");
   return t.charAt(0).toUpperCase() + t.slice(1);

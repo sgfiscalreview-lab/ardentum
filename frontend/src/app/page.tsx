@@ -50,6 +50,9 @@ export default function Home() {
           <Link href="/app" className="inline-flex h-10 items-center rounded-sm bg-accent px-5 text-sm font-medium text-on-accent hover:bg-accent-hover">
             Open the workspace
           </Link>
+          <Link href="/tour" className="inline-flex h-10 items-center rounded-sm border border-line-strong bg-surface px-5 text-sm font-medium text-ink hover:bg-surface-2">
+            Take the guided tour
+          </Link>
           <Link href="/research" className="inline-flex h-10 items-center rounded-sm border border-line-strong bg-surface px-5 text-sm font-medium text-ink hover:bg-surface-2">
             Read the methodology
           </Link>

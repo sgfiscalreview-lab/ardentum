@@ -1,0 +1,420 @@
+{
+  "euro": {
+    "assets": {
+      "US market": {
+        "months": 331,
+        "volatility_unhedged": 0.15673728873550877,
+        "volatility_hedged": 0.15685890074883954,
+        "risk_change_from_hedging": 0.0007758971353395427,
+        "mean_unhedged_annual": 0.09800911804074883,
+        "mean_hedged_annual": 0.09028944476567569,
+        "corr_us_stocks_vs_dollar": -0.29418346652506483,
+        "min_variance_hedge_ratio": 0.49777949376100555,
+        "max_drawdown_unhedged": -0.5818969965755878,
+        "max_drawdown_hedged": -0.5090249310946906
+      },
+      "NODUR": {
+        "months": 331,
+        "volatility_unhedged": 0.12986495841119053,
+        "volatility_hedged": 0.12759419753606632,
+        "risk_change_from_hedging": -0.017485555017345833,
+        "mean_unhedged_annual": 0.08578221176965214,
+        "mean_hedged_annual": 0.07806253849457909,
+        "corr_us_stocks_vs_dollar": -0.3378269596430422,
+        "min_variance_hedge_ratio": 0.5340396030001262,
+        "max_drawdown_unhedged": -0.35443968968591744,
+        "max_drawdown_hedged": -0.33785312747521923
+      },
+      "DURBL": {
+        "months": 331,
+        "volatility_unhedged": 0.3240992976938978,
+        "volatility_hedged": 0.3268373599979335,
+        "risk_change_from_hedging": 0.008448220417378804,
+        "mean_unhedged_annual": 0.1268645712400316,
+        "mean_hedged_annual": 0.11914489796495846,
+        "corr_us_stocks_vs_dollar": -0.1663211257363986,
+        "min_variance_hedge_ratio": 0.39622642026756144,
+        "max_drawdown_unhedged": -0.7683543960896847,
+        "max_drawdown_hedged": -0.7499728936757963
+      },
+      "MANUF": {
+        "months": 331,
+        "volatility_unhedged": 0.19740106086635353,
+        "volatility_hedged": 0.20483828881376123,
+        "risk_change_from_hedging": 0.03767572430850774,
+        "mean_unhedged_annual": 0.12412523347405628,
+        "mean_hedged_annual": 0.11640556019898315,
+        "corr_us_stocks_vs_dollar": -0.3048759951439629,
+        "min_variance_hedge_ratio": 0.32581915669990497,
+        "max_drawdown_unhedged": -0.548849956261731,
+        "max_drawdown_hedged": -0.6068475272030003
+      },
+      "ENRGY": {
+        "months": 331,
+        "volatility_unhedged": 0.24323939428024396,
+        "volatility_hedged": 0.24719699303748102,
+        "risk_change_from_hedging": 0.016270385678881283,
+        "mean_unhedged_annual": 0.12348368815282004,
+        "mean_hedged_annual": 0.11576401487774693,
+        "corr_us_stocks_vs_dollar": -0.228558630907951,
+        "min_variance_hedge_ratio": 0.3869893980947493,
+        "max_drawdown_unhedged": -0.6041251774548536,
+        "max_drawdown_hedged": -0.6742209603604785
+      },
+      "CHEMS": {
+        "months": 331,
+        "volatility_unhedged": 0.14705018658633606,
+        "volatility_hedged": 0.1509946967090063,
+        "risk_change_from_hedging": 0.026824244254558316,
+        "mean_unhedged_annual": 0.0821647391804576,
+        "mean_hedged_annual": 0.07444506590538458,
+        "corr_us_stocks_vs_dollar": -0.3452000800913555,
+        "min_variance_hedge_ratio": 0.4315490487589315,
+        "max_drawdown_unhedged": -0.3414714845475936,
+        "max_drawdown_hedged": -0.4441409874884409
+      },
+      "BUSEQ": {
+        "months": 331,
+        "volatility_unhedged": 0.23950593177473833,
+        "volatility_hedged": 0.2375801106148827,
+        "risk_change_from_hedging": -0.008040807781190651,
+        "mean_unhedged_annual": 0.1278633773019521,
+        "mean_hedged_annual": 0.12014370402687899,
+        "corr_us_stocks_vs_dollar": -0.17231012207921234,
+        "min_variance_hedge_ratio": 0.5534955192874885,
+        "max_drawdown_unhedged": -0.8080799087503369,
+        "max_drawdown_hedged": -0.7930188952428939
+      },
+      "TELCM": {
+        "months": 331,
+        "volatility_unhedged": 0.18465087253120083,
+        "volatility_hedged": 0.18343012029294378,
+        "risk_change_from_hedging": -0.006611137123388233,
+        "mean_unhedged_annual": 0.04682775363661475,
+        "mean_hedged_annual": 0.039108080361541585,
+        "corr_us_stocks_vs_dollar": -0.23219799249404607,
+        "min_variance_hedge_ratio": 0.5261622844554695,
+        "max_drawdown_unhedged": -0.7735121261340598,
+        "max_drawdown_hedged": -0.7189862573393517
+      },
+      "UTILS": {
+        "months": 331,
+        "volatility_unhedged": 0.15737751174633433,
+        "volatility_hedged": 0.1478900469183249,
+        "risk_change_from_hedging": -0.06028475557106017,
+        "mean_unhedged_annual": 0.09743082741079197,
+        "mean_hedged_annual": 0.08971115413571891,
+        "corr_us_stocks_vs_dollar": -0.21169820388554997,
+        "min_variance_hedge_ratio": 0.6686302852983563,
+        "max_drawdown_unhedged": -0.49674227455713127,
+        "max_drawdown_hedged": -0.3813421253169962
+      },
+      "SHOPS": {
+        "months": 331,
+        "volatility_unhedged": 0.1697729796547887,
+        "volatility_hedged": 0.16130874521397853,
+        "risk_change_from_hedging": -0.04985619300563082,
+        "mean_unhedged_annual": 0.10919234951980547,
+        "mean_hedged_annual": 0.10147267624473238,
+        "corr_us_stocks_vs_dollar": -0.1918736221557244,
+        "min_variance_hedge_ratio": 0.6631652367260727,
+        "max_drawdown_unhedged": -0.4266628173019029,
+        "max_drawdown_hedged": -0.3875440340534796
+      },
+      "HLTH": {
+        "months": 331,
+        "volatility_unhedged": 0.15167068775668238,
+        "volatility_hedged": 0.14447251143082823,
+        "risk_change_from_hedging": -0.04745924497554743,
+        "mean_unhedged_annual": 0.09341556673277512,
+        "mean_hedged_annual": 0.08569589345770202,
+        "corr_us_stocks_vs_dollar": -0.24175979384677676,
+        "min_variance_hedge_ratio": 0.624116347587021,
+        "max_drawdown_unhedged": -0.5146747093069901,
+        "max_drawdown_hedged": -0.3397077108264319
+      },
+      "MONEY": {
+        "months": 331,
+        "volatility_unhedged": 0.194745789428632,
+        "volatility_hedged": 0.19835225749855984,
+        "risk_change_from_hedging": 0.018518850037831047,
+        "mean_unhedged_annual": 0.09363223117030267,
+        "mean_hedged_annual": 0.08591255789522947,
+        "corr_us_stocks_vs_dollar": -0.2694953750248464,
+        "min_variance_hedge_ratio": 0.4174555800638499,
+        "max_drawdown_unhedged": -0.7081541088144667,
+        "max_drawdown_hedged": -0.7330407542250996
+      },
+      "OTHER": {
+        "months": 331,
+        "volatility_unhedged": 0.17285635317177106,
+        "volatility_hedged": 0.1765852906460283,
+        "risk_change_from_hedging": 0.021572464105798383,
+        "mean_unhedged_annual": 0.08022361291117493,
+        "mean_hedged_annual": 0.07250393963610184,
+        "corr_us_stocks_vs_dollar": -0.29798648192789995,
+        "min_variance_hedge_ratio": 0.4241309749254708,
+        "max_drawdown_unhedged": -0.6306763808067306,
+        "max_drawdown_hedged": -0.6028695941898987
+      }
+    },
+    "crises_us_market": {
+      "2008 financial crisis": {
+        "local_usd": -0.4582485432926541,
+        "unhedged": -0.4118835910463874,
+        "hedged": -0.4661201199924342,
+        "currency": 0.08558343807336177
+      },
+      "2020 Covid crash": {
+        "local_usd": -0.20216025000000004,
+        "unhedged": -0.19516776625479393,
+        "hedged": -0.2052527069536625,
+        "currency": 0.008764270951912678
+      },
+      "2022 rate shock": {
+        "local_usd": -0.2484493224703469,
+        "unhedged": -0.12674326090962806,
+        "hedged": -0.2611822398982787,
+        "currency": 0.16193992660716727
+      }
+    },
+    "rolling_5y_hedge_ratio_us_market": {
+      "2004": 0.9321207597896997,
+      "2005": 0.997531652923128,
+      "2006": 0.9974225195630932,
+      "2007": 0.8316299515344722,
+      "2008": 0.4692417689220848,
+      "2009": 0.36337448043550147,
+      "2010": 0.22419228433864696,
+      "2011": 0.1838685108310897,
+      "2012": 0.12884339675169837,
+      "2013": 0.10101950802829057,
+      "2014": 0.13672973257256765,
+      "2015": 0.441395549014567,
+      "2016": 0.5614150243942226,
+      "2017": 0.7701742728116487,
+      "2018": 0.7620416595532525,
+      "2019": 0.7756589356457465,
+      "2020": 0.21732050603173841,
+      "2021": 0.20715026436304249,
+      "2022": -0.12072239081773078,
+      "2023": -0.3019107652488461,
+      "2024": -0.20024528077333448,
+      "2025": 0.2670438127291233,
+      "2026": 0.14245963796132105
+    },
+    "sample": [
+      "1999-02-28",
+      "2026-08-31"
+    ]
+  },
+  "sterling": {
+    "assets": {
+      "US market": {
+        "months": 331,
+        "volatility_unhedged": 0.14990220941843319,
+        "volatility_hedged": 0.15681305342640836,
+        "risk_change_from_hedging": 0.04610234922344891,
+        "mean_unhedged_annual": 0.10476133299864154,
+        "mean_hedged_annual": 0.09843650853249475,
+        "corr_us_stocks_vs_dollar": -0.3524186252094537,
+        "min_variance_hedge_ratio": 0.3541102738295891,
+        "max_drawdown_unhedged": -0.4899553587337582,
+        "max_drawdown_hedged": -0.5019426445158195
+      },
+      "NODUR": {
+        "months": 331,
+        "volatility_unhedged": 0.1276547592817101,
+        "volatility_hedged": 0.12737417537773466,
+        "risk_change_from_hedging": -0.0021979901537102497,
+        "mean_unhedged_annual": 0.09331517975396633,
+        "mean_hedged_annual": 0.08699035528781963,
+        "corr_us_stocks_vs_dollar": -0.33445177118020775,
+        "min_variance_hedge_ratio": 0.5049250477023762,
+        "max_drawdown_unhedged": -0.2768194727065538,
+        "max_drawdown_hedged": -0.32944653476026453
+      },
+      "DURBL": {
+        "months": 331,
+        "volatility_unhedged": 0.31470820106515796,
+        "volatility_hedged": 0.3254739785951609,
+        "risk_change_from_hedging": 0.03420876066643719,
+        "mean_unhedged_annual": 0.13206213799120664,
+        "mean_hedged_annual": 0.1257373135250598,
+        "corr_us_stocks_vs_dollar": -0.2530666169959699,
+        "min_variance_hedge_ratio": 0.025640925725545136,
+        "max_drawdown_unhedged": -0.6595729237991302,
+        "max_drawdown_hedged": -0.745637548385627
+      },
+      "MANUF": {
+        "months": 331,
+        "volatility_unhedged": 0.1925167958657709,
+        "volatility_hedged": 0.20425593988331023,
+        "risk_change_from_hedging": 0.06097724598389975,
+        "mean_unhedged_annual": 0.13111992040350465,
+        "mean_hedged_annual": 0.12479509593735781,
+        "corr_us_stocks_vs_dollar": -0.3431983280428205,
+        "min_variance_hedge_ratio": 0.17941995644401473,
+        "max_drawdown_unhedged": -0.42299645516902584,
+        "max_drawdown_hedged": -0.5986429467930228
+      },
+      "ENRGY": {
+        "months": 331,
+        "volatility_unhedged": 0.2347455327543101,
+        "volatility_hedged": 0.24722687256849848,
+        "risk_change_from_hedging": 0.05316965851380706,
+        "mean_unhedged_annual": 0.1293150387304289,
+        "mean_hedged_annual": 0.12299021426428217,
+        "corr_us_stocks_vs_dollar": -0.31366930135239324,
+        "min_variance_hedge_ratio": 0.08596065549971238,
+        "max_drawdown_unhedged": -0.5975310297197862,
+        "max_drawdown_hedged": -0.6806762060548455
+      },
+      "CHEMS": {
+        "months": 331,
+        "volatility_unhedged": 0.1434826007704303,
+        "volatility_hedged": 0.15058017302531276,
+        "risk_change_from_hedging": 0.049466431586631554,
+        "mean_unhedged_annual": 0.08947373882060058,
+        "mean_hedged_annual": 0.08314891435445382,
+        "corr_us_stocks_vs_dollar": -0.36475762337285367,
+        "min_variance_hedge_ratio": 0.3563491821578109,
+        "max_drawdown_unhedged": -0.26016912967086414,
+        "max_drawdown_hedged": -0.4412684835637086
+      },
+      "BUSEQ": {
+        "months": 331,
+        "volatility_unhedged": 0.23543266898102183,
+        "volatility_hedged": 0.23812058518260984,
+        "risk_change_from_hedging": 0.01141692108075576,
+        "mean_unhedged_annual": 0.13457402402974852,
+        "mean_hedged_annual": 0.12824919956360176,
+        "corr_us_stocks_vs_dollar": -0.2117588490711827,
+        "min_variance_hedge_ratio": 0.4123921986159599,
+        "max_drawdown_unhedged": -0.8028651776807374,
+        "max_drawdown_hedged": -0.7878955438329382
+      },
+      "TELCM": {
+        "months": 331,
+        "volatility_unhedged": 0.18019256357235414,
+        "volatility_hedged": 0.18370987786026788,
+        "risk_change_from_hedging": 0.01951975274773976,
+        "mean_unhedged_annual": 0.05367755668614489,
+        "mean_hedged_annual": 0.04735273221999803,
+        "corr_us_stocks_vs_dollar": -0.27205147183615846,
+        "min_variance_hedge_ratio": 0.41190436780742407,
+        "max_drawdown_unhedged": -0.7150240171486352,
+        "max_drawdown_hedged": -0.711590437100234
+      },
+      "UTILS": {
+        "months": 331,
+        "volatility_unhedged": 0.15290821575421715,
+        "volatility_hedged": 0.14808349324226877,
+        "risk_change_from_hedging": -0.03155306265363511,
+        "mean_unhedged_annual": 0.10456550395765402,
+        "mean_hedged_annual": 0.09824067949150728,
+        "corr_us_stocks_vs_dollar": -0.23438687433378058,
+        "min_variance_hedge_ratio": 0.599950530678588,
+        "max_drawdown_unhedged": -0.42646610673377794,
+        "max_drawdown_hedged": -0.37773551639698255
+      },
+      "SHOPS": {
+        "months": 331,
+        "volatility_unhedged": 0.16425555742811865,
+        "volatility_hedged": 0.16077612116469292,
+        "risk_change_from_hedging": -0.021183065692912062,
+        "mean_unhedged_annual": 0.11616476148661758,
+        "mean_hedged_annual": 0.10983993702047079,
+        "corr_us_stocks_vs_dollar": -0.22487224437706496,
+        "min_variance_hedge_ratio": 0.5778382040881529,
+        "max_drawdown_unhedged": -0.38114666316325463,
+        "max_drawdown_hedged": -0.3715126460393122
+      },
+      "HLTH": {
+        "months": 331,
+        "volatility_unhedged": 0.14656933162225533,
+        "volatility_hedged": 0.1445969970742406,
+        "risk_change_from_hedging": -0.013456666044557863,
+        "mean_unhedged_annual": 0.10047145287093749,
+        "mean_hedged_annual": 0.09414662840479068,
+        "corr_us_stocks_vs_dollar": -0.27332245901629426,
+        "min_variance_hedge_ratio": 0.539525735810449,
+        "max_drawdown_unhedged": -0.39849127297139575,
+        "max_drawdown_hedged": -0.3304215612245487
+      },
+      "MONEY": {
+        "months": 331,
+        "volatility_unhedged": 0.18527727014796297,
+        "volatility_hedged": 0.1978041199304824,
+        "risk_change_from_hedging": 0.0676113684777171,
+        "mean_unhedged_annual": 0.0997121866121474,
+        "mean_hedged_annual": 0.09338736214600059,
+        "corr_us_stocks_vs_dollar": -0.3587373003881588,
+        "min_variance_hedge_ratio": 0.16971324726188353,
+        "max_drawdown_unhedged": -0.6153581602171441,
+        "max_drawdown_hedged": -0.7266803438500287
+      },
+      "OTHER": {
+        "months": 331,
+        "volatility_unhedged": 0.16675925231028474,
+        "volatility_hedged": 0.1763548095319945,
+        "risk_change_from_hedging": 0.05754137829699291,
+        "mean_unhedged_annual": 0.08698719211195621,
+        "mean_hedged_annual": 0.08066236764580942,
+        "corr_us_stocks_vs_dollar": -0.35139871372980086,
+        "min_variance_hedge_ratio": 0.27339632559219945,
+        "max_drawdown_unhedged": -0.5009043141657663,
+        "max_drawdown_hedged": -0.5967340489583983
+      }
+    },
+    "crises_us_market": {
+      "2008 financial crisis": {
+        "local_usd": -0.4582485432926541,
+        "unhedged": -0.2149396648472649,
+        "hedged": -0.4570379513402557,
+        "currency": 0.4491153192723656
+      },
+      "2020 Covid crash": {
+        "local_usd": -0.20216025000000004,
+        "unhedged": -0.15245436113335886,
+        "hedged": -0.20985188290221823,
+        "currency": 0.06230059215104444
+      },
+      "2022 rate shock": {
+        "local_usd": -0.2484493224703469,
+        "unhedged": -0.0823869116771998,
+        "hedged": -0.2602163475370479,
+        "currency": 0.22095969807251636
+      }
+    },
+    "rolling_5y_hedge_ratio_us_market": {
+      "2004": 0.9430536665036743,
+      "2005": 1.2375379640989796,
+      "2006": 1.171037797035973,
+      "2007": 0.8706168929575123,
+      "2008": 0.4268967938936809,
+      "2009": 0.3908889499536584,
+      "2010": 0.25773006184501257,
+      "2011": 0.11667766308535045,
+      "2012": 0.046154524712175134,
+      "2013": 0.2706778648824409,
+      "2014": 0.26634423431046106,
+      "2015": 0.25481211414844107,
+      "2016": 0.4632491965994535,
+      "2017": 0.5914466030798596,
+      "2018": 0.4962959173571836,
+      "2019": 0.4341007635466307,
+      "2020": 0.1662882420832909,
+      "2021": -0.013835090343269718,
+      "2022": -0.3117539166014333,
+      "2023": -0.4924240162067526,
+      "2024": -0.5390834809931111,
+      "2025": -0.09501201688387463,
+      "2026": -0.16916670088492117
+    },
+    "sample": [
+      "1999-02-28",
+      "2026-08-31"
+    ]
+  }
+}

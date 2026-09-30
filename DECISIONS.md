@@ -289,3 +289,43 @@ fixes are about robustness and phones.
   schedules after 60 idle days, and note that one awake Render service uses ~744 of 750
   free hours.
 
+
+## D-034 Open-source release 1.0.0
+The code is released under the MIT licence, with `CITATION.cff`, a changelog and release
+notes, so it can be cited and archived with a DOI (Zenodo archives each GitHub release;
+`docs/RELEASING.md`). MIT is the most widely understood permissive licence and matches the
+licences of the main dependencies. It covers the code only: data sources keep their own
+terms (Licences page), and the name is not licensed. The copyright line reads "The
+Ardentum authors" until the author adds their name.
+
+## D-035 Anonymous usage counts and a guided tour
+To report real usage without tracking anyone, the API keeps one number per UTC day and
+kind of action (`usage_counts`: day, event, count). A request adds one only when it
+succeeds; background jobs add one in the same transaction that marks them finished, so a
+visible result is always counted and a failed count can never fail a job (savepoint).
+Nothing about the person, address, device or content is stored, so the totals are not
+personal data; they are public at `/api/v1/usage` and on the Usage page, and the Privacy
+Policy describes them. The live smoke test sends `X-Ardentum-Monitor` and is not counted
+(the header can only lower counts, so honouring it from anyone is safe). Visitors and page
+views are deliberately not counted: that would need a tracker or IP logging.
+The guided tour (`/tour`, `?tour=<step>` on workspace pages) walks through eight steps on
+the synthetic demo data with no sign-in.
+
+## D-036 Research studies
+`research/` holds three studies built on the engine and rerun on public data by a GitHub
+workflow (the dev container cannot reach the data hosts). Choices:
+* **Walk-forward only.** Every portfolio uses data available at its formation date.
+* **Sharpe-ratio tests.** The Jobson-Korkie test with Memmel's correction is reported
+  because DeMiguel, Garlappi and Uppal (2009) use it, next to a HAC version of Ledoit and
+  Wolf (2008), which stays valid under fat tails and autocorrelation. The robust test uses
+  a Bartlett kernel with the Newey-West (1994) lag rule rather than their quadratic-spectral
+  kernel with prewhitening; simulation tests check its size.
+* **Promised versus delivered.** The delivered Sharpe ratio is computed over all
+  out-of-sample months pooled. Averaging 12-month Sharpe ratios overstates it (noisy
+  ratios; calm years dominate), which an earlier version did.
+* **Currency hedge.** A one-month forward priced by covered interest parity from central
+  bank policy rates, the same method as the app (D-031); policy rates stand in for the
+  interbank rates that price real forwards.
+* Rejected topics: the cost of ESG screens (no historical ESG scores in the free data, and
+  scores are never imputed), value-premium decay (does not use the engine),
+  Black-Litterman views (results depend on subjective views).

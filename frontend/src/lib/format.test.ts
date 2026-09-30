@@ -1,4 +1,4 @@
-import { date, humanise, money, num, pct, signedPct } from "./format";
+import { date, humanise, money, month, num, pct, signedPct } from "./format";
 
 describe("format", () => {
   it("formats percentages and handles missing values", () => {
@@ -39,5 +39,9 @@ describe("signed formats", () => {
   it("drop the sign when the rounded value is zero", () => {
     expect(signedPct(-0.00001, 1)).toBe("0.0%");
     expect(signedPct(0.00001, 1)).toBe("0.0%");
+  });
+  it("formats months", () => {
+    expect(month("2026-10")).toBe("Oct 2026");
+    expect(month(null)).toBe("n/a");
   });
 });

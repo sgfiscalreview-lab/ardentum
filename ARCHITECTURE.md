@@ -86,6 +86,7 @@ by tests. The frontend never re-derives a metric.
 * `open_esg.py` — WikiRate matching, scoring and saved ESG overlays.
 * `jobs.py` — background jobs claimed by long-polls, heartbeat and recovery (D-025).
 * `analysis.py` — maps API requests → quant calls → API responses (applies ESG overlays).
+* `usage.py` — anonymous daily counts of completed calculations, saves and exports (D-035).
 
 ### `api/`
 
@@ -110,6 +111,7 @@ consistent error envelope `{"error": {"type", "message", "details"}}`.
 | `GET /esg/open/metrics`, `GET /esg/open/companies`, `POST /esg/open/preview` | browse WikiRate; preview scores |
 | `CRUD /esg/overlays` | saved open-data ESG overlays (used via `universe.esg_overlay_id`) |
 | `GET /health/db` | database check (daily keep-alive) |
+| `GET /usage` | public, anonymous usage counts |
 
 Compute endpoints are rate limited per verified user or client IP with a counter shared
 through PostgreSQL (D-024).
@@ -118,7 +120,8 @@ through PostgreSQL (D-024).
 
 Tables: `users` (id = identity-provider subject), `datasets` (gzip CSV blob + asset
 metadata JSON incl. currency, ISIN, market cap), `portfolios` (weights + generating spec +
-summary), `provider_cache`, `rate_limit_counters`, `jobs`, `esg_overlays`. Alembic migrations in
+summary), `provider_cache`, `rate_limit_counters`, `jobs`, `esg_overlays`, `usage_counts` (day, kind,
+count; nothing about users). Alembic migrations in
 `backend/migrations`. Row ownership is enforced in the API (the backend is the only
 database client; Supabase RLS is not relied upon).
 

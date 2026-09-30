@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { LegalPage, Section } from "@/components/legal";
-import { CONTACT } from "@/lib/legal";
+import { CONTACT, SOURCE_URL } from "@/lib/legal";
 
 export const metadata: Metadata = { title: "Licences" };
 
@@ -19,7 +19,16 @@ const DATA = [
 export default function LicencesPage() {
   return (
     <LegalPage title="Licences">
-      <Section title="1. Website software">
+      <Section title="1. Ardentum's own code">
+        <p>
+          Ardentum&apos;s source code is published under the MIT licence at{" "}
+          <a href={SOURCE_URL} className={link}>
+            {SOURCE_URL.replace("https://", "")}
+          </a>
+          : anyone may use, change and share it, provided the copyright notice and licence text are kept. The licence covers the code only, not the data sources below or the Ardentum name.
+        </p>
+      </Section>
+      <Section title="2. Website software">
         <p>
           The website is built with open-source packages, including Next.js, React, Recharts, TanStack Query, the Supabase client and KaTeX, all under the MIT licence, together with their dependencies under MIT, Apache 2.0, ISC and BSD licences.{" "}
           <a href="/third-party-licenses.txt" className={link}>
@@ -28,17 +37,17 @@ export default function LicencesPage() {
           , is generated from the installed packages every time the website is built. The build stops if a package has no declared licence or a copyleft licence that has not been reviewed.
         </p>
       </Section>
-      <Section title="2. Server software">
+      <Section title="3. Server software">
         <p>
           The Ardentum API runs on FastAPI, Pydantic and SQLAlchemy (MIT), NumPy, pandas, SciPy, scikit-learn, HTTPX and Uvicorn (BSD), CVXPY, Clarabel and OSQP (Apache 2.0), and psycopg (LGPL 3.0), whose source code is available from its authors.
         </p>
       </Section>
-      <Section title="3. Fonts and images">
+      <Section title="4. Fonts and images">
         <p>
           Text uses the fonts already installed on your device; no web fonts are downloaded. Mathematical formulas in the methodology pages use the fonts included with KaTeX (MIT licence), served from this website. Screenshots show Ardentum itself running on its synthetic demo data, and the icon was made for Ardentum. No stock images are used.
         </p>
       </Section>
-      <Section title="4. Data">
+      <Section title="5. Data">
         <ul className="list-disc space-y-1.5 pl-5">
           {DATA.map((d) => (
             <li key={d.source}>
@@ -48,7 +57,7 @@ export default function LicencesPage() {
         </ul>
         <p>Data you upload stays under its own licence; you confirm when uploading that you have the right to use it.</p>
       </Section>
-      <Section title="5. Questions">
+      <Section title="6. Questions">
         <p>If you believe material on this site is used without the right licence, write to {CONTACT} and it will be reviewed promptly.</p>
       </Section>
     </LegalPage>

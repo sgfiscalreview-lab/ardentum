@@ -1,0 +1,22 @@
+{
+  "industries_sample": [
+    "1926-07-31",
+    "2026-08-31"
+  ],
+  "fx_sample": {
+    "EUR": [
+      "1999-01-31",
+      "2026-09-30"
+    ],
+    "GBP": [
+      "1999-01-31",
+      "2026-09-30"
+    ]
+  },
+  "runtime_seconds": 80.6,
+  "sources": [
+    "Kenneth R. French Data Library: 12 Industry Portfolios, Fama/French 3 Factors (monthly)",
+    "European Central Bank reference rates via Frankfurter",
+    "BIS central bank policy rates (WS_CBPOL)"
+  ]
+}
