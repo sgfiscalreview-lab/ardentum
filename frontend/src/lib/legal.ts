@@ -14,6 +14,9 @@ export const LEGAL = {
   lastUpdated: process.env.NEXT_PUBLIC_LEGAL_LAST_UPDATED?.trim() || "2026-09-28",
 };
 
+/** Public source repository (MIT licence). */
+export const SOURCE_URL = "https://github.com/sgfiscalreview-lab/ardentum";
+
 export const LEGAL_CONFIGURED = Boolean(LEGAL.operator && LEGAL.contactEmail && LEGAL.governingLaw);
 
 export const OPERATOR = LEGAL.operator || "the operator of this website";

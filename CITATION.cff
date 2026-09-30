@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use Ardentum in your work, please cite it as below."
+type: software
+title: "Ardentum: quantitative portfolio analysis you can explain"
+abstract: >-
+  Ardentum is an open-source web platform for building, optimising, simulating and
+  backtesting investment portfolios. It combines mean-variance, maximum-Sharpe and
+  minimum-CVaR optimisation under explicit constraints (including ESG limits) with
+  shrinkage estimators, Black-Litterman views, seeded Monte Carlo simulation,
+  walk-forward backtests without look-ahead, and currency-hedged returns, and explains
+  the mathematics, assumptions and limitations behind every result. Every calculation
+  is tested against closed forms or independent references.
+authors:
+  - name: "The Ardentum authors"
+version: "1.0.0"
+license: MIT
+repository-code: "https://github.com/sgfiscalreview-lab/ardentum"
+url: "https://ardentum-frontend.pages.dev"
+keywords:
+  - portfolio optimisation
+  - efficient frontier
+  - CVaR
+  - Black-Litterman
+  - Monte Carlo simulation
+  - backtesting
+  - ESG
+  - quantitative finance
+  - financial education

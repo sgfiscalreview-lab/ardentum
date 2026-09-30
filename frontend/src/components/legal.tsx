@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { LEGAL, LEGAL_CONFIGURED, operatorDetails } from "@/lib/legal";
+import { LEGAL, LEGAL_CONFIGURED, SOURCE_URL, operatorDetails } from "@/lib/legal";
 
 export function LegalPage({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -70,6 +70,9 @@ export function SiteFooter() {
               {l.label}
             </Link>
           ))}
+          <a href={SOURCE_URL} className="underline-offset-2 hover:underline">
+            Source code
+          </a>
         </nav>
       </div>
     </footer>
