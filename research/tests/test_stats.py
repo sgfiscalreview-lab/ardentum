@@ -80,3 +80,16 @@ def test_min_variance_hedge_ratio_brute_force() -> None:
     grid = np.linspace(-1, 2, 30001)
     var = [np.var(g * frame["hedged"] + (1 - g) * frame["unhedged"], ddof=1) for g in grid]
     assert h == pytest.approx(grid[int(np.argmin(var))], abs=2e-4)
+
+
+def test_sharpe_standard_error_matches_simulation() -> None:
+    rng = np.random.default_rng(5)
+    t = 240
+    sims = np.array([stats.sharpe(rng.normal(0.006, 0.04, t)) for _ in range(4000)])
+    z = rng.normal(size=t)
+    exact = 0.006 + 0.04 * (z - z.mean()) / z.std(ddof=1)  # sample Sharpe exactly the true one
+    se = stats.sharpe_standard_error(exact)
+    assert sims.std(ddof=1) == pytest.approx(se, rel=0.1)
+    # Known answer: zero mean gives sqrt(12 / T).
+    x = np.array([0.01, -0.01] * 60)
+    assert stats.sharpe_standard_error(x) == pytest.approx(math.sqrt(12 / 120))

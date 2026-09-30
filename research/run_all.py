@@ -7,6 +7,7 @@ Usage (from the repository root):
 from __future__ import annotations
 
 import json
+import shutil
 import time
 from pathlib import Path
 
@@ -23,6 +24,8 @@ def main() -> None:
     fx = {"EUR": data.fx_month_end("EUR", "USD"), "GBP": data.fx_month_end("GBP", "USD")}
     rates = {c: data.policy_rate_month_end(c) for c in ("EUR", "GBP", "USD")}
     print(f"industries {industries.index[0].date()} to {industries.index[-1].date()}")
+    if OUT.exists():
+        shutil.rmtree(OUT)  # no stale tables or figures from an earlier version of a study
     one_over_n.run(industries, factors, OUT / "1_one_over_n")
     currency_hedging.run(industries, factors, fx, rates, OUT / "2_currency_hedging")
     promised_vs_realised.run(industries, factors, OUT / "3_promised_vs_realised")

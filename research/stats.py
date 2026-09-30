@@ -12,6 +12,16 @@ def sharpe(excess: np.ndarray, periods_per_year: int = 12) -> float:
     return float(excess.mean() / excess.std(ddof=1) * math.sqrt(periods_per_year))
 
 
+def sharpe_standard_error(excess: np.ndarray, periods_per_year: int = 12) -> float:
+    """Standard error of the annualised Sharpe ratio for independent returns (Lo, 2002).
+
+    SE of the per-period ratio is sqrt((1 + SR^2 / 2) / T); annualising multiplies by
+    sqrt(periods_per_year), like the ratio itself.
+    """
+    sr = excess.mean() / excess.std(ddof=1)
+    return float(math.sqrt((1 + 0.5 * sr**2) / len(excess)) * math.sqrt(periods_per_year))
+
+
 def jkm_test(a: np.ndarray, b: np.ndarray) -> tuple[float, float]:
     """Jobson-Korkie test of equal Sharpe ratios with Memmel's (2003) correction.
 
