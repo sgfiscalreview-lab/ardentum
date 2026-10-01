@@ -8,6 +8,7 @@ ISO-8601. Request models forbid unknown fields so typos fail loudly.
 from __future__ import annotations
 
 import datetime as dt
+import json
 from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -22,6 +23,7 @@ Ticker = Annotated[
 ]
 Weight = Annotated[float, Field(ge=-1.0, le=1.0)]
 MAX_ASSETS = 60
+MAX_SAVED_JSON = 64 * 1024  # bytes of settings or summary stored with a saved portfolio
 
 
 class RequestModel(BaseModel):
@@ -89,7 +91,9 @@ class ViewIn(RequestModel):
 
 class BlackLittermanIn(RequestModel):
     prior: Literal["market_cap", "equal_weight", "custom"] = "market_cap"
-    prior_weights: dict[Ticker, Annotated[float, Field(ge=0.0)]] | None = None
+    prior_weights: dict[Ticker, Annotated[float, Field(ge=0.0)]] | None = Field(
+        None, max_length=MAX_ASSETS
+    )
     risk_aversion: float = Field(2.5, gt=0.0, le=20.0)
     tau: float = Field(0.05, gt=0.0, le=1.0)
     views: list[ViewIn] = Field(default_factory=list, max_length=20)
@@ -137,9 +141,11 @@ class TrackingErrorIn(RequestModel):
 class ConstraintsIn(RequestModel):
     min_weight: float = Field(0.0, ge=-1.0, le=1.0)
     max_weight: float = Field(1.0, ge=0.0, le=1.0)
-    asset_bounds: dict[Ticker, tuple[Weight, Weight]] = Field(default_factory=dict)
+    asset_bounds: dict[Ticker, tuple[Weight, Weight]] = Field(
+        default_factory=dict, max_length=MAX_ASSETS
+    )
     sector_limits: list[SectorLimitIn] = Field(default_factory=list, max_length=30)
-    excluded_assets: list[Ticker] = Field(default_factory=list)
+    excluded_assets: list[Ticker] = Field(default_factory=list, max_length=MAX_ASSETS)
     excluded_sectors: list[str] = Field(default_factory=list, max_length=30)
     min_esg_score: float | None = Field(None, ge=0.0, le=100.0)
     esg_tilt: float = Field(0.0, ge=0.0, le=0.2, description="Annual return per 1 SD of ESG score.")
@@ -306,6 +312,14 @@ class PortfolioIn(RequestModel):
     weights: dict[Ticker, Weight] = Field(min_length=1, max_length=MAX_ASSETS)
     spec: dict[str, Any] | None = None
     summary: dict[str, Any] | None = None
+
+    @field_validator("spec", "summary")
+    @classmethod
+    def _small(cls, v: dict[str, Any] | None) -> dict[str, Any] | None:
+        # Stored as given: keep each within a size no saved settings come near.
+        if v is not None and len(json.dumps(v, default=str)) > MAX_SAVED_JSON:
+            raise ValueError(f"At most {MAX_SAVED_JSON // 1024} KB of saved settings.")
+        return v
 
     @field_validator("weights")
     @classmethod
@@ -949,7 +963,9 @@ class OverlayPreviewRequest(RequestModel):
     year: int | None = Field(None, ge=1990, le=2100, description="Latest answer up to this year.")
     transform: EsgTransformIn = Field(default_factory=EsgTransformIn)
     company_overrides: dict[Ticker, int] = Field(
-        default_factory=dict, description="Ticker -> WikiRate company id, confirmed by the user."
+        default_factory=dict,
+        max_length=200,
+        description="Ticker -> WikiRate company id, confirmed by the user.",
     )
 
 
@@ -1004,7 +1020,9 @@ class CompositePreviewRequest(RequestModel):
     tickers: list[Ticker] = Field(min_length=1, max_length=200)
     components: list[CompositeComponentIn] = Field(min_length=2, max_length=6)
     company_overrides: dict[Ticker, int] = Field(
-        default_factory=dict, description="Ticker -> WikiRate company id, confirmed by the user."
+        default_factory=dict,
+        max_length=200,
+        description="Ticker -> WikiRate company id, confirmed by the user.",
     )
 
     @field_validator("components")

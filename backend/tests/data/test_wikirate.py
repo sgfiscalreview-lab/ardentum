@@ -65,6 +65,17 @@ def test_parse_answers_and_numbers() -> None:
         wr.parse_answers(b"[]")
 
 
+def test_only_web_links_are_kept() -> None:
+    bad = {**answer_item("Apple Inc.", 2023, "1"), "url": "javascript:alert(1)", "answer_url": None}
+    odd = {**answer_item("Apple Inc.", 2022, "1"), "url": " DATA:text/html,x"}
+    answers, _ = wr.parse_answers(answers_payload(bad, odd))
+    assert [a.url for a in answers] == ["", ""]
+    [c] = wr.parse_companies(
+        companies_payload({**company_item(1, "A", ["US0378331005"]), "url": "vbscript:x"})
+    )
+    assert c.url == ""
+
+
 @respx.mock
 def test_client_sends_key_and_reports_errors() -> None:
     route = respx.get(f"{wr.BASE_URL}/Metrics.json").mock(

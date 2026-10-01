@@ -124,7 +124,7 @@ def parse_metrics(payload: bytes) -> list[OpenMetric]:
                     range=_text(it.get("range")),
                     answers=int(it["answer"]) if isinstance(it.get("answer"), int) else None,
                     topics=tuple(t.split("+")[-1] for t in _list(it.get("topics"))),
-                    url=str(it.get("url", "")).removesuffix(".json"),
+                    url=_web_url(it.get("url")),
                 )
             )
         except (KeyError, TypeError, ValueError):
@@ -143,12 +143,19 @@ def parse_companies(payload: bytes) -> list[OpenCompany]:
                     name=str(it["name"]),
                     headquarters=_text(it.get("headquarters")),
                     isins=tuple(i.strip().upper() for i in isins),
-                    url=str(it.get("url", "")).removesuffix(".json"),
+                    url=_web_url(it.get("url")),
                 )
             )
         except (KeyError, TypeError, ValueError):
             continue
     return out
+
+
+def _web_url(value: Any) -> str:
+    """A link to show users: only http(s) addresses, so a stray ``javascript:`` or
+    ``data:`` value from the source can never become a link."""
+    url = str(value or "").strip().removesuffix(".json")
+    return url if url.lower().startswith(("https://", "http://")) else ""
 
 
 def parse_answers(payload: bytes) -> tuple[list[OpenAnswer], str | None]:
@@ -161,7 +168,7 @@ def parse_answers(payload: bytes) -> tuple[list[OpenAnswer], str | None]:
                     company=str(it["company"]),
                     year=int(it["year"]),
                     value=str(_text(it.get("value")) or ""),
-                    url=str(it.get("url") or it.get("answer_url") or "").removesuffix(".json"),
+                    url=_web_url(it.get("url") or it.get("answer_url")),
                 )
             )
         except (KeyError, TypeError, ValueError):

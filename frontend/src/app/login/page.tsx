@@ -6,13 +6,10 @@ import { Suspense, useState } from "react";
 
 import { Button, Callout, Card, Field, Input } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
+import { safeNext } from "@/lib/redirect";
 
 const EMAIL_AUTH = process.env.NEXT_PUBLIC_AUTH_EMAIL_ENABLED === "true";
 
-function safeNext(n: string | null): string {
-  // Only allow same-site relative paths to prevent open redirects.
-  return n && n.startsWith("/") && !n.startsWith("//") ? n : "/app";
-}
 
 function LoginForm() {
   const { mode, status, signInDev, signInPassword, signUpPassword, signInOAuth } = useAuth();

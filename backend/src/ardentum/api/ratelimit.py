@@ -1,7 +1,9 @@
-"""Rate limiting for compute-heavy endpoints.
+"""Rate limiting.
 
-Each client — the verified user, or the client IP address for anonymous or invalid
-tokens — may make ``limit`` compute requests per ``window`` seconds.
+Each client (the verified user, or the client IP address for anonymous or invalid
+tokens) has two budgets per minute: one for calculations, and one for everything else
+that writes data or calls an outside service (saves, uploads, deletions, sign-in and
+WikiRate lookups). Plain reads are not limited.
 
 Two stores implement the same ``check`` interface:
 
@@ -50,6 +52,20 @@ COMPUTE_PATHS = frozenset(
         "/api/v1/jobs",
     }
 )
+
+
+WRITE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
+
+
+def budget_for(method: str, path: str) -> str | None:
+    """The budget a request counts against: "compute", "write" or none."""
+    if not path.startswith("/api/v1/"):
+        return None
+    if method == "POST" and (path in COMPUTE_PATHS or path.startswith("/api/v1/jobs")):
+        return "compute"
+    if method in WRITE_METHODS or (method == "GET" and path.startswith("/api/v1/esg/open/")):
+        return "write"
+    return None
 
 
 class Limiter(Protocol):

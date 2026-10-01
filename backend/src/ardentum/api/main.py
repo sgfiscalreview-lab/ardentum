@@ -22,12 +22,13 @@ from starlette.concurrency import run_in_threadpool
 from ardentum import __version__
 from ardentum.api import errors
 from ardentum.api.auth import AuthError, verify_token
+from ardentum.api.bodylimit import FORM_OVERHEAD, JSON_BODY_LIMIT, BodySizeLimitMiddleware
 from ardentum.api.ratelimit import (
-    COMPUTE_PATHS,
     DatabaseRateLimiter,
     Limiter,
     RateLimiter,
     address_key,
+    budget_for,
     client_ip,
 )
 from ardentum.api.routers import analysis, auth, datasets, jobs, meta, open_esg, portfolios
@@ -56,31 +57,33 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         openapi_url=f"{API_PREFIX}/openapi.json",
         redoc_url=None,
     )
-    # Innermost first: unexpected errors become JSON 500s that still pass through CORS.
+    # Middleware added first sits innermost. Unexpected errors become JSON 500s, and CORS
+    # (added last) wraps everything, so browsers can read every answer, refusals included.
     app.add_middleware(errors.UnexpectedErrorMiddleware)
     app.add_middleware(GZipMiddleware, minimum_size=2048)
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.cors_origins,
-        allow_origin_regex=settings.cors_origin_regex,
-        allow_credentials=False,
-        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type"],
-        max_age=600,
-    )
+    upload_limit = 2 * settings.max_upload_bytes + FORM_OVERHEAD
+
+    def _body_limit(method: str, path: str) -> int:
+        return upload_limit if method == "POST" and path == "/api/v1/datasets" else JSON_BODY_LIMIT
+
+    app.add_middleware(BodySizeLimitMiddleware, limit_for=_body_limit)
 
     engine = make_engine(settings.database_url, settings.env is Environment.PRODUCTION)
     factory = sessionmaker(bind=engine, expire_on_commit=False)
-    limiter: Limiter | None = None
-    if settings.compute_rate_limit > 0:
-        store = settings.rate_limit_store
-        if store == "auto":
-            store = "memory" if settings.database_url.startswith("sqlite") else "database"
-        limiter = (
-            DatabaseRateLimiter(factory, settings.compute_rate_limit)
-            if store == "database"
-            else RateLimiter(settings.compute_rate_limit, 60.0)
-        )
+    store = settings.rate_limit_store
+    if store == "auto":
+        store = "memory" if settings.database_url.startswith("sqlite") else "database"
+    limiters: dict[str, Limiter] = {}
+    for budget, limit in (
+        ("compute", settings.compute_rate_limit),
+        ("write", settings.write_rate_limit),
+    ):
+        if limit > 0:
+            limiters[budget] = (
+                DatabaseRateLimiter(factory, limit)
+                if store == "database"
+                else RateLimiter(limit, 60.0)
+            )
 
     address_secret = (
         settings.rate_limit_secret.encode()
@@ -104,20 +107,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def _rate_limit(
         request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
-        path = request.url.path
-        if (
-            limiter is not None
-            and request.method == "POST"
-            and (path in COMPUTE_PATHS or path.startswith("/api/v1/jobs"))
-        ):
+        budget = budget_for(request.method, request.url.path)
+        limiter = limiters.get(budget) if budget else None
+        if budget and limiter is not None:
             key = await run_in_threadpool(_client_key, request)
-            wait = await run_in_threadpool(limiter.check, key)
+            wait = await run_in_threadpool(limiter.check, f"{budget[0]}:{key}")
             if wait is not None:
+                what = "calculations" if budget == "compute" else "requests"
                 return JSONResponse(
                     {
                         "error": {
                             "type": "rate_limited",
-                            "message": f"Too many calculations; try again in {int(wait) + 1} s.",
+                            "message": f"Too many {what}; try again in {int(wait) + 1} s.",
                             "details": None,
                         }
                     },
@@ -165,6 +166,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             rid,
         )
         return response
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origins,
+        allow_origin_regex=settings.cors_origin_regex,
+        allow_credentials=False,
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type"],
+        expose_headers=["Retry-After", "X-Request-ID"],
+        max_age=600,
+    )
 
     app.state.settings = settings
     app.state.engine = engine
