@@ -269,7 +269,12 @@ def check_api(rep: Report, api: str, site: str) -> None:
             rep.fail("Usage counts", f"HTTP {r.status}: {error_message(r)}")
             return
         u = r.json()
-        rep.ok("Usage counts", f"{u['total_calculations']} calculations counted since {u['since']}")
+        counted = (
+            f"{u['total_calculations']} calculations counted since {u['since']}"
+            if u["since"]
+            else "nothing counted yet"
+        )
+        rep.ok("Usage counts", f"{counted}; this check's own calculations are not counted")
 
     rep.check("API health", health)
     if rep.rows and rep.rows[-1][:2] == ("FAIL", "API health"):
