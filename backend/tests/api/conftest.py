@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from collections.abc import Iterator
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -23,11 +24,15 @@ DEMO_TICKERS = [
 
 
 @pytest.fixture
-def settings() -> Settings:
+def settings(tmp_path: Path) -> Settings:
     return Settings(
         env=Environment.TEST,
-        # Set ARDENTUM_TEST_DATABASE_URL to run the API suite against PostgreSQL.
-        database_url=os.environ.get("ARDENTUM_TEST_DATABASE_URL", "sqlite://"),
+        # Set ARDENTUM_TEST_DATABASE_URL to run the API suite against PostgreSQL. The SQLite
+        # default is a file, not memory: background jobs run on other threads, and an
+        # in-memory database is one connection that threads would share.
+        database_url=os.environ.get(
+            "ARDENTUM_TEST_DATABASE_URL", f"sqlite:///{tmp_path / 'api.sqlite3'}"
+        ),
         auth_mode=AuthMode.DEV,
         dev_jwt_secret="test-secret-that-is-long-enough-0123456789",
         cors_origins=["http://localhost:3000"],
