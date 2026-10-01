@@ -1,0 +1,16 @@
+# Secret scanning (gitleaks, run by CI on every push and pull request). The default rules
+# apply; the values below are public or test-only and are not secrets.
+title = "Ardentum"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Public or test-only values"
+regexes = [
+  # The Supabase publishable key is public by design: it ships in the website, and the
+  # database tables are closed to it (migration 0007).
+  '''^sb_publishable_[A-Za-z0-9_-]+$''',
+  # The API test suite's own token-signing secret.
+  '''^test-secret-that-is-long-enough-0123456789$''',
+]
