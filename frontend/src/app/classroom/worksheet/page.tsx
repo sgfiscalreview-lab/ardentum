@@ -7,12 +7,12 @@ import { PrintButton, SiteAddress } from "../print-tools";
 export const metadata: Metadata = { title: "Classroom worksheet" };
 
 function AnswerBox() {
-  return <div aria-hidden className="mt-1.5 h-16 rounded-sm border border-line print:border-line-strong" />;
+  return <div aria-hidden className="mt-1.5 h-16 rounded-sm border border-line print:h-14 print:border-line-strong" />;
 }
 
 function Questions({ items }: { items: string[] }) {
   return (
-    <ol className="mt-3 space-y-3 pl-5 [list-style:lower-alpha]">
+    <ol className="mt-3 space-y-3 pl-5 [list-style:lower-alpha] print:space-y-2">
       {items.map((q) => (
         <li key={q} className="break-inside-avoid text-sm text-ink">
           {q}
@@ -46,7 +46,7 @@ export default function WorksheetPage() {
       </dl>
 
       {EXERCISES.map((ex, i) => (
-        <section key={ex.title} className="mt-8">
+        <section key={ex.title} className="mt-8 print:mt-5">
           <h2 className="break-after-avoid text-lg font-semibold text-ink">
             Exercise {i + 1}. {ex.title}
           </h2>
@@ -59,7 +59,7 @@ export default function WorksheetPage() {
         </section>
       ))}
 
-      <section className="mt-8">
+      <section className="mt-8 print:mt-5">
         <h2 className="text-lg font-semibold text-ink">{EXTENSION.title}</h2>
         <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-ink-2">
           {EXTENSION.steps.map((s) => (
@@ -69,7 +69,7 @@ export default function WorksheetPage() {
         <Questions items={EXTENSION.questions} />
       </section>
 
-      <section className="mt-8 break-inside-avoid">
+      <section className="mt-8 break-inside-avoid print:mt-5">
         <h2 className="text-lg font-semibold text-ink">Before you leave</h2>
         <p className="mt-2 text-sm text-ink">{EXIT_QUESTION}</p>
         <AnswerBox />

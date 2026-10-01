@@ -19,10 +19,14 @@ test("the classroom guide links to a printable worksheet and gives the answers",
   await expect(page.getByRole("button", { name: "Print the worksheet" })).toBeVisible();
   // The address students need on paper.
   await expect(page.getByText("localhost:3000")).toBeVisible();
-  // Printing leaves out the site header, footer and the button itself.
-  await page.emulateMedia({ media: "print" });
+  // Printing leaves out the site header, footer and the button itself, and uses dark
+  // text with no page tint even when the screen is in dark mode.
+  await page.emulateMedia({ media: "print", colorScheme: "dark" });
   await expect(page.getByRole("button", { name: "Print the worksheet" })).toBeHidden();
   await expect(page.getByRole("navigation", { name: "Footer" })).toBeHidden();
+  const heading = page.getByRole("heading", { level: 1 });
+  expect(await heading.evaluate((el) => getComputedStyle(el).color)).toBe("rgb(29, 30, 32)");
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor)).toBe("rgba(0, 0, 0, 0)");
 });
 
 test("the workspace defaults reproduce the classroom answer key", async ({ page }) => {

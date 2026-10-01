@@ -254,8 +254,23 @@ body {
   display: block;
 }
 
-/* Printing (the classroom worksheet): no page tint, so only the text and boxes use ink. */
+/* Printing (the classroom worksheet): dark text on the paper itself, whatever the screen
+   theme, and no page tint, so only the text and boxes use ink. */
 @media print {
+  :root,
+  :root[data-theme] {
+    color-scheme: light;
+    --plane: #f1efea;
+    --surface: #f8f7f3;
+    --surface-2: #e9e6df;
+    --ink: #1d1e20;
+    --ink-2: #474744;
+    --muted: #5a5853;
+    --border: rgba(29, 30, 32, 0.13);
+    --border-strong: rgba(29, 30, 32, 0.24);
+    --accent-ink: #1f4f82;
+  }
+  html,
   body {
     background: transparent;
   }
