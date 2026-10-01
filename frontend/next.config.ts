@@ -1,10 +1,12 @@
 import type { NextConfig } from "next";
 
+import { contentSecurityPolicy } from "./scripts/csp-policy.mjs";
+
 /*
  * Two build modes:
  *  - NEXT_OUTPUT=export (automatic on Cloudflare Pages) → static files in out/. The
  *    browser calls the API directly at NEXT_PUBLIC_API_BASE (CORS enforced by the API).
- *    Security headers come from public/_headers.
+ *    Security headers come from public/_headers (policy added by scripts/add-csp.mjs).
  *  - default (standalone) → Node server (Docker, local dev, E2E). /api/v1/* is proxied to
  *    API_URL, so NEXT_PUBLIC_API_BASE can stay empty.
  */
@@ -50,11 +52,21 @@ function checkStaticSettings(): void {
 }
 if (staticExport) checkStaticSettings();
 
+// The same set as public/_headers. The policy is left out of `next dev`, whose tooling
+// evaluates code at run time.
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "DENY" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+  {
+    key: "Permissions-Policy",
+    value: "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()",
+  },
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+  { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
+  ...(process.env.NODE_ENV === "production"
+    ? [{ key: "Content-Security-Policy", value: contentSecurityPolicy(process.env) }]
+    : []),
 ];
 
 const config: NextConfig = staticExport

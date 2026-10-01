@@ -32,12 +32,30 @@ from ardentum.api.ratelimit import (
     client_ip,
 )
 from ardentum.api.routers import analysis, auth, datasets, jobs, meta, open_esg, portfolios
-from ardentum.config import Environment, Settings, get_settings
+from ardentum.config import AuthMode, Environment, Settings, get_settings
 from ardentum.db.models import Base
 from ardentum.db.session import make_engine
 from ardentum.services import usage
 
 API_PREFIX = "/api/v1"
+DOCS_PATH = f"{API_PREFIX}/docs"
+# Answers are JSON: nothing in them may run, load or be framed. The interactive API
+# documentation is the one page, and it loads Swagger UI from jsDelivr.
+API_CSP = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
+DOCS_CSP = (
+    "default-src 'none'; script-src 'unsafe-inline' https://cdn.jsdelivr.net; "
+    "style-src 'unsafe-inline' https://cdn.jsdelivr.net; "
+    "img-src 'self' data: https://fastapi.tiangolo.com; connect-src 'self'; "
+    "frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
+)
+SECURITY_HEADERS = {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "no-referrer",
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+    "Cross-Origin-Resource-Policy": "same-origin",
+    "Cross-Origin-Opener-Policy": "same-origin",
+}
 # A caller-supplied request id is echoed and logged only if it looks like one.
 _REQUEST_ID = re.compile(r"[A-Za-z0-9._-]{1,64}")
 
@@ -53,9 +71,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         title="Ardentum API",
         version=__version__,
         description="Quantitative portfolio analysis: optimisation, simulation, backtesting and ESG.",
-        docs_url=f"{API_PREFIX}/docs",
+        docs_url=DOCS_PATH,
         openapi_url=f"{API_PREFIX}/openapi.json",
         redoc_url=None,
+        swagger_ui_oauth2_redirect_url=None,
     )
     # Middleware added first sits innermost. Unexpected errors become JSON 500s, and CORS
     # (added last) wraps everything, so browsers can read every answer, refusals included.
@@ -152,9 +171,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         response = await call_next(request)
         ms = (time.perf_counter() - start) * 1000
         response.headers["X-Request-ID"] = rid
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["Referrer-Policy"] = "no-referrer"
+        response.headers.update(SECURITY_HEADERS)
+        response.headers["Content-Security-Policy"] = (
+            DOCS_CSP if request.url.path == DOCS_PATH else API_CSP
+        )
         if request.url.path.startswith(API_PREFIX) and "Cache-Control" not in response.headers:
             response.headers["Cache-Control"] = "no-store"
         log.info(
@@ -183,6 +203,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.sessionmaker = factory
 
     errors.install(app)
+    if settings.auth_mode is AuthMode.DEV:
+        app.include_router(auth.dev_router, prefix=API_PREFIX)
     for r in (
         meta.router,
         auth.router,
