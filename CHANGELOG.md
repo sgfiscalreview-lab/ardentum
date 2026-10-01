@@ -6,10 +6,23 @@ All notable changes to Ardentum are recorded here. Versions follow
 ## [Unreleased]
 
 ### Added
+- Risk parity (equal risk contribution) objective: every holding carries the same share of
+  risk, using no expected returns; usable in walk-forward backtests.
+- "Copy link" on every workspace page: a link that reopens the same settings and
+  recomputes the same result in any browser, with nothing stored on a server.
+- Glossary of the terms on the site (`/glossary`), linked from result labels.
+- Printing a workspace page prints its results without menus and settings.
+- A notice while the free API server starts after a quiet period; pages wake it early.
 - Classroom kit: a teacher guide with a 45-minute lesson plan and answers (`/classroom`)
   and a printable student worksheet (`/classroom/worksheet`) on the demo data. A backend
   test checks the answers against the API.
 - The live smoke test also checks the usage counts and the tour, usage and classroom pages.
+
+### Changed
+- The optimiser's reason for each holding sits in a full-width row under it, readable on
+  phones; long calculations show elapsed seconds.
+- Dependabot opens at most two pull requests per ecosystem a month and no longer bumps
+  the Docker base images.
 
 ### Security
 - The database is closed to Supabase's public Data API: row-level security on every table

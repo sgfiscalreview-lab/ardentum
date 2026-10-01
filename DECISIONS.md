@@ -378,3 +378,30 @@ code and tests.
 * **Kept as is.** The API documentation stays public (it documents the public API).
   There are no admin routes and no passwords (OAuth only). Major-version upgrades
   (TypeScript 7, ESLint 10, Vitest 5, jsdom 30) wait for their own pull requests.
+
+## D-039 Product improvements after trying every page
+Every page was opened on a laptop and a phone screen and every calculation was run, looking
+for anything confusing. Changes:
+* **Sleeping API.** The free host stops the API after a quiet period, and the first
+  request then waits up to a minute with nothing on screen. Every page load now sends a
+  wake-up request, and a notice with a running count appears when a request has waited
+  three seconds for a possibly sleeping API (before any answer in the session, or after
+  ten quiet minutes). Background-job polls, which wait on purpose, never trigger it.
+* **Shareable links.** Settings were only in one browser's storage, so a teacher could
+  not hand a class an analysis. The link carries the settings and the page's calculation
+  in its fragment, deflate-compressed: no server stores anything, and the recipient's page
+  recomputes the identical result. The recipient's own settings are replaced only with a
+  visible notice and a way back; unreadable links change nothing. Links to an uploaded
+  dataset or saved ESG scores say that only their owner can open them.
+* **Risk parity.** A common objective that uses no expected returns, the noisiest input.
+  It is exact (equal shares to machine precision) rather than "closest within your
+  limits": the weights come from the risks alone, so a limit it breaks is named with the
+  weight that breaks it. With the workspace's default 30% cap on the demo data, the bond
+  fund needs 45%, and the message says so.
+* **Readability.** The optimiser's reasons were in a narrow last column, cut off on
+  laptops and phones; each now has a full-width row. Result labels link to a glossary of
+  plain definitions, each linked to its formulas. Workspace pages print (or save as PDF)
+  their results without menus and settings. Long calculations show elapsed seconds.
+* **Dependabot.** At most one minor-and-patch and one major pull request per ecosystem
+  each month. Docker base images are left alone: their Python and Node versions match
+  `requires-python` and CI, so a bump there must be made together with those settings.

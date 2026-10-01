@@ -17,14 +17,14 @@ mathematics, assumptions and limitations behind every result.
 
 | | |
 |---|---|
-| **Optimisation** | Minimum volatility, maximum Sharpe (exact convex reformulation), target return or volatility, mean-variance utility, minimum CVaR (Rockafellar-Uryasev) |
+| **Optimisation** | Minimum volatility, maximum Sharpe (exact convex reformulation), target return or volatility, mean-variance utility, minimum CVaR (Rockafellar-Uryasev), risk parity (equal risk contribution) |
 | **Constraints** | Position bounds, exclusions, sector limits, gross exposure, tracking error, minimum ESG score, ESG preference. Every solution is checked against every constraint. |
 | **Estimation** | Historical and Bayes-Stein means; sample and Ledoit-Wolf covariance; Black-Litterman views with Idzorek confidences |
 | **Analysis** | Mean-variance, ESG-efficient and mean-CVaR frontiers; risk decomposition; binding constraints (KKT); why each holding is there; weight stability under resampling |
 | **Simulation** | Seeded parametric, bootstrap and stationary block-bootstrap Monte Carlo, with contributions, withdrawals and the chance of running out |
 | **Backtesting** | Walk-forward with no look-ahead, transaction costs, Cariño-linked and Brinson-Fachler attribution, side-by-side comparison |
 | **Data** | US industry returns since 1926 (Kenneth R. French Data Library); ECB exchange rates, unhedged or hedged at BIS policy rates; open ESG scores from WikiRate (CC BY 4.0); CSV uploads |
-| **Platform** | Accounts (Supabase Auth, Google sign-in), saved portfolios, CSV and JSON export, methodology pages with every formula, a guided tour, a classroom lesson with a printable worksheet, and public anonymous usage counts |
+| **Platform** | Accounts (Supabase Auth, Google sign-in), saved portfolios, CSV and JSON export, shareable links that reopen a calculation, printable results, methodology pages with every formula, a glossary, a guided tour, a classroom lesson with a printable worksheet, and public anonymous usage counts |
 
 | Efficient frontier | Walk-forward backtest | Monte Carlo |
 |---|---|---|
