@@ -411,11 +411,32 @@ export function Th({ children, align = "left", className }: { children?: ReactNo
   );
 }
 
-export function Td({ children, align = "left", className, title }: { children?: ReactNode; align?: "left" | "right"; className?: string; title?: string }) {
+export function Td({
+  children,
+  align = "left",
+  className,
+  title,
+  colSpan,
+  continued = false,
+}: {
+  children?: ReactNode;
+  align?: "left" | "right";
+  className?: string;
+  title?: string;
+  colSpan?: number;
+  /** The row continues in the next one (no rule or bottom padding before it). */
+  continued?: boolean;
+}) {
   return (
     <td
       title={title}
-      className={cx("border-b border-line px-2 py-1.5 align-top", align === "right" && "text-right tabular whitespace-nowrap", className)}
+      colSpan={colSpan}
+      className={cx(
+        "px-2 align-top",
+        continued ? "pt-1.5" : "border-b border-line py-1.5",
+        align === "right" && "text-right tabular whitespace-nowrap",
+        className,
+      )}
     >
       {children}
     </td>

@@ -2,7 +2,7 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 
 import { BarList, ChartFrame, DataTable } from "@/components/charts";
 import { ConstraintsPanel, ObjectivePanel, StatusBadge } from "@/components/forms";
@@ -117,7 +117,9 @@ function Results({
 }) {
   const r = data.result;
   const ex = data.explanation;
-  const held = r.holdings.filter((h) => Math.abs(h.weight) > 1e-9).sort((a, b) => b.weight - a.weight);
+  // The engine's own status decides what counts as held, so the lists agree with the table.
+  const held = r.holdings.filter((h) => h.status !== "zero_by_optimiser" && h.status !== "excluded").sort((a, b) => b.weight - a.weight);
+  const cols = r.objective === "max_sharpe" ? 7 : 6;
   const binding = r.diagnostics.filter((d) => d.binding && d.kind !== "excluded" && d.kind !== "asset_lower");
   const csv = () =>
     toCsv([
@@ -213,26 +215,34 @@ function Results({
               <Th align="right">Volatility</Th>
               <Th align="right">β to portfolio</Th>
               {r.objective === "max_sharpe" && <Th align="right">Required return</Th>}
-              <Th>Reason</Th>
             </tr>
           </thead>
           <tbody>
             {[...r.holdings].sort((a, b) => b.weight - a.weight).map((h) => (
-              <tr key={h.ticker}>
-                <Td>
-                  <span className="font-medium text-ink">{h.ticker}</span>
-                  <span className="block text-[11px] text-muted">{h.sector ?? "n/a"}</span>
-                </Td>
-                <Td>
-                  <StatusBadge status={h.status} />
-                </Td>
-                <Td align="right">{pct(h.weight, 1)}</Td>
-                <Td align="right">{pct(h.expected_return)}</Td>
-                <Td align="right">{pct(h.volatility)}</Td>
-                <Td align="right">{num(h.beta_to_portfolio)}</Td>
-                {r.objective === "max_sharpe" && <Td align="right">{pct(h.required_return)}</Td>}
-                <Td className="min-w-[18rem] text-xs leading-snug text-ink-2">{h.reason}</Td>
-              </tr>
+              <Fragment key={h.ticker}>
+                <tr>
+                  <Td continued>
+                    <span className="font-medium text-ink">{h.ticker}</span>
+                    <span className="block text-[11px] text-muted">{h.sector ?? "n/a"}</span>
+                  </Td>
+                  <Td continued>
+                    <StatusBadge status={h.status} />
+                  </Td>
+                  <Td align="right" continued>{pct(h.weight, 1)}</Td>
+                  <Td align="right" continued>{pct(h.expected_return)}</Td>
+                  <Td align="right" continued>{pct(h.volatility)}</Td>
+                  <Td align="right" continued>{num(h.beta_to_portfolio)}</Td>
+                  {r.objective === "max_sharpe" && <Td align="right" continued>{pct(h.required_return)}</Td>}
+                </tr>
+                <tr>
+                  {/* The reason spans the row and wraps at the screen width, so it can be read
+                      without scrolling the table sideways on a phone. */}
+                  <Td colSpan={cols} className="text-xs leading-snug text-ink-2">
+                    <span className="sr-only">Reason for {h.ticker}: </span>
+                    <span className="block max-w-[min(48rem,calc(100vw-4rem))]">{h.reason}</span>
+                  </Td>
+                </tr>
+              </Fragment>
             ))}
           </tbody>
         </Table>

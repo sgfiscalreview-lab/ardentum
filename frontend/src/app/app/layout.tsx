@@ -1,7 +1,7 @@
 import { Suspense, type ReactNode } from "react";
 
 import { TourBar } from "@/components/tour-bar";
-import { MobileStepNav, StepNav, UniverseSummary } from "@/components/workspace";
+import { MobileStepNav, SharedLinkNotice, StepNav, UniverseSummary } from "@/components/workspace";
 
 export default function WorkspaceLayout({ children }: { children: ReactNode }) {
   return (
@@ -15,6 +15,7 @@ export default function WorkspaceLayout({ children }: { children: ReactNode }) {
         <Suspense fallback={null}>
           <TourBar />
         </Suspense>
+        <SharedLinkNotice />
         {children}
       </main>
     </div>

@@ -1,8 +1,9 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from "react";
 
 import type { ConstraintsIn, EstimationSettings, ObjectiveIn, UniverseSelection } from "./api/types";
+import { decodeShare, SHARE_PREFIX } from "./share";
 
 /** A set of weights the user is working with (from the optimiser, a saved portfolio, ...). */
 export interface WorkingPortfolio {
@@ -102,6 +103,39 @@ export function restoreState(raw: unknown): WorkspaceState | null {
   };
 }
 
+const PAGE_KEYS: readonly PageKey[] = ["analytics", "optimise", "frontier", "frontier_cvar", "esg", "simulate", "backtest", "compare"];
+const SHARE_VERSION = 1;
+
+/** What a shareable link carries: the settings, the working portfolio and the given pages' calculations. */
+export function sharePayload(state: WorkspaceState, pages: string[]): Record<string, unknown> {
+  const requests: Record<string, unknown> = {};
+  for (const k of pages) if (state.requests[k as PageKey] !== undefined) requests[k] = state.requests[k as PageKey];
+  return {
+    v: SHARE_VERSION,
+    universe: state.universe,
+    estimation: state.estimation,
+    objective: state.objective,
+    constraints: state.constraints,
+    working: state.working,
+    requests,
+  };
+}
+
+/** Workspace settings from a shared link, or null when it is not a valid link of this version. */
+export function stateFromShare(payload: unknown): WorkspaceState | null {
+  if (!isRecord(payload) || payload.v !== SHARE_VERSION) return null;
+  const u = payload.universe;
+  if (!isRecord(u) || typeof u.dataset_id !== "string" || !isStringList(u.tickers) || u.tickers.length === 0) return null;
+  const requests: Partial<Record<PageKey, unknown>> = {};
+  if (isRecord(payload.requests)) {
+    for (const k of PAGE_KEYS) if (isRecord(payload.requests[k])) requests[k] = payload.requests[k];
+  }
+  return restoreState({ ...payload, requests, version: STATE_VERSION });
+}
+
+/** After a shared link was opened: what to offer the visitor. */
+export type SharedLink = { status: "loaded"; previous: WorkspaceState } | { status: "unreadable" };
+
 type Action =
   | { type: "universe"; value: Partial<UniverseSelection> }
   | { type: "estimation"; value: Partial<EstimationSettings> }
@@ -155,6 +189,12 @@ interface WorkspaceContextValue {
   setWorking: (v: WorkingPortfolio | null) => void;
   submit: (page: PageKey, request: unknown) => void;
   reset: () => void;
+  /** Set when this page was opened from a shared link. */
+  shared: SharedLink | null;
+  /** Keep the shared settings (or acknowledge an unreadable link). */
+  dismissShared: () => void;
+  /** Return to the settings this browser had before the shared link replaced them. */
+  restoreBeforeShare: () => void;
 }
 
 const WorkspaceContext = createContext<WorkspaceContextValue | null>(null);
@@ -162,18 +202,73 @@ const WorkspaceContext = createContext<WorkspaceContextValue | null>(null);
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, DEFAULT_STATE);
   const [hydrated, setHydrated] = useReducer(() => true, false);
+  const [shared, setShared] = useState<SharedLink | null>(null);
+  // The address's fragment as first seen: it is removed from the address bar once read.
+  const fragment = useRef<string | null>(null);
+  const latest = useRef(state);
+  useEffect(() => {
+    latest.current = state;
+  });
+
+  // A link opened in a tab already showing this site only changes the fragment.
+  useEffect(() => {
+    const onHashChange = () => {
+      const f = window.location.hash;
+      if (!f.startsWith(SHARE_PREFIX)) return;
+      window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+      const previous = latest.current;
+      decodeShare(f)
+        .then((payload) => {
+          const incoming = stateFromShare(payload);
+          if (!incoming) throw new Error("not a shared workspace");
+          dispatch({ type: "hydrate", value: incoming });
+          setShared({ status: "loaded", previous });
+        })
+        .catch(() => setShared({ status: "unreadable" }));
+    };
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
 
   useEffect(() => {
+    let local: WorkspaceState | null = null;
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const restored = restoreState(JSON.parse(raw));
-        if (restored) dispatch({ type: "hydrate", value: restored });
-      }
+      if (raw) local = restoreState(JSON.parse(raw));
+      if (local) dispatch({ type: "hydrate", value: local });
     } catch {
       /* corrupted or unavailable storage: start from defaults */
     }
-    setHydrated();
+    if (fragment.current === null) {
+      fragment.current = window.location.hash;
+      if (fragment.current.startsWith(SHARE_PREFIX)) {
+        // A reload should not apply the link again, and the address bar stays readable.
+        window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+      }
+    }
+    if (!fragment.current.startsWith(SHARE_PREFIX)) {
+      setHydrated();
+      return;
+    }
+    // Results wait until the shared settings are in place (hydrated stays false until then).
+    let cancelled = false;
+    decodeShare(fragment.current)
+      .then((payload) => {
+        const incoming = stateFromShare(payload);
+        if (!incoming) throw new Error("not a shared workspace");
+        if (cancelled) return;
+        dispatch({ type: "hydrate", value: incoming });
+        setShared({ status: "loaded", previous: local ?? DEFAULT_STATE });
+      })
+      .catch(() => {
+        if (!cancelled) setShared({ status: "unreadable" });
+      })
+      .finally(() => {
+        if (!cancelled) setHydrated();
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -192,10 +287,28 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const setWorking = useCallback((value: WorkingPortfolio | null) => dispatch({ type: "working", value }), []);
   const submit = useCallback((page: PageKey, value: unknown) => dispatch({ type: "request", page, value }), []);
   const reset = useCallback(() => dispatch({ type: "reset" }), []);
+  const dismissShared = useCallback(() => setShared(null), []);
+  const restoreBeforeShare = useCallback(() => {
+    if (shared?.status === "loaded") dispatch({ type: "hydrate", value: shared.previous });
+    setShared(null);
+  }, [shared]);
 
   const value = useMemo(
-    () => ({ state, hydrated, setUniverse, setEstimation, setObjective, setConstraints, setWorking, submit, reset }),
-    [state, hydrated, setUniverse, setEstimation, setObjective, setConstraints, setWorking, submit, reset],
+    () => ({
+      state,
+      hydrated,
+      setUniverse,
+      setEstimation,
+      setObjective,
+      setConstraints,
+      setWorking,
+      submit,
+      reset,
+      shared,
+      dismissShared,
+      restoreBeforeShare,
+    }),
+    [state, hydrated, setUniverse, setEstimation, setObjective, setConstraints, setWorking, submit, reset, shared, dismissShared, restoreBeforeShare],
   );
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
 }

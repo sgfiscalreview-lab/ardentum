@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 import { SiteFooter } from "@/components/legal";
+import { ServerWaking } from "@/components/server-waking";
 import { SiteHeader } from "@/components/site-header";
 
 import "./globals.css";
@@ -28,6 +29,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         </a>
         <Providers>
           <SiteHeader />
+          <ServerWaking />
           <div id="main">{children}</div>
           <SiteFooter />
         </Providers>

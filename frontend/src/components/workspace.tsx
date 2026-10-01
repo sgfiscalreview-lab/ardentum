@@ -3,12 +3,13 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { api, ApiError, unwrap } from "@/lib/api/client";
 import type { DataWindowOut, DatasetOut } from "@/lib/api/types";
 import { date as fmtDate, ESTIMATOR_LABELS, pct } from "@/lib/format";
-import { useWorkspace, type PageKey } from "@/lib/workspace";
+import { encodeShare, PAGE_REQUESTS } from "@/lib/share";
+import { sharePayload, useWorkspace, type PageKey } from "@/lib/workspace";
 
 import { Badge, Button, Callout, cx, Disclosure, Spinner, Skeleton } from "./ui";
 
@@ -204,8 +205,93 @@ export function PageHeader({ title, description, actions }: { title: string; des
         <h1 className="text-xl font-semibold tracking-tight text-ink">{title}</h1>
         <p className="mt-1 text-sm text-ink-2">{description}</p>
       </div>
-      {actions && <div className="flex items-center gap-2">{actions}</div>}
+      <div className="flex flex-wrap items-center gap-2 print:hidden">
+        <ShareButton />
+        {actions}
+      </div>
     </div>
+  );
+}
+
+/**
+ * Copies a link that opens this page with the same settings and, where the page has one,
+ * the same calculation. Nothing is stored: everything travels in the link itself.
+ */
+export function ShareButton() {
+  const pathname = usePathname();
+  const { state } = useWorkspace();
+  const ds = useDataset(state.universe.dataset_id);
+  const [result, setResult] = useState<{ status: "copied" } | { status: "manual"; url: string } | null>(null);
+  const privateParts = [ds.data?.owned && "your uploaded dataset", state.universe.esg_overlay_id && "your saved ESG scores"].filter(Boolean);
+
+  const copy = async () => {
+    const url = window.location.origin + pathname + (await encodeShare(sharePayload(state, PAGE_REQUESTS[pathname] ?? [])));
+    try {
+      await navigator.clipboard.writeText(url);
+      setResult({ status: "copied" });
+    } catch {
+      setResult({ status: "manual", url }); // clipboard blocked: show the link to copy by hand
+    }
+  };
+
+  return (
+    <div className="relative">
+      <Button size="sm" variant="ghost" onClick={copy} aria-describedby="share-status">
+        Copy link
+      </Button>
+      <div id="share-status" role="status" className="absolute left-0 top-full z-20 mt-1 w-72 sm:left-auto sm:right-0">
+        {result && (
+          <div className="rounded-sm border border-line bg-surface p-2 text-xs text-ink-2">
+            {result.status === "copied" ? (
+              <p>
+                <span className="font-medium text-ink">Link copied.</span> It opens this page with your settings
+                {PAGE_REQUESTS[pathname] ? " and recomputes this result" : ""}.
+              </p>
+            ) : (
+              <label className="block">
+                <span className="font-medium text-ink">Copy this link:</span>
+                <input readOnly value={result.url} onFocus={(e) => e.currentTarget.select()} className="mt-1 w-full rounded-sm border border-line bg-surface-2 px-1.5 py-1 text-ink" />
+              </label>
+            )}
+            {privateParts.length > 0 && (
+              <p className="mt-1">It uses {privateParts.join(" and ")}, which only you can open.</p>
+            )}
+            <button type="button" onClick={() => setResult(null)} className="mt-1 underline underline-offset-2">
+              Close
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** After a shared link: say what happened and offer the way back. */
+export function SharedLinkNotice() {
+  const { shared, dismissShared, restoreBeforeShare } = useWorkspace();
+  if (!shared) return null;
+  if (shared.status === "unreadable") {
+    return (
+      <Callout tone="warning" title="This shared link could not be read" className="mb-4">
+        It may have been cut short when it was copied. Your own settings are unchanged.{" "}
+        <button type="button" onClick={dismissShared} className="underline underline-offset-2">
+          Dismiss
+        </button>
+      </Callout>
+    );
+  }
+  return (
+    <Callout tone="info" title="You opened a shared link" className="mb-4">
+      Its settings now replace yours in this browser, and results are recomputed from them.
+      <span className="mt-2 flex flex-wrap gap-2">
+        <Button size="sm" onClick={dismissShared}>
+          Keep these settings
+        </Button>
+        <Button size="sm" variant="ghost" onClick={restoreBeforeShare}>
+          Go back to my settings
+        </Button>
+      </span>
+    </Callout>
   );
 }
 
@@ -259,6 +345,23 @@ export function ErrorCallout({ error }: { error: Error | null }) {
   );
 }
 
+/** Whole seconds since the calling component mounted, updated each second. */
+function useSecondsRunning(): number {
+  const [seconds, setSeconds] = useState(0);
+  useEffect(() => {
+    const start = Date.now();
+    const timer = window.setInterval(() => setSeconds(Math.floor((Date.now() - start) / 1000)), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+  return seconds;
+}
+
+/** "(12 s)" once a calculation has run for a couple of seconds, so a long one visibly progresses. */
+function Elapsed() {
+  const seconds = useSecondsRunning();
+  return seconds >= 2 ? <span className="tabular"> ({seconds} s)</span> : null;
+}
+
 /** Shown while a page's first result is being computed: the shape of the results. */
 export function ResultsSkeleton() {
   return (
@@ -279,7 +382,10 @@ export function ResultsSkeleton() {
         <Skeleton className="h-3 w-48" />
         <Skeleton className="mt-4 h-56 w-full" />
       </div>
-      <p className="text-xs text-muted">Computing. Long calculations run in the background; this page updates when they finish.</p>
+      <p className="text-xs text-muted">
+        Computing
+        <Elapsed />. Long calculations run in the background; this page updates when they finish.
+      </p>
     </div>
   );
 }
@@ -289,7 +395,8 @@ export function Running({ running, children }: { running: boolean; children: Rea
     <div className={cx("relative", running && "pointer-events-none opacity-60")} aria-busy={running}>
       {running && (
         <div className="absolute right-3 top-3 z-10 flex items-center gap-2 rounded-md border border-line bg-surface px-2 py-1 text-xs text-ink-2">
-          <Spinner className="size-3" /> Computing…
+          <Spinner className="size-3" /> Computing
+          <Elapsed />
         </div>
       )}
       {children}
