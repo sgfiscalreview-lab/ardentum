@@ -41,6 +41,7 @@ export function SiteFooter() {
     { href: "/cookies", label: "Cookie Policy" },
     { href: "/licences", label: "Licences" },
     { href: "/research", label: "Methodology" },
+    { href: "/glossary", label: "Glossary" },
     { href: "/tour", label: "Guided tour" },
     { href: "/classroom", label: "Classroom" },
     { href: "/usage", label: "Usage" },

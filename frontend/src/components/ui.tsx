@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   forwardRef,
   useId,
@@ -9,6 +10,8 @@ import {
   type ReactNode,
   type SelectHTMLAttributes,
 } from "react";
+
+import { glossaryIdFor } from "@/lib/glossary";
 
 export function cx(...parts: unknown[]): string {
   return parts.filter((p): p is string => typeof p === "string" && p.length > 0).join(" ");
@@ -340,7 +343,9 @@ export function Stat({
 }) {
   return (
     <div className="min-w-0 rounded-md border border-line bg-surface px-3 py-2.5" title={help}>
-      <p className="truncate text-[11px] font-medium text-ink-2">{label}</p>
+      <p className="truncate text-[11px] font-medium text-ink-2">
+        <GlossaryLabel label={label} />
+      </p>
       <p className="mt-0.5 text-xl font-semibold text-ink">{value}</p>
       {sub && (
         <p className={cx("mt-0.5 text-[11px]", tone === "good" ? "text-good" : tone === "critical" ? "text-critical" : "text-muted")}>
@@ -348,6 +353,17 @@ export function Stat({
         </p>
       )}
     </div>
+  );
+}
+
+/** A result label, linked to its glossary definition when it has one. */
+export function GlossaryLabel({ label }: { label: ReactNode }) {
+  const id = typeof label === "string" ? glossaryIdFor(label) : undefined;
+  if (!id) return <>{label}</>;
+  return (
+    <Link href={`/glossary#${id}`} className="underline decoration-dotted underline-offset-2 print:no-underline" title={`What "${String(label)}" means`}>
+      {label}
+    </Link>
   );
 }
 

@@ -207,6 +207,9 @@ export function PageHeader({ title, description, actions }: { title: string; des
       </div>
       <div className="flex flex-wrap items-center gap-2 print:hidden">
         <ShareButton />
+        <Button size="sm" variant="ghost" onClick={() => window.print()} title="Prints the results without the settings and menus">
+          Print
+        </Button>
         {actions}
       </div>
     </div>

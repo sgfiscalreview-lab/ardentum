@@ -360,7 +360,7 @@ function SaveButton({ data, request }: { data: OptimiseResponse; request: Optimi
   const [msg, setMsg] = useState<{ tone: "success" | "error"; text: string } | null>(null);
   if (status !== "signed_in") {
     return (
-      <Link href="/login?next=/app/optimise" className="inline-flex h-8 items-center rounded-md border border-line-strong px-3 text-[13px] font-medium text-ink hover:bg-surface-2">
+      <Link href="/login?next=/app/optimise" className="inline-flex h-8 items-center print:hidden rounded-md border border-line-strong px-3 text-[13px] font-medium text-ink hover:bg-surface-2">
         Sign in to save
       </Link>
     );
