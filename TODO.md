@@ -11,6 +11,12 @@ Legend: **[F]** needs a founder decision/credential · **[E]** engineering
 - [ ] **[F]** Set operator name, contact email and governing law for the Terms of Service and Privacy Policy (NEXT_PUBLIC_LEGAL_*), and have both texts reviewed by a lawyer before a public launch.
 - [ ] **[F]** Optional domain (~$10/yr, Cloudflare Registrar).
 
+## Security (owner actions, see SECURITY.md)
+- [ ] **[F]** Merge the database lock-down (migration 0007) and confirm the "Database closed to the public key" smoke check passes.
+- [ ] **[F]** Turn on GitHub private vulnerability reporting, Dependabot alerts and security updates, secret scanning and push protection; protect `main`.
+- [ ] **[F]** Rotate any secret that was ever shared outside the hosts' settings (database password, Supabase secret key, OAuth client secrets).
+- [ ] **[F]** Two-factor sign-in on GitHub, Supabase, Render, Cloudflare and Google.
+
 ## Engineering — next
 - [ ] **[E]** Deploy to staging once accounts exist; run E2E against staging; manual acceptance pass.
 - [x] **[E]** Verify Docker builds in CI (first run).

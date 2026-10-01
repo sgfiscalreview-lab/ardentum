@@ -87,6 +87,7 @@ pooler URL from step 1.3, and grant the Cloud Run service account *Secret Access
 | `ARDENTUM_CORS_ORIGIN_REGEX` | optional, for preview deployments, e.g. `^https://[a-z0-9-]+\.<project>\.pages\.dev$` |
 | `ARDENTUM_TRUSTED_PROXY_HOPS` | `1` on Cloud Run and Render (client IP for rate limits); `2` behind an extra load balancer |
 | `ARDENTUM_RATE_LIMIT_STORE` | `database`: limits shared by all instances |
+| `ARDENTUM_COMPUTE_RATE_LIMIT` / `ARDENTUM_WRITE_RATE_LIMIT` | optional; calculations, and saves, uploads, deletions, sign-in and WikiRate lookups, per client per minute (default 60 each) |
 | `WEB_CONCURRENCY` | `1` per vCPU |
 | `ARDENTUM_FRED_API_KEY` | optional (free at fred.stlouisfed.org) |
 | `ARDENTUM_WIKIRATE_API_KEY` | optional (free WikiRate account) |

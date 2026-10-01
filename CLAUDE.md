@@ -71,6 +71,8 @@ Local PostgreSQL (dev container): `initdb` + `pg_ctl -o '-p 5433'` (see PROGRESS
 * 252/52/12 periods per year (DECISIONS D-006).
 * New objective or constraint ⇒ add: closed-form or independent test, KKT/verification
   test, API schema field, explanation text, methodology doc update.
+* New table ⇒ enable row-level security in its migration (Supabase publishes the `public`
+  schema; `tests/api/test_db_lockdown.py` fails otherwise). Security overview: `SECURITY.md`.
 * Error messages are user-facing: state what is wrong and how to fix it.
 * Keep `DECISIONS.md` (why), `PROGRESS.md` (what's done), `TODO.md` (what's next) current.
 * Commit messages end with the session attribution lines.

@@ -340,3 +340,41 @@ workspace defaults, so every student sees the same numbers. Those numbers live i
 recomputes them through the API, and an end-to-end test checks that the workspace defaults
 reproduce them, so a change to the demo data, the defaults or the engine cannot leave the
 answer key wrong. The worksheet prints without the site header, footer or page tint.
+
+## D-038 Security pass
+A review against a common web-app checklist (secrets, rate limits, access, passwords, keys,
+authentication, dependencies, input, XSS, debug mode, environment, exposed files, admin
+routes, endpoints, CORS, headers, database access). `SECURITY.md` maps each item to the
+code and tests.
+* **Database closed to Supabase's Data API (the one serious finding).** Supabase publishes
+  the `public` schema at `/rest/v1` and grants new tables to its `anon` and
+  `authenticated` roles, whose key the website holds by design. The migrations never
+  enabled row-level security, so anyone with that key could read and change every table;
+  the live smoke test confirmed it. Migration 0007 enables row-level security with no
+  policies and revokes those roles' privileges, including on future tables. The API is
+  unaffected because it connects as the tables' owner. A PostgreSQL test recreates
+  Supabase's grants and fails if any table, present or future, is left open; the smoke
+  test checks the live project. Remote production connections require TLS.
+* **Two rate-limit budgets.** Calculations keep theirs; saves, uploads, deletions,
+  sign-in and WikiRate lookups get a second one (60 a minute each), so a script cannot
+  fill the free database or get the API blocked by WikiRate. CORS now wraps every
+  middleware: a 429 previously reached browsers without CORS headers and looked like a
+  network error.
+* **Bounded input.** Bodies are capped at 1 MB (uploads: two 5 MB files); saved settings
+  at 64 KB; ESG overlays at 100 per user; the remaining unbounded lists at the asset
+  limit. Framework errors use the usual error format.
+* **Output that other programs read.** CSV exports write formula-like text as text
+  (WikiRate company names are editable by anyone); WikiRate links must be http(s); the
+  sign-in return address accepts only plain paths on the site (`/\host` was accepted).
+* **Headers and surface.** HSTS, Content-Security-Policy and cross-origin policies on the
+  API (the documentation page may load Swagger UI); the Node server sends the website's
+  full header set, built from the same module as the static `_headers`. Developer sign-in
+  is not registered outside dev mode. Uvicorn's access log (client addresses) and server
+  header are off; the API's own log has no addresses, as the Privacy Policy says.
+* **Secrets and dependencies.** gitleaks scans every commit in CI (history clean); builds
+  fail if a secret key reaches browser files; the smoke test checks the live bundle.
+  pip-audit and npm audit run weekly and on lockfile changes rather than in CI, so a new
+  advisory does not block unrelated work; Dependabot proposes grouped monthly updates.
+* **Kept as is.** The API documentation stays public (it documents the public API).
+  There are no admin routes and no passwords (OAuth only). Major-version upgrades
+  (TypeScript 7, ESLint 10, Vitest 5, jsdom 30) wait for their own pull requests.

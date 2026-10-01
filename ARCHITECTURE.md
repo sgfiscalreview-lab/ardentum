@@ -113,8 +113,10 @@ consistent error envelope `{"error": {"type", "message", "details"}}`.
 | `GET /health/db` | database check (daily keep-alive) |
 | `GET /usage` | public, anonymous usage counts |
 
-Compute endpoints are rate limited per verified user or client IP with a counter shared
-through PostgreSQL (D-024).
+Requests are rate limited per verified user or client IP with counters shared through
+PostgreSQL (D-024): one budget for calculations, one for saves, uploads, deletions,
+sign-in and WikiRate lookups (D-038). Bodies are capped at 1 MB (uploads 10 MB). Security
+headers, CORS and the rest of the protections are listed in `SECURITY.md`.
 
 ### `db/`
 
@@ -122,8 +124,11 @@ Tables: `users` (id = identity-provider subject), `datasets` (gzip CSV blob + as
 metadata JSON incl. currency, ISIN, market cap), `portfolios` (weights + generating spec +
 summary), `provider_cache`, `rate_limit_counters`, `jobs`, `esg_overlays`, `usage_counts` (day, kind,
 count; nothing about users). Alembic migrations in
-`backend/migrations`. Row ownership is enforced in the API (the backend is the only
-database client; Supabase RLS is not relied upon).
+`backend/migrations`. Row ownership is enforced in the API, the only database client.
+Supabase also publishes the `public` schema through its Data API, so every table has
+row-level security with no policies and the Data API roles have no privileges
+(migration 0007, D-038); the API connects as the tables' owner, which these do not
+restrict.
 
 ## Frontend
 
