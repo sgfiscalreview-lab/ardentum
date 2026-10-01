@@ -42,10 +42,11 @@ export function SiteFooter() {
     { href: "/licences", label: "Licences" },
     { href: "/research", label: "Methodology" },
     { href: "/tour", label: "Guided tour" },
+    { href: "/classroom", label: "Classroom" },
     { href: "/usage", label: "Usage" },
   ];
   return (
-    <footer className="mt-16 border-t border-line">
+    <footer className="mt-16 border-t border-line print:hidden">
       <div className="mx-auto flex max-w-[1600px] flex-col gap-3 px-4 py-6 text-xs text-muted sm:flex-row sm:items-start sm:justify-between">
         <div className="max-w-2xl space-y-2 leading-relaxed">
           <p>

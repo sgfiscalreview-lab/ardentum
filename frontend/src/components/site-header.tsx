@@ -31,7 +31,7 @@ export function SiteHeader() {
   const { choice, setChoice } = useTheme();
   const next = choice === "system" ? "light" : choice === "light" ? "dark" : "system";
   return (
-    <header className="sticky top-0 z-30 border-b border-line bg-surface">
+    <header className="sticky top-0 z-30 border-b border-line bg-surface print:hidden">
       {/* Below "sm" the menu moves to its own row so the header never exceeds the screen. */}
       <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-6 px-4 sm:h-12 sm:flex-nowrap">
         <Link href="/" aria-label="Ardentum home" className="flex h-12 items-center">
