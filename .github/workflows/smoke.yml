@@ -40,7 +40,7 @@ jobs:
       SUPABASE_URL: ${{ vars.SUPABASE_URL || 'https://nkfcdwltcmatapijhpli.supabase.co' }}
       SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_CiH4Os2AiFUzLhUNPbR0xg_YlspWU1K' }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Check the live deployment
         run: >-
           python3 scripts/smoke.py --api "$API_URL" --site "$SITE_URL"
