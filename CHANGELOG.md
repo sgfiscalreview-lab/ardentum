@@ -3,6 +3,14 @@
 All notable changes to Ardentum are recorded here. Versions follow
 [Semantic Versioning](https://semver.org/); dates are the GitHub release dates.
 
+## [Unreleased]
+
+### Added
+- Classroom kit: a teacher guide with a 45-minute lesson plan and answers (`/classroom`)
+  and a printable student worksheet (`/classroom/worksheet`) on the demo data. A backend
+  test checks the answers against the API.
+- The live smoke test also checks the usage counts and the tour and usage pages.
+
 ## [1.0.0]
 
 First public release. The full release notes are in

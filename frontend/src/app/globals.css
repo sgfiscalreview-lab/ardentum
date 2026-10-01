@@ -253,3 +253,10 @@ body {
 :root[data-theme="dark"] .only-dark {
   display: block;
 }
+
+/* Printing (the classroom worksheet): no page tint, so only the text and boxes use ink. */
+@media print {
+  body {
+    background: transparent;
+  }
+}

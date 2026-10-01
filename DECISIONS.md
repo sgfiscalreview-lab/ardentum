@@ -329,3 +329,14 @@ workflow (the dev container cannot reach the data hosts). Choices:
 * Rejected topics: the cost of ESG screens (no historical ESG scores in the free data, and
   scores are never imputed), value-premium decay (does not use the engine),
   Black-Litterman views (results depend on subjective views).
+
+## D-037 Classroom kit
+A ready-made lesson (`/classroom`, `/classroom/worksheet`) gives teachers a reason to use
+Ardentum and students something concrete to do: find a portfolio safer than the safest
+asset, test the optimiser's promised Sharpe ratio in a walk-forward backtest against equal
+weights, and read Monte Carlo ranges. It runs on the synthetic demo data with the
+workspace defaults, so every student sees the same numbers. Those numbers live in
+`frontend/src/lib/classroom-answers.json`; `backend/tests/api/test_classroom_answers.py`
+recomputes them through the API, and an end-to-end test checks that the workspace defaults
+reproduce them, so a change to the demo data, the defaults or the engine cannot leave the
+answer key wrong. The worksheet prints without the site header, footer or page tint.

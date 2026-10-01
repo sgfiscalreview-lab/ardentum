@@ -24,7 +24,7 @@ mathematics, assumptions and limitations behind every result.
 | **Simulation** | Seeded parametric, bootstrap and stationary block-bootstrap Monte Carlo, with contributions, withdrawals and the chance of running out |
 | **Backtesting** | Walk-forward with no look-ahead, transaction costs, Cariño-linked and Brinson-Fachler attribution, side-by-side comparison |
 | **Data** | US industry returns since 1926 (Kenneth R. French Data Library); ECB exchange rates, unhedged or hedged at BIS policy rates; open ESG scores from WikiRate (CC BY 4.0); CSV uploads |
-| **Platform** | Accounts (Supabase Auth, Google sign-in), saved portfolios, CSV and JSON export, methodology pages with every formula |
+| **Platform** | Accounts (Supabase Auth, Google sign-in), saved portfolios, CSV and JSON export, methodology pages with every formula, a guided tour, a classroom lesson with a printable worksheet, and public anonymous usage counts |
 
 | Efficient frontier | Walk-forward backtest | Monte Carlo |
 |---|---|---|

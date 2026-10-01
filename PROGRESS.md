@@ -47,13 +47,14 @@ Status as of 2026-09-30.
 | Release 1.0.0 (D-034): MIT licence, `CITATION.cff`, changelog, release notes, README with screenshots, Zenodo guide; Licences page and footer link to the source | ✅ | `docs/RELEASING.md`; Zenodo connection pending (founder) |
 | Anonymous usage counts and guided tour (D-035): `/api/v1/usage`, Usage page, 8-step tour on the demo data, Privacy Policy updated | ✅ | `tests/api/test_usage.py` (SQLite + PostgreSQL), `e2e/tour-usage.spec.ts`, accessibility and phone checks on the new pages |
 | Research studies (D-036): 1/N out of sample, dollar hedging for euro and sterling investors, promised versus delivered Sharpe ratios; results committed by the Research workflow | ✅ | `research/tests` (known answers, brute force, simulated test size); `research/results/` |
+| Classroom kit (D-037): teacher guide with lesson plan and answers, printable worksheet; answer key recomputed by a backend test and checked against the workspace defaults end to end | ✅ | `tests/api/test_classroom_answers.py`, `e2e/classroom.spec.ts`, accessibility and phone checks on both pages |
 | Database URLs copied from Supabase's ORM snippets (`?pgbouncer=true`) accepted | ✅ | `tests/data/test_db_url.py`; migrations checked with such a URL on PostgreSQL |
 
 ## Test status
-- Backend: 354 tests passing (SQLite); API suite (94 tests) also passing on PostgreSQL 16; ruff clean; mypy --strict clean. Migrations 0001–0006 upgrade, `alembic check` and downgrade cleanly on PostgreSQL.
+- Backend: 357 tests passing (SQLite); API suite (97 tests) also passing on PostgreSQL 16; ruff clean; mypy --strict clean. Migrations 0001–0006 upgrade, `alembic check` and downgrade cleanly on PostgreSQL.
 - Research: 13 tests for the study statistics and hedging set-up (`research/tests`), run by the Research workflow before each run.
 - Frontend: ESLint (incl. React Compiler rules) clean; `tsc --strict` clean; Vitest unit tests passing.
-- End-to-end: 52 Playwright tests (16 workflows incl. the guided tour and usage counts, open ESG data, composite scores, CVaR frontier, currency hedging, legal pages and account deletion, 33 accessibility checks over 16 pages in light and dark, phone-width layout checks) passing; Playwright starts the API, the web app and a local WikiRate stand-in.
+- End-to-end: 58 Playwright tests (18 workflows incl. the classroom kit, the guided tour and usage counts, open ESG data, composite scores, CVaR frontier, currency hedging, legal pages and account deletion, 37 accessibility checks over 18 pages in light and dark, phone-width layout checks) passing; Playwright starts the API, the web app and a local WikiRate stand-in.
 
 ## Performance (dev container, 14 assets, 10 years daily)
 | Request | Time |

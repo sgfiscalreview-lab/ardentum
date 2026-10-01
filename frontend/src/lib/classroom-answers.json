@@ -1,0 +1,20 @@
+{
+  "_note": "Results of the worksheet exercises on the synthetic demo data with the workspace's default settings. Computed by the API and checked by backend/tests/api/test_classroom_answers.py; regenerate if the demo data or defaults change.",
+  "lowest_single_asset_volatility": { "ticker": "GOVB.SYN", "value": 0.051 },
+  "lowest_correlation": { "assets": ["PTR.SYN", "GOVB.SYN"], "value": -0.23 },
+  "min_volatility_portfolio": 0.047,
+  "max_sharpe_promised": 0.63,
+  "backtest": {
+    "evaluation": ["2013-12-02", "2025-12-31"],
+    "strategy_sharpe": 0.16,
+    "strategy_cagr": 0.032,
+    "equal_weight_sharpe": 0.39,
+    "equal_weight_cagr": 0.071,
+    "annual_turnover": 2.84
+  },
+  "monte_carlo": {
+    "one_year": { "probability_of_loss": 0.25, "p05": 8541, "p50": 11200, "p95": 14783 },
+    "ten_years": { "probability_of_loss": 0.02, "p05": 12190, "p50": 30760, "p95": 76169 }
+  },
+  "esg": { "baseline_sharpe": 0.63, "esg_sharpe": 0.57, "baseline_volatility": 0.17, "esg_volatility": 0.22 }
+}
