@@ -27,6 +27,18 @@ from typing import Any
 from urllib.parse import urlparse
 
 UA = "ardentum-smoke/1"
+# Every table the API's migrations create (backend/migrations), including Alembic's own.
+DATABASE_TABLES = (
+    "users",
+    "datasets",
+    "portfolios",
+    "esg_overlays",
+    "jobs",
+    "provider_cache",
+    "rate_limit_counters",
+    "usage_counts",
+    "alembic_version",
+)
 KF_UNIVERSE = {
     "dataset_id": "kf12",
     "tickers": ["NODUR", "HLTH", "MONEY"],
@@ -416,8 +428,31 @@ def check_supabase(rep: Report, supabase: str, key: str) -> None:
                 "Supabase > Project Settings > JWT Keys (guide step 2.4)",
             )
 
+    def data_api_closed() -> None:
+        # The website's public key must not reach the app's tables through Supabase's own
+        # Data API (/rest/v1). limit=0 asks for no rows, so nothing personal is fetched.
+        statuses = {}
+        for table in DATABASE_TABLES:
+            r = request("GET", f"{base}/rest/v1/{table}?select=*&limit=0", headers={"apikey": key})
+            statuses[table] = r.status
+        readable = [t for t, s in statuses.items() if s == 200]
+        unclear = [f"{t} HTTP {s}" for t, s in statuses.items() if s not in (200, 401, 403, 404)]
+        if readable:
+            rep.fail(
+                "Database closed to the public key",
+                f"anyone with the website's key can use {', '.join(readable)} through "
+                "Supabase's Data API; deploy the API so migration 0007 runs (row-level security)",
+            )
+        elif unclear:
+            rep.warn(
+                "Database closed to the public key", "unexpected answers: " + ", ".join(unclear)
+            )
+        else:
+            rep.ok("Database closed to the public key", f"all {len(statuses)} tables refused")
+
     rep.check("Supabase", providers)
     rep.check("Token signing keys", signing_keys)
+    rep.check("Database closed to the public key", data_api_closed)
 
 
 def plain_url(rep: Report, name: str, value: str) -> str:

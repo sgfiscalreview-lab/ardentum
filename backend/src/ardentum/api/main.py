@@ -69,7 +69,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         max_age=600,
     )
 
-    engine = make_engine(settings.database_url)
+    engine = make_engine(settings.database_url, settings.env is Environment.PRODUCTION)
     factory = sessionmaker(bind=engine, expire_on_commit=False)
     limiter: Limiter | None = None
     if settings.compute_rate_limit > 0:
