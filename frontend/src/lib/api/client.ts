@@ -71,7 +71,10 @@ let woken = false;
 export function wakeApi(): void {
   if (woken || typeof window === "undefined") return;
   woken = true;
-  tracked(new Request(`${baseUrl}/api/v1/health`), true).catch(() => undefined);
+  // The body is read so the connection closes (an unread response stays open).
+  tracked(new Request(`${baseUrl}/api/v1/health`), true)
+    .then((r) => r.text())
+    .catch(() => undefined);
 }
 api.use(authMiddleware);
 
