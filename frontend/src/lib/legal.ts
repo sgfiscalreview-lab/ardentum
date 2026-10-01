@@ -11,7 +11,7 @@ export const LEGAL = {
   // publish them, e.g. the EU and UK).
   address: process.env.NEXT_PUBLIC_LEGAL_ADDRESS?.trim() || "",
   registration: process.env.NEXT_PUBLIC_LEGAL_REGISTRATION?.trim() || "",
-  lastUpdated: process.env.NEXT_PUBLIC_LEGAL_LAST_UPDATED?.trim() || "2026-09-30",
+  lastUpdated: process.env.NEXT_PUBLIC_LEGAL_LAST_UPDATED?.trim() || "2026-10-01",
 };
 
 /** Public source repository (MIT licence). */

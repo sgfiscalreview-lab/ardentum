@@ -12,7 +12,8 @@ import logging
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from ardentum.api.auth import AuthError
@@ -54,6 +55,14 @@ def classify(exc: BaseException) -> tuple[str, str, int]:
     return "internal_error", "An unexpected error occurred while running the calculation.", 500
 
 
+_HTTP_TYPES = {
+    400: "bad_request",
+    404: "not_found",
+    405: "method_not_allowed",
+    413: "payload_too_large",
+}
+
+
 def _body(kind: str, message: str, details: object = None) -> dict[str, object]:
     return {"error": {"type": kind, "message": message, "details": details}}
 
@@ -77,6 +86,17 @@ def install(app: FastAPI) -> None:
     @app.exception_handler(NotFoundError)
     async def _nf(_request: Request, exc: NotFoundError) -> JSONResponse:
         return JSONResponse(_body("not_found", str(exc)), status_code=404)
+
+    @app.exception_handler(StarletteHTTPException)
+    async def _http(_request: Request, exc: StarletteHTTPException) -> Response:
+        # Unknown addresses, wrong methods, unreadable or oversized bodies: the usual
+        # error format instead of the framework's {"detail": ...}.
+        if exc.status_code in (204, 304):  # no body allowed
+            return Response(status_code=exc.status_code, headers=exc.headers)
+        kind = _HTTP_TYPES.get(exc.status_code, "http_error")
+        return JSONResponse(
+            _body(kind, str(exc.detail)), status_code=exc.status_code, headers=exc.headers
+        )
 
     @app.exception_handler(RequestValidationError)
     async def _validation(_request: Request, exc: RequestValidationError) -> JSONResponse:

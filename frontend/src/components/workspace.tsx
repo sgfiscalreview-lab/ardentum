@@ -380,15 +380,7 @@ export function download(filename: string, content: string, type: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-/** CSV serialisation with RFC 4180 quoting (no calculations). */
-export function toCsv(rows: (string | number | null | undefined)[][]): string {
-  const cell = (v: string | number | null | undefined) => {
-    if (v === null || v === undefined) return "";
-    const s = String(v);
-    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-  };
-  return rows.map((r) => r.map(cell).join(",")).join("\n") + "\n";
-}
+export { toCsv } from "@/lib/csv";
 
 export function ExportMenu({ name, json, csv }: { name: string; json: unknown; csv?: () => string }) {
   return (

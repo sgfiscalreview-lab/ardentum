@@ -27,7 +27,7 @@ from typing import Any
 from urllib.parse import urlencode
 
 import numpy as np
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ardentum.api import schemas as s
@@ -42,6 +42,7 @@ from ardentum.services.market_data import MarketDataService, NotFoundError
 from ardentum.services.provider_cache import CachedPayload
 
 WIKIRATE_MAX_AGE = dt.timedelta(days=1)
+MAX_OVERLAYS_PER_USER = 100
 ISIN_CHUNK = 20
 COMPANY_CHUNK = 25
 SOURCE = "wikirate"
@@ -392,8 +393,20 @@ class OpenEsgService:
             raise NotFoundError("Sign in to save ESG overlays.")
         return p, session
 
+    def _room(self, principal: Principal, session: Session) -> None:
+        n = session.scalar(
+            select(func.count())
+            .select_from(EsgOverlay)
+            .where(EsgOverlay.owner_id == principal.user_id)
+        )
+        if (n or 0) >= MAX_OVERLAYS_PER_USER:
+            raise InvalidInputError(
+                f"You can save at most {MAX_OVERLAYS_PER_USER} ESG overlays; delete one first."
+            )
+
     def save(self, name: str, req: s.OverlayPreviewRequest) -> s.OverlayOut:
         principal, session = self._owner()
+        self._room(principal, session)
         preview = self.preview(req)  # recomputed server-side: never trust client scores
         if preview.scored == 0:
             raise InvalidInputError("None of the assets received a score; nothing to save.")
@@ -421,6 +434,7 @@ class OpenEsgService:
 
     def save_composite(self, name: str, req: s.CompositePreviewRequest) -> s.OverlayOut:
         principal, session = self._owner()
+        self._room(principal, session)
         preview = self.composite_preview(req)  # recomputed server-side
         if preview.scored == 0:
             raise InvalidInputError(

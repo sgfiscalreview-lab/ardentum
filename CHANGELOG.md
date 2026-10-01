@@ -11,6 +11,24 @@ All notable changes to Ardentum are recorded here. Versions follow
   test checks the answers against the API.
 - The live smoke test also checks the usage counts and the tour, usage and classroom pages.
 
+### Security
+- The database is closed to Supabase's public Data API: row-level security on every table
+  and no access for its public roles, including on tables created later (migration 0007).
+  Before this, anyone with the website's public key could read and change the tables.
+- A second rate limit covers saves, uploads, deletions, sign-in and WikiRate lookups;
+  rate-limited answers now reach the browser with their message.
+- Request bodies are capped (1 MB; uploads 10 MB), as are saved settings (64 KB) and saved
+  ESG overlays (100 per user).
+- Security headers on the API (HSTS, Content-Security-Policy, cross-origin policies) and
+  more on the website; developer sign-in no longer exists in production.
+- CSV exports cannot carry spreadsheet formulas; outside links must be http(s); the sign-in
+  page's return address only accepts paths on the site.
+- Secret scanning of every commit (gitleaks), a build check for secret keys in browser
+  files, weekly dependency audits and Dependabot updates. `SECURITY.md` explains how to
+  report a problem and how each part is protected.
+- Updated dependencies (FastAPI 0.142, Next.js 16.3.8, cryptography 50.0.2 and others);
+  removed three unused frontend packages.
+
 ## [1.0.0]
 
 First public release. The full release notes are in

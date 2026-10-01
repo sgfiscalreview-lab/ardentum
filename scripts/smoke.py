@@ -15,6 +15,7 @@ warnings are optional items.
 from __future__ import annotations
 
 import argparse
+import base64
 import json
 import os
 import re
@@ -27,6 +28,35 @@ from typing import Any
 from urllib.parse import urlparse
 
 UA = "ardentum-smoke/1"
+# Every table the API's migrations create (backend/migrations), including Alembic's own.
+DATABASE_TABLES = (
+    "users",
+    "datasets",
+    "portfolios",
+    "esg_overlays",
+    "jobs",
+    "provider_cache",
+    "rate_limit_counters",
+    "usage_counts",
+    "alembic_version",
+)
+API_HEADERS = (
+    "strict-transport-security",
+    "content-security-policy",
+    "x-content-type-options",
+    "x-frame-options",
+    "referrer-policy",
+    "cross-origin-resource-policy",
+)
+SITE_HEADERS = (
+    "strict-transport-security",
+    "content-security-policy",
+    "x-content-type-options",
+    "x-frame-options",
+    "referrer-policy",
+    "permissions-policy",
+    "cross-origin-opener-policy",
+)
 KF_UNIVERSE = {
     "dataset_id": "kf12",
     "tickers": ["NODUR", "HLTH", "MONEY"],
@@ -102,6 +132,24 @@ class Report:
         return "\n".join(lines) + "\n"
 
 
+def secrets_in(code: str) -> list[str]:
+    """Secret keys in code sent to browsers (frontend/scripts/check-client-secrets.mjs
+    runs the same check at build time)."""
+    found = []
+    if re.search(r"sb_secret_[A-Za-z0-9_-]{10,}", code):
+        found.append("a Supabase secret key")
+    if re.search(r"GOCSPX-[A-Za-z0-9_-]{10,}", code):
+        found.append("a Google OAuth client secret")
+    for payload in re.findall(r"eyJ[A-Za-z0-9_-]{10,}\.(eyJ[A-Za-z0-9_-]{10,})\.", code):
+        try:
+            claims = json.loads(base64.urlsafe_b64decode(payload + "=" * (-len(payload) % 4)))
+        except ValueError:
+            continue
+        if isinstance(claims, dict) and claims.get("role") == "service_role":
+            found.append("a Supabase service-role key")
+    return found
+
+
 def error_message(r: Response) -> str:
     try:
         return str(r.json()["error"]["message"])
@@ -174,6 +222,17 @@ def check_api(rep: Report, api: str, site: str) -> None:
             rep.ok("Sign-in required", "account endpoints refuse anonymous and dev sign-in")
         else:
             rep.fail("Sign-in required", f"/auth/me HTTP {me.status}, dev-login HTTP {dev.status}")
+
+    def api_headers() -> None:
+        r = request("GET", f"{v1}/health")
+        missing = [h for h in API_HEADERS if h not in r.headers]
+        server = r.headers.get("server", "")
+        if missing:
+            rep.warn("API security headers", "missing: " + ", ".join(missing))
+        elif "uvicorn" in server.lower():
+            rep.warn("API security headers", f"present, but the server names itself ({server})")
+        else:
+            rep.ok("API security headers", f"{len(API_HEADERS)} present")
 
     def ken_french() -> None:
         # The first analysis downloads and caches the industry returns.
@@ -284,6 +343,7 @@ def check_api(rep: Report, api: str, site: str) -> None:
         ("Production settings", meta),
         ("CORS", cors),
         ("Sign-in required", auth_guard),
+        ("API security headers", api_headers),
         ("Ken French data", ken_french),
         ("Risk-free rate (Fama-French)", risk_free),
         ("ECB exchange rates (Frankfurter)", fx),
@@ -312,10 +372,18 @@ def check_site(rep: Report, site: str, api: str, supabase: str | None, key: str 
             rep.fail("Website", f"landing page not found at {base}/; {describe(r)}; {hint}")
             return
         rep.ok("Website", "landing page loads")
-        if "x-frame-options" in r.headers:
-            rep.ok("Security headers", "public/_headers is applied")
+        missing = [h for h in SITE_HEADERS if h not in r.headers]
+        csp = r.headers.get("content-security-policy", "")
+        if missing:
+            rep.warn("Security headers", "missing: " + ", ".join(missing))
+        elif urlparse(api).netloc not in csp:
+            rep.fail(
+                "Security headers",
+                "the Content-Security-Policy does not allow the API, so the site cannot call "
+                "it; check NEXT_PUBLIC_API_BASE and that the build ran scripts/add-csp.mjs",
+            )
         else:
-            rep.warn("Security headers", "missing; check that the build output is `out`")
+            rep.ok("Security headers", f"{len(SITE_HEADERS)} present, policy allows the API")
 
         # Settings are baked into the JavaScript at build time; look for them.
         scripts: set[str] = set()
@@ -328,6 +396,11 @@ def check_site(rep: Report, site: str, api: str, supabase: str | None, key: str 
             "NEXT_PUBLIC_SUPABASE_URL": urlparse(supabase).netloc if supabase else None,
             "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY": key,
         }
+        leaks = secrets_in(code)
+        if leaks:
+            rep.fail("No secrets in the website", "found: " + ", ".join(leaks))
+        else:
+            rep.ok("No secrets in the website", "no secret keys in the website's code")
         for var, value in wanted.items():
             if value is None:
                 continue
@@ -416,8 +489,31 @@ def check_supabase(rep: Report, supabase: str, key: str) -> None:
                 "Supabase > Project Settings > JWT Keys (guide step 2.4)",
             )
 
+    def data_api_closed() -> None:
+        # The website's public key must not reach the app's tables through Supabase's own
+        # Data API (/rest/v1). limit=0 asks for no rows, so nothing personal is fetched.
+        statuses = {}
+        for table in DATABASE_TABLES:
+            r = request("GET", f"{base}/rest/v1/{table}?select=*&limit=0", headers={"apikey": key})
+            statuses[table] = r.status
+        readable = [t for t, s in statuses.items() if s == 200]
+        unclear = [f"{t} HTTP {s}" for t, s in statuses.items() if s not in (200, 401, 403, 404)]
+        if readable:
+            rep.fail(
+                "Database closed to the public key",
+                f"anyone with the website's key can use {', '.join(readable)} through "
+                "Supabase's Data API; deploy the API so migration 0007 runs (row-level security)",
+            )
+        elif unclear:
+            rep.warn(
+                "Database closed to the public key", "unexpected answers: " + ", ".join(unclear)
+            )
+        else:
+            rep.ok("Database closed to the public key", f"all {len(statuses)} tables refused")
+
     rep.check("Supabase", providers)
     rep.check("Token signing keys", signing_keys)
+    rep.check("Database closed to the public key", data_api_closed)
 
 
 def plain_url(rep: Report, name: str, value: str) -> str:

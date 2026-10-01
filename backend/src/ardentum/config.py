@@ -49,6 +49,8 @@ class Settings(BaseSettings):
 
     max_upload_bytes: int = 5 * 1024 * 1024
     compute_rate_limit: int = 60  # compute requests per client per minute (0 disables)
+    # Saves, uploads, deletions, sign-in and WikiRate lookups per client per minute.
+    write_rate_limit: int = 60
     # "database" shares limits across instances (PostgreSQL); "auto" = database unless SQLite.
     rate_limit_store: Literal["auto", "memory", "database"] = "auto"
     # Proxies in front of the API that append to X-Forwarded-For (Cloud Run / Render: 1).

@@ -35,3 +35,13 @@ def test_engine_connects_without_rejecting_the_url() -> None:
     with pytest.raises(OperationalError) as err:
         engine.connect()
     assert "invalid connection option" not in str(err.value)
+
+
+def test_remote_production_connections_require_tls() -> None:
+    assert postgres_url(SUPABASE_PRISMA, require_tls=True).query["sslmode"] == "require"
+    # The URL's own choice wins, and local servers (no TLS by default) are left alone.
+    chosen = postgres_url("postgresql://u:p@db.example.com/db?sslmode=verify-full", True)
+    assert chosen.query["sslmode"] == "verify-full"
+    for local in ("postgresql://u:p@localhost/db", "postgresql://u:p@127.0.0.1:5433/db"):
+        assert "sslmode" not in postgres_url(local, require_tls=True).query
+    assert "sslmode" not in postgres_url(SUPABASE_PRISMA).query

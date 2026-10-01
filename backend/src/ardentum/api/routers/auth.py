@@ -8,11 +8,13 @@ from ardentum.api.deps import DbDep, RequiredPrincipal, SettingsDep
 from ardentum.services.account import delete_account, export_account
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+# Registered only when ARDENTUM_AUTH_MODE=dev, which production settings refuse.
+dev_router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post("/dev-login", response_model=s.TokenOut)
+@dev_router.post("/dev-login", response_model=s.TokenOut)
 def dev_login(body: s.DevLoginRequest, settings: SettingsDep) -> s.TokenOut:
-    """Development-only sign-in. Disabled unless ARDENTUM_AUTH_MODE=dev (never in production)."""
+    """Development-only sign-in for local use and tests; absent in production."""
     token, exp = issue_dev_token(settings, body.email)
     principal = verify_token(settings, token)
     return s.TokenOut(

@@ -1,6 +1,6 @@
 # Progress
 
-Status as of 2026-09-30.
+Status as of 2026-10-01.
 
 | Phase | Area | Status | Evidence |
 |---|---|---|---|
@@ -18,7 +18,7 @@ Status as of 2026-09-30.
 | 12 | Auth + saved portfolios | ✅ | Supabase JWT tests, ownership isolation, E2E save/export/delete |
 | 13 | Production deployment | 🟡 artifacts ready | Free-tier stack (D-017): static export for Cloudflare Pages, Cloud Run container, Supabase OAuth, keep-alive; DEPLOYMENT.md step-by-step — **awaiting founder accounts** (TODO) |
 | 14 | Research section / docs | ✅ | `docs/methodology/*` rendered at `/research` with KaTeX |
-| 15 | Security / performance / a11y / UX audit | ✅ first pass | axe WCAG 2.1 AA tests (light+dark), shared rate limiting, timing, visual review |
+| 15 | Security / performance / a11y / UX audit | ✅ second pass (D-038) | `SECURITY.md`; database closed to Supabase's Data API (`tests/api/test_db_lockdown.py`, live smoke check); `test_access_control.py`, `test_request_limits.py`, `test_security_headers.py`; gitleaks in CI; dependency audits; axe WCAG 2.1 AA tests (light+dark) |
 
 ## Free-tier extensions (founder-approved plan)
 
@@ -51,10 +51,11 @@ Status as of 2026-09-30.
 | Database URLs copied from Supabase's ORM snippets (`?pgbouncer=true`) accepted | ✅ | `tests/data/test_db_url.py`; migrations checked with such a URL on PostgreSQL |
 
 ## Test status
-- Backend: 357 tests passing (SQLite); API suite (97 tests) also passing on PostgreSQL 16; ruff clean; mypy --strict clean. Migrations 0001–0006 upgrade, `alembic check` and downgrade cleanly on PostgreSQL.
+- Backend: 371 tests passing (SQLite; 2 more run only on PostgreSQL); API suite (111 tests, including the database lock-down checks) also passing on PostgreSQL 16; ruff clean; mypy --strict clean. Migrations 0001–0007 upgrade, `alembic check` and downgrade cleanly on PostgreSQL.
 - Research: 13 tests for the study statistics and hedging set-up (`research/tests`), run by the Research workflow before each run.
-- Frontend: ESLint (incl. React Compiler rules) clean; `tsc --strict` clean; Vitest unit tests passing.
-- End-to-end: 58 Playwright tests (18 workflows incl. the classroom kit, the guided tour and usage counts, open ESG data, composite scores, CVaR frontier, currency hedging, legal pages and account deletion, 37 accessibility checks over 18 pages in light and dark, phone-width layout checks) passing; Playwright starts the API, the web app and a local WikiRate stand-in.
+- Frontend: ESLint (incl. React Compiler rules) clean; `tsc --strict` clean; 13 Vitest unit tests passing; builds fail if a secret key reaches browser files.
+- Security: gitleaks finds no secrets in the history; pip-audit and npm audit report no known vulnerabilities (2026-10-01).
+- End-to-end (Node server with the full Content-Security-Policy): 58 Playwright tests (18 workflows incl. the classroom kit, the guided tour and usage counts, open ESG data, composite scores, CVaR frontier, currency hedging, legal pages and account deletion, 37 accessibility checks over 18 pages in light and dark, phone-width layout checks) passing; Playwright starts the API, the web app and a local WikiRate stand-in.
 
 ## Performance (dev container, 14 assets, 10 years daily)
 | Request | Time |

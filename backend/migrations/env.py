@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from alembic import context
 
-from ardentum.config import get_settings
+from ardentum.config import Environment, get_settings
 from ardentum.db.models import Base
 from ardentum.db.session import make_engine
 
@@ -24,7 +24,8 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    engine = make_engine(get_settings().database_url)
+    settings = get_settings()
+    engine = make_engine(settings.database_url, settings.env is Environment.PRODUCTION)
     with engine.connect() as connection:
         context.configure(connection=connection, target_metadata=target_metadata, compare_type=True)
         with context.begin_transaction():

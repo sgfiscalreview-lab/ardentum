@@ -10,7 +10,7 @@ import respx
 from fastapi.testclient import TestClient
 
 from ardentum.data.providers import wikirate as wr
-from ardentum.services import market_data
+from ardentum.services import market_data, open_esg
 from ardentum.services.provider_cache import clear_memory
 from tests.api.conftest import login
 from tests.api.test_api_auth_portfolios import PRICES
@@ -232,3 +232,17 @@ def test_save_overlay_and_use_it_in_optimisation(client: TestClient, auth: dict[
     assert "another dataset" in r.json()["error"]["message"]
     assert client.delete(f"/api/v1/esg/overlays/{oid}", headers=auth).status_code == 204
     assert client.get(f"/api/v1/esg/overlays/{oid}", headers=auth).status_code == 404
+
+
+@respx.mock
+def test_saved_overlays_per_user_are_capped(
+    client: TestClient, auth: dict[str, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(open_esg, "MAX_OVERLAYS_PER_USER", 1)
+    ds = _upload(client, auth)
+    _mock_wikirate()
+    body = {"name": "Scope 1", "preview": _preview(ds, company_overrides={"CCC": 300})}
+    assert client.post("/api/v1/esg/overlays", json=body, headers=auth).status_code == 201
+    r = client.post("/api/v1/esg/overlays", json=body, headers=auth)
+    assert r.status_code == 422
+    assert "at most 1 ESG overlays" in r.json()["error"]["message"]
