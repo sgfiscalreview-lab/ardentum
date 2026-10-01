@@ -15,6 +15,13 @@ Objectives
 * ``target_return``     minimise ``w' S w`` s.t. ``mu' w >= target``.
 * ``target_volatility`` maximise ``mu' w`` s.t. ``sqrt(w' S w) <= target``.
 * ``max_utility``       maximise ``mu' w - (gamma / 2) w' S w``.
+* ``risk_parity``       equal risk contribution (Maillard, Roncalli and Teiletche 2010):
+  every held asset contributes the same share of variance, ``w_i (S w)_i = w' S w / n``.
+  Solved through Spinu's (2013) strictly convex problem
+  ``min 1/2 y' S y - (1/n) sum log y_i`` (unique solution; ``w = y / sum y``), then
+  polished with Newton steps. Uses no expected returns. Long-only; the weights are set
+  by the risks alone, so other constraints are checked afterwards, and a violated one
+  is reported with the weight that breaks it rather than approximated.
 
 Constraints: full investment (``sum w = 1``), per-asset bounds, excluded assets
 and sectors (weight fixed at zero), sector minimum/maximum exposure, minimum
@@ -63,6 +70,7 @@ class Objective(StrEnum):
     TARGET_VOLATILITY = "target_volatility"
     MAX_UTILITY = "max_utility"
     MIN_CVAR = "min_cvar"
+    RISK_PARITY = "risk_parity"
 
 
 TILT_OBJECTIVES = frozenset(
@@ -773,6 +781,15 @@ def optimise(
         extra += cvar_diag
         extra_checks += checks
 
+    elif obj is Objective.RISK_PARITY:
+        raw, solver = _risk_parity(comp)
+        _check_risk_parity_fits(comp, raw)
+        # Constraints only for reporting their values; nothing is solved with them.
+        _, tagged = comp.cvx_constraints(cp.Variable(comp.n))
+        extra_checks.append(
+            ("equal risk contributions", risk_parity_gap(raw, comp.cov) <= RISK_PARITY_TOL)
+        )
+
     else:  # pragma: no cover - exhaustive enum
         raise InvalidInputError(f"Unsupported objective {obj!r}.")
 
@@ -850,6 +867,94 @@ def _min_cvar(
             )
         )
     return w, tagged, solver, diags, checks
+
+
+RISK_PARITY_TOL = 1e-8  # largest allowed gap between any risk share and 1/n
+
+
+def risk_parity_gap(w: np.ndarray, cov: np.ndarray) -> float:
+    """Largest distance between a held asset's share of variance and an equal share."""
+    held = w > ZERO_WEIGHT_TOL
+    contrib = w * (cov @ w)
+    total = float(contrib.sum())
+    if total <= 0 or not held.any():
+        return float("inf")
+    return float(np.max(np.abs(contrib[held] / total - 1.0 / held.sum())))
+
+
+def _risk_parity(comp: _Compiled) -> tuple[np.ndarray, str]:
+    """Equal-risk-contribution weights over the assets that are not excluded."""
+    if (comp.lb < 0).any():
+        raise InvalidInputError(
+            "Risk parity holds every asset with a positive weight, so it cannot take short "
+            "positions; set the minimum weight to 0."
+        )
+    inv = [i for i in range(comp.n) if i not in comp.excluded]
+    sub = comp.cov[np.ix_(inv, inv)]
+    k = len(inv)
+    if float(np.linalg.eigvalsh(sub).min()) <= 1e-10 * max(float(np.trace(sub)) / k, 1e-12):
+        raise InvalidInputError(
+            "Risk parity needs every asset to carry risk of its own, but the covariance of these "
+            "assets is singular (an asset has no variance, or moves exactly with others). Remove "
+            "the riskless or duplicated asset."
+        )
+    y = cp.Variable(k)
+    factor = _covariance_factor(sub)
+    prob = cp.Problem(cp.Minimize(0.5 * cp.sum_squares(factor @ y) - cp.sum(cp.log(y)) / k))
+    solver = _solve(prob, "risk-parity")
+    if y.value is None or not np.all(np.asarray(y.value) > 0):
+        raise SolverError("The risk-parity problem returned non-positive weights.")
+    yv = _newton_polish(sub, np.asarray(y.value, dtype=float), 1.0 / k)
+    w = np.zeros(comp.n)
+    w[inv] = yv / yv.sum()
+    return w, solver
+
+
+def _newton_polish(cov: np.ndarray, y: np.ndarray, b: float, steps: int = 20) -> np.ndarray:
+    """Newton steps on the optimality condition ``S y = b / y`` (interior-point solvers
+    stop at about 1e-8; this makes the risk shares equal to machine precision)."""
+    for _ in range(steps):
+        grad = cov @ y - b / y
+        if float(np.max(np.abs(grad * y))) < 1e-15:
+            break
+        step = np.linalg.solve(cov + np.diag(b / y**2), grad)
+        t = 1.0
+        while np.any(y - t * step <= 0):  # stay inside the positive orthant
+            t /= 2
+        y = y - t * step
+    return y
+
+
+def _check_risk_parity_fits(comp: _Compiled, w: np.ndarray) -> None:
+    """Report, by name, every constraint the equal-risk weights break."""
+    problems: list[str] = []
+    for i, t in enumerate(comp.tickers):
+        if i in comp.excluded:
+            continue
+        if w[i] > comp.ub[i] + VERIFY_TOL:
+            problems.append(f"{t} gets {w[i]:.1%}, above its maximum of {comp.ub[i]:.1%}")
+        elif w[i] < comp.lb[i] - VERIFY_TOL:
+            problems.append(f"{t} gets {w[i]:.1%}, below its minimum of {comp.lb[i]:.1%}")
+    for row in comp.rows:
+        if row.kind == "budget":
+            continue
+        v = float(row.coeffs @ w)
+        shown = f"{v:.1f}" if row.kind == "min_esg" else f"{v:.1%}"
+        if (row.sense == "le" and v > row.bound + VERIFY_TOL) or (
+            row.sense == "ge" and v < row.bound - VERIFY_TOL
+        ):
+            problems.append(f"the limit {row.label} is broken (the portfolio has {shown})")
+    if comp.benchmark is not None and comp.max_te is not None:
+        te = portfolio_volatility(w - comp.benchmark, comp.cov)
+        if te > comp.max_te + VERIFY_TOL:
+            problems.append(f"tracking error is {te:.2%}, above the {comp.max_te:.2%} limit")
+    if problems:
+        raise InfeasibleProblemError(
+            "The equal-risk portfolio does not meet your constraints: "
+            + "; ".join(problems)
+            + ". Risk parity sets every weight from the assets' risks alone, so loosen these "
+            "limits, exclude assets, or choose another objective."
+        )
 
 
 def _build_result(

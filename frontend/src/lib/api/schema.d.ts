@@ -4,6 +4,26 @@
  */
 
 export interface paths {
+    "/api/v1/auth/dev-login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Dev Login
+         * @description Development-only sign-in for local use and tests; absent in production.
+         */
+        post: operations["dev_login_api_v1_auth_dev_login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -72,26 +92,6 @@ export interface paths {
         get: operations["usage_counts_api_v1_usage_get"];
         put?: never;
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auth/dev-login": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Dev Login
-         * @description Development-only sign-in. Disabled unless ARDENTUM_AUTH_MODE=dev (never in production).
-         */
-        post: operations["dev_login_api_v1_auth_dev_login_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1727,7 +1727,7 @@ export interface components {
          * Objective
          * @enum {string}
          */
-        Objective: "min_volatility" | "max_sharpe" | "target_return" | "target_volatility" | "max_utility" | "min_cvar";
+        Objective: "min_volatility" | "max_sharpe" | "target_return" | "target_volatility" | "max_utility" | "min_cvar" | "risk_parity";
         /** ObjectiveIn */
         ObjectiveIn: {
             /** @default max_sharpe */
@@ -2412,6 +2412,39 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    dev_login_api_v1_auth_dev_login_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DevLoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     health_api_v1_health_get: {
         parameters: {
             query?: never;
@@ -2492,39 +2525,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UsageOut"];
-                };
-            };
-        };
-    };
-    dev_login_api_v1_auth_dev_login_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DevLoginRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TokenOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

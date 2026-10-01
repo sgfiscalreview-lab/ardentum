@@ -14,8 +14,9 @@ Let $w$ be portfolio weights, $\mu$ annualised expected returns, $\Sigma$ the an
 | Target volatility | $\max_w\ \mu^\top w\ \text{ s.t. }\ \sqrt{w^\top\Sigma w} \le \sigma^*$ |
 | Maximum utility | $\max_w\ \mu^\top w - \tfrac{\gamma}{2}w^\top\Sigma w$ |
 | Minimum CVaR | $\min_w\ \mathrm{CVaR}_\beta(-R w)$, optionally s.t. $\mu^\top w \ge m$ (see below) |
+| Risk parity | $w_i(\Sigma w)_i = \tfrac{1}{n}\,w^\top\Sigma w$ for every held asset (see below) |
 
-All share the constraint set $\mathcal C$ below. Variance is written $\lVert F w\rVert_2^2$ with $F = \Lambda^{1/2}V^\top$ from the eigendecomposition $\Sigma = V\Lambda V^\top$, which is exact and numerically robust even for singular (positive semi-definite) matrices.
+All except risk parity share the constraint set $\mathcal C$ below. Variance is written $\lVert F w\rVert_2^2$ with $F = \Lambda^{1/2}V^\top$ from the eigendecomposition $\Sigma = V\Lambda V^\top$, which is exact and numerically robust even for singular (positive semi-definite) matrices.
 
 ## Constraints
 
@@ -54,6 +55,20 @@ with the minimising $\alpha$ equal to the value at risk. Introducing $u_t \ge 0$
 CVaR here is **per data period** (e.g. one-day CVaR for daily data) and is **historical**: it cannot anticipate losses worse than the window contains. At least $1/(1-\beta)$ observations are required. Every optimisation result also reports the historical one-period VaR and CVaR of its weights at the chosen level.
 
 Validation: the optimum equals an independent solution of the same programme by SciPy's HiGHS solver, is no worse than a brute-force grid over the simplex, and the reported CVaR equals the closed form (mean of the $k$ worst losses when $(1-\beta)T=k$).
+
+## Risk parity: equal risk contributions
+
+The Euler decomposition splits portfolio variance into one contribution per asset, $w_i(\Sigma w)_i$, which sum to $w^\top\Sigma w$. A **risk parity** (equal risk contribution) portfolio makes these contributions equal, so each of the $n$ holdings carries $1/n$ of the risk (Maillard, Roncalli and Teiletche, 2010). It uses no expected returns, the noisiest input, which is its appeal; the price is that low-risk assets can need large weights.
+
+The weights solve Spinu's (2013) strictly convex problem
+
+$$\min_{y>0}\ \tfrac12\,y^\top\Sigma y - \tfrac1n\sum_{i=1}^n \log y_i, \qquad w = y\,/\,\textstyle\sum_i y_i .$$
+
+Its optimality condition $(\Sigma y)_i = 1/(n\,y_i)$ says exactly that every $y_i(\Sigma y)_i$ equals $1/n$, and strict convexity makes the solution unique when $\Sigma$ is positive definite. CVXPY solves it (an exponential-cone programme), and a few Newton steps on the optimality condition make the shares equal to machine precision. Excluded assets are left out; short positions are not allowed.
+
+The weights are set by the risks alone, so other constraints (weight and sector limits, a minimum ESG score, a tracking-error limit) are checked afterwards. A broken one is reported with the weight that breaks it, for example "GOVB.SYN gets 45.1%, above its maximum of 30.0%", rather than replaced by a portfolio that is no longer risk parity.
+
+Validation: two assets give inverse-volatility weights for any correlation, and so does any number of assets with one common correlation (closed forms); every risk contribution equals $1/n$ to $10^{-10}$; the weights match an independent solution of the same problem by SciPy's quasi-Newton method; and the volatility lies between those of the minimum-variance and equally weighted portfolios, as Maillard, Roncalli and Teiletche prove.
 
 ## Efficient frontier
 

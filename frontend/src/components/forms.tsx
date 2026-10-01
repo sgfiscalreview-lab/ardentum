@@ -14,6 +14,8 @@ const OBJECTIVE_HELP: Record<ObjectiveIn["objective"], string> = {
   target_volatility: "Highest expected return without exceeding a chosen volatility.",
   max_utility: "Maximises return − (γ/2)·variance; higher γ means more risk-averse.",
   min_cvar: "Smallest average loss in the worst periods of the history (historical CVaR). Uses the actual return distribution, including fat tails.",
+  risk_parity:
+    "Every holding contributes the same share of risk. Uses no expected returns. The weights come from the risks alone, so your weight limits must leave room for them: low-risk assets can need large weights.",
 };
 
 export function ObjectivePanel({ value, onChange }: { value: ObjectiveIn; onChange: (v: ObjectiveIn) => void }) {

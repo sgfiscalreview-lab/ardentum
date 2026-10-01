@@ -25,6 +25,7 @@ Primary sources for the methods used in Ardentum.
 - Lo, A. W. (2002). The statistics of Sharpe ratios. *Financial Analysts Journal*, 58(4), 36–52.
 - Markowitz, H. (1952). Portfolio selection. *Journal of Finance*, 7(1), 77–91.
 - Merton, R. C. (1972). An analytic derivation of the efficient portfolio frontier. *Journal of Financial and Quantitative Analysis*, 7(4), 1851–1872.
+- Maillard, S., Roncalli, T., & Teïletche, J. (2010). The properties of equally weighted risk contribution portfolios. *Journal of Portfolio Management*, 36(4), 60–70.
 - Michaud, R. O. (1998). *Efficient Asset Management*. Harvard Business School Press.
 - Pedersen, L. H., Fitzgibbons, S., & Pomorski, L. (2021). Responsible investing: The ESG-efficient frontier. *Journal of Financial Economics*, 142(2), 572–597.
 - Politis, D. N., & Romano, J. P. (1994). The stationary bootstrap. *Journal of the American Statistical Association*, 89(428), 1303–1313.
@@ -37,6 +38,7 @@ Primary sources for the methods used in Ardentum.
 - Idzorek, T. M. (2005). A step-by-step guide to the Black-Litterman model. Zephyr Associates working paper.
 - Rockafellar, R. T., & Uryasev, S. (2000). Optimization of conditional value-at-risk. *Journal of Risk*, 2(3), 21–41.
 - Rockafellar, R. T., & Uryasev, S. (2002). Conditional value-at-risk for general loss distributions. *Journal of Banking & Finance*, 26(7), 1443–1471.
+- Spinu, F. (2013). An algorithm for computing risk parity weights. SSRN Working Paper 2297383.
 
 ## Data sources
 
