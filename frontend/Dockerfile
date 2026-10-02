@@ -1,10 +1,10 @@
 # Ardentum web — production image. Build context: repository root (needs docs/).
-FROM node:22-slim AS deps
+FROM node:26-slim AS deps
 WORKDIR /repo/frontend
 COPY frontend/package.json frontend/package-lock.json frontend/.npmrc ./
 RUN npm ci
 
-FROM node:22-slim AS build
+FROM node:26-slim AS build
 WORKDIR /repo/frontend
 ARG API_URL=http://backend:8000
 ARG NEXT_PUBLIC_SUPABASE_URL=""
@@ -17,7 +17,7 @@ COPY frontend ./
 COPY docs /repo/docs
 RUN npm run build
 
-FROM node:22-slim AS run
+FROM node:26-slim AS run
 WORKDIR /app
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0
 COPY --from=build /repo/frontend/.next/standalone ./
