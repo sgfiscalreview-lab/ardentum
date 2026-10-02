@@ -73,6 +73,7 @@ export const OBJECTIVE_LABELS: Record<string, string> = {
   target_volatility: "Target volatility",
   max_utility: "Maximum utility",
   min_cvar: "Minimum CVaR (tail loss)",
+  risk_parity: "Risk parity (equal risk)",
 };
 
 export const ESTIMATOR_LABELS: Record<string, string> = {

@@ -49,6 +49,8 @@ Status as of 2026-10-01.
 | Research studies (D-036): 1/N out of sample, dollar hedging for euro and sterling investors, promised versus delivered Sharpe ratios; results committed by the Research workflow | ✅ | `research/tests` (known answers, brute force, simulated test size); `research/results/` |
 | Classroom kit (D-037): teacher guide with lesson plan and answers, printable worksheet; answer key recomputed by a backend test and checked against the workspace defaults end to end | ✅ | `tests/api/test_classroom_answers.py`, `e2e/classroom.spec.ts`, accessibility and phone checks on both pages |
 | Database URLs copied from Supabase's ORM snippets (`?pgbouncer=true`) accepted | ✅ | `tests/data/test_db_url.py`; migrations checked with such a URL on PostgreSQL |
+| Security pass (D-038): database closed to Supabase's Data API (confirmed live), rate limits, headers, secrets, dependencies | ✅ | `SECURITY.md`; live smoke "Database closed to the public key: all 9 tables refused" |
+| Product round (D-039): API wake-up notice, shareable links, risk parity, glossary, printable results, readable holdings reasons | ✅ | `tests/quant/test_risk_parity.py`, `tests/api/test_risk_parity_api.py`, `src/lib/share.test.ts`, `src/lib/api/server-status.test.ts`, `e2e/share.spec.ts`, `e2e/server-waking.spec.ts`, `e2e/risk-parity.spec.ts`, `e2e/glossary-print.spec.ts` |
 
 ## Test status
 - Backend: 371 tests passing (SQLite; 2 more run only on PostgreSQL); API suite (111 tests, including the database lock-down checks) also passing on PostgreSQL 16; ruff clean; mypy --strict clean. Migrations 0001–0007 upgrade, `alembic check` and downgrade cleanly on PostgreSQL.

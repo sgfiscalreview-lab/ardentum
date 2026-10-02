@@ -14,6 +14,8 @@ Key identities used
   ``mu_i - rf = beta_i (mu_p - rf)`` with ``beta_i = (S w)_i / (w' S w)``. An
   excluded-by-optimiser asset has ``mu_i - rf < beta_i (mu_p - rf)``: its expected
   excess return is too low for the risk it would add.
+* Risk parity: every held asset contributes the same share of variance,
+  ``w_i (S w)_i = w' S w / n``; expected returns play no part.
 
 Weight stability: :func:`resampled_weight_intervals` re-estimates inputs on
 bootstrap resamples of the return history and re-optimises (in the spirit of
@@ -85,6 +87,7 @@ _OBJECTIVE_TEXT = {
     Objective.TARGET_VOLATILITY: "Maximise expected return without exceeding the target volatility.",
     Objective.MAX_UTILITY: "Maximise mean-variance utility: expected return minus a risk-aversion penalty on variance.",
     Objective.MIN_CVAR: "Minimise historical conditional value at risk: the average loss in the worst periods of the window.",
+    Objective.RISK_PARITY: "Equal risk contribution (risk parity): every holding contributes the same share of portfolio volatility, using no expected returns.",
 }
 
 
@@ -240,6 +243,12 @@ def _headline(objective: Objective, r: OptimisationResult) -> str:
         return f"Lowest-risk way to reach {r.expected_return:.2%} expected return: {r.volatility:.2%} volatility."
     if objective is Objective.TARGET_VOLATILITY:
         return f"Highest expected return ({r.expected_return:.2%}) within {r.volatility:.2%} volatility."
+    if objective is Objective.RISK_PARITY:
+        n = int((r.weights > HELD_TOL).sum())
+        return (
+            f"Every holding contributes the same share of risk ({1 / max(n, 1):.1%} each): "
+            f"{r.volatility:.2%} expected volatility."
+        )
     if objective is Objective.MIN_CVAR and r.cvar is not None and r.cvar_confidence is not None:
         return (
             f"Smallest average loss in the worst {1 - r.cvar_confidence:.0%} of periods: "
@@ -253,6 +262,11 @@ def _held_reason(objective: Objective, weight: float, pct: float) -> str:
         return (
             f"Held at {weight:.1%}: at this weight its marginal contribution to variance equals "
             f"that of every other unconstrained holding. It contributes {pct:.0%} of risk."
+        )
+    if objective is Objective.RISK_PARITY:
+        return (
+            f"Held at {weight:.1%}: at this weight it contributes {pct:.1%} of portfolio risk, the "
+            "same share as every other holding."
         )
     if objective is Objective.MAX_SHARPE:
         return (

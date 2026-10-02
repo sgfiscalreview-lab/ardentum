@@ -140,6 +140,14 @@ calculations go through background jobs (`runJob`). The app builds either as a s
 export (`NEXT_OUTPUT=export`, calling the API directly) or as a Node server that proxies
 `/api/v1`.
 
+Workspace settings live in the browser (`lib/workspace.tsx`, localStorage). "Copy link"
+puts them, with the current page's calculation, deflate-compressed in the URL fragment
+(`lib/share.ts`): nothing is stored on a server, and opening the link recomputes the
+result. `lib/api/server-status.ts` notices when requests wait for a sleeping API (free
+hosting) and the layout says so; every page load also sends one wake-up request. The
+glossary (`/glossary`, `lib/glossary.ts`) is linked from result labels. Workspace pages
+print their results only (print styles in `globals.css`).
+
 ## Authentication
 
 Production: Supabase Auth issues JWTs; the backend verifies signature (JWKS for

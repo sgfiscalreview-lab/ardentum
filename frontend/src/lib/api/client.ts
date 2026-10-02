@@ -1,6 +1,7 @@
 import createClient, { type Middleware } from "openapi-fetch";
 
 import type { components, paths } from "./schema";
+import { requestFinished, requestStarted } from "./server-status";
 
 /** Error returned by the Ardentum API, carrying the server's user-facing message. */
 export class ApiError extends Error {
@@ -46,7 +47,35 @@ function withTimeout(request: Request): Promise<Response> {
   return fetch(request, { signal: AbortSignal.any([request.signal, AbortSignal.timeout(REQUEST_TIMEOUT_MS)]) });
 }
 
-export const api = createClient<paths>({ baseUrl, fetch: withTimeout });
+/** Every API call reports whether the API answered (server-status.ts). */
+async function tracked(request: Request, quiet = false): Promise<Response> {
+  const id = requestStarted(Date.now(), quiet);
+  try {
+    const response = await withTimeout(request);
+    requestFinished(id, true);
+    return response;
+  } catch (e) {
+    requestFinished(id, false);
+    throw e;
+  }
+}
+
+export const api = createClient<paths>({ baseUrl, fetch: (request) => tracked(request) });
+
+let woken = false;
+
+/**
+ * Ask the API to start, once per page load, so that it is likely awake by the time a
+ * visitor runs a calculation. Failures are ignored: real requests report their own.
+ */
+export function wakeApi(): void {
+  if (woken || typeof window === "undefined") return;
+  woken = true;
+  // The body is read so the connection closes (an unread response stays open).
+  tracked(new Request(`${baseUrl}/api/v1/health`), true)
+    .then((r) => r.text())
+    .catch(() => undefined);
+}
 api.use(authMiddleware);
 
 interface ErrorEnvelope {
