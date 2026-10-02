@@ -438,6 +438,7 @@ def check_site(rep: Report, site: str, api: str, supabase: str | None, key: str 
             ("/usage", "How much Ardentum is used"),
             ("/classroom", "Teach with Ardentum"),
             ("/classroom/worksheet", "the optimiser"),
+            ("/glossary", "What the terms mean"),
         ):
             r = request("GET", base + path)
             if r.status == 200 and heading in r.text:
@@ -454,7 +455,7 @@ def check_site(rep: Report, site: str, api: str, supabase: str | None, key: str 
 
     rep.check("Website", pages)
     rep.check("Legal pages", legal)
-    rep.check("Tour, usage and classroom pages", public_pages)
+    rep.check("Tour, usage, classroom and glossary pages", public_pages)
     rep.check("Screenshots", screenshots)
 
 
