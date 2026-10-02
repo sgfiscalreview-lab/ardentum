@@ -23,6 +23,10 @@ All notable changes to Ardentum are recorded here. Versions follow
   phones; long calculations show elapsed seconds.
 - Dependabot opens at most two pull requests per ecosystem a month and no longer bumps
   the Docker base images.
+- Website tooling on ESLint 10, Vitest 5 and jsdom 30. TypeScript stays on 5.9 until
+  typescript-eslint and openapi-typescript support TypeScript 7; the unused
+  `@testing-library/jest-dom` was removed.
+- The live smoke test also loads the glossary page.
 
 ### Security
 - The database is closed to Supabase's public Data API: row-level security on every table
