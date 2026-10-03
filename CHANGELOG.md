@@ -6,6 +6,16 @@ All notable changes to Ardentum are recorded here. Versions follow
 ## [Unreleased]
 
 ### Added
+- Crisis replay: a portfolio bought before each of seven crashes since 1929 and held,
+  with its return against the market, largest fall, worst day, each holding's
+  contribution and how long it took to get back to its previous high. Real data; any
+  period you choose also works on demo data.
+- Factor exposure: the Fama-French three-factor model (market, size, value) for any
+  portfolio on real data, with Newey-West standard errors, the split of the average
+  return into factors and alpha, and each holding's loadings.
+- Trade list: the purchases and sales, with costs, that move what you hold now to a
+  target portfolio, adding or withdrawing money on the way.
+- Four starting examples on the Universe page that open a finished result in one click.
 - Risk parity (equal risk contribution) objective: every holding carries the same share of
   risk, using no expected returns; usable in walk-forward backtests.
 - "Copy link" on every workspace page: a link that reopens the same settings and
@@ -27,6 +37,9 @@ All notable changes to Ardentum are recorded here. Versions follow
   typescript-eslint and openapi-typescript support TypeScript 7; the unused
   `@testing-library/jest-dom` was removed.
 - The live smoke test also loads the glossary page.
+- Choosing a real industry dataset lists its industries to pick from (it showed a ticker
+  box meant for live data).
+- Browser tests serve the Kenneth French files from a local stand-in.
 
 ### Security
 - The database is closed to Supabase's public Data API: row-level security on every table

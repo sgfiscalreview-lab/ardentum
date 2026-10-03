@@ -7,7 +7,7 @@ from fastapi import APIRouter
 
 from ardentum.api import schemas as s
 from ardentum.api.deps import MarketService
-from ardentum.services import analysis, risk_free
+from ardentum.services import analysis, portfolio_tools, risk_free
 
 router = APIRouter(tags=["analysis"])
 
@@ -59,6 +59,30 @@ def backtest(req: s.BacktestRequest, service: MarketService) -> s.BacktestRespon
 def compare(req: s.CompareRequest, service: MarketService) -> s.CompareResponse:
     """Side-by-side comparison of fixed-weight portfolios."""
     return analysis.run_compare(service, req)
+
+
+@router.get("/stress/crises", response_model=list[s.CrisisOut])
+def crises_list() -> list[s.CrisisOut]:
+    """The historical crises the replay covers (market high to low)."""
+    return portfolio_tools.crisis_catalogue()
+
+
+@router.post("/stress", response_model=s.StressResponse)
+def stress(req: s.StressRequest, service: MarketService) -> s.StressResponse:
+    """Crisis replay: a fixed portfolio bought before historical crises and held through them."""
+    return portfolio_tools.run_stress(service, req)
+
+
+@router.post("/factors", response_model=s.FactorResponse)
+def factors(req: s.FactorRequest, service: MarketService) -> s.FactorResponse:
+    """Fama-French three-factor exposure of a fixed-weight portfolio."""
+    return portfolio_tools.run_factors(service, req)
+
+
+@router.post("/trades", response_model=s.TradesResponse)
+def trades(req: s.TradesRequest) -> s.TradesResponse:
+    """Trades (with costs) that move current holdings to target weights."""
+    return portfolio_tools.run_trades(req)
 
 
 def _source_out(info: risk_free.SourceInfo, available: bool) -> s.RiskFreeSourceOut:

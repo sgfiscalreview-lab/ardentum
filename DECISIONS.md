@@ -405,3 +405,35 @@ for anything confusing. Changes:
 * **Dependabot.** At most one minor-and-patch and one major pull request per ecosystem
   each month. Docker base images are left alone: their Python and Node versions match
   `requires-python` and CI, so a bump there must be made together with those settings.
+
+## D-040 Crisis replay, factor exposure, trade lists and starting examples
+Four additions chosen after asking what a first-time visitor, a class and a returning user
+miss most.
+* **Crisis replay.** Seven crises, each from the US market's closing high to its closing
+  low (S&P 500; Dow Jones for 1929), so every portfolio is measured over the same dates.
+  The portfolio is bought at the first close and held without trading: the simplest
+  assumption to explain ("you owned this going in") and the one under which contributions
+  add up exactly to the return. Recovery keeps holding after the low until the previous
+  high is regained, using all later data. The named crises are refused on synthetic data,
+  whose dates contain no real events; any period the user chooses works on any daily data.
+  The dates live in one backend catalogue that the page reads, so they cannot drift apart.
+* **Factor exposure.** The Fama-French three-factor model, because its data is already
+  downloaded with the industry portfolios and it is the standard first model in teaching.
+  Newey-West standard errors because daily returns are heteroskedastic and slightly
+  autocorrelated; p-values from Student's t, matching statsmodels (a test-only dependency).
+  Weekly and monthly factor returns are compounded from the daily series rather than taken
+  from French's monthly files, so any frequency and any upload calendar line up with the
+  factor data; periods the factors do not fully cover are dropped and reported. Synthetic
+  data is refused: regressing it on real factors would produce meaningless numbers.
+* **Trade list.** Costs are paid out of the portfolio, so the value invested afterwards
+  solves a one-dimensional equation; it has a unique root and the result is checked
+  against the cash identity. Amounts are in the user's currency, with no prices or units,
+  because the built-in assets are not tradable as such (the page says so). Trade lists
+  stay out of shared links: they contain what someone owns.
+* **Starting examples.** Four one-click examples replace the settings and open a page
+  with the calculation already submitted (the same mechanism as shared links). Three use
+  real data, one the synthetic 60/40 demo; each is labelled.
+* **Found on the way.** Choosing a real industry dataset showed a free-text ticker box
+  meant for live data instead of the list of industries; the list now shows whenever a
+  dataset has one. The Kenneth French address is configurable, and the browser tests use
+  a local stand-in serving the generated fixtures, so they no longer depend on Dartmouth.

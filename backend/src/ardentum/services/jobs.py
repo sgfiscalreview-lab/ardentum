@@ -32,7 +32,7 @@ from ardentum.api.errors import classify
 from ardentum.config import Settings
 from ardentum.db.models import Job
 from ardentum.quant.errors import InvalidInputError
-from ardentum.services import analysis, usage
+from ardentum.services import analysis, portfolio_tools, usage
 from ardentum.services.market_data import MarketDataService, NotFoundError
 
 log = logging.getLogger("ardentum.jobs")
@@ -53,6 +53,8 @@ KINDS: dict[str, tuple[type[BaseModel], Runner]] = {
     "montecarlo": (s.MonteCarloRequest, analysis.run_montecarlo),
     "backtest": (s.BacktestRequest, analysis.run_backtest_service),
     "compare": (s.CompareRequest, analysis.run_compare),
+    "stress": (s.StressRequest, portfolio_tools.run_stress),
+    "factors": (s.FactorRequest, portfolio_tools.run_factors),
 }
 
 # Jobs executing in this process -> event set on completion (wakes local long-polls).

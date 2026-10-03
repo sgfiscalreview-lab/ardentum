@@ -23,6 +23,8 @@ mathematics, assumptions and limitations behind every result.
 | **Analysis** | Mean-variance, ESG-efficient and mean-CVaR frontiers; risk decomposition; binding constraints (KKT); why each holding is there; weight stability under resampling |
 | **Simulation** | Seeded parametric, bootstrap and stationary block-bootstrap Monte Carlo, with contributions, withdrawals and the chance of running out |
 | **Backtesting** | Walk-forward with no look-ahead, transaction costs, Cariño-linked and Brinson-Fachler attribution, side-by-side comparison |
+| **History and exposure** | Crisis replay through seven crashes since 1929 (buy and hold, recovery time); Fama-French three-factor exposure with Newey-West standard errors |
+| **Putting it into practice** | Trade list from current holdings to target weights, with costs and new money; one-click starting examples |
 | **Data** | US industry returns since 1926 (Kenneth R. French Data Library); ECB exchange rates, unhedged or hedged at BIS policy rates; open ESG scores from WikiRate (CC BY 4.0); CSV uploads |
 | **Platform** | Accounts (Supabase Auth, Google sign-in), saved portfolios, CSV and JSON export, shareable links that reopen a calculation, printable results, methodology pages with every formula, a glossary, a guided tour, a classroom lesson with a printable worksheet, and public anonymous usage counts |
 
@@ -34,7 +36,7 @@ mathematics, assumptions and limitations behind every result.
 
 Every financial calculation lives in `backend/src/ardentum/quant/` and is tested against
 an independent answer: closed forms, SciPy, scikit-learn, PyPortfolioOpt, brute-force
-search or the KKT optimality conditions. Backtests are tested for look-ahead: changing
+search, statsmodels or the KKT optimality conditions. Backtests are tested for look-ahead: changing
 any future return must not change a past decision. Undefined results are reported with
 the reason instead of a number, and infeasible requests say what to change. Details:
 [docs/methodology/09-validation.md](docs/methodology/09-validation.md).

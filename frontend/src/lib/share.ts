@@ -18,6 +18,9 @@ export const PAGE_REQUESTS: Record<string, string[]> = {
   "/app/simulate": ["simulate"],
   "/app/backtest": ["backtest"],
   "/app/compare": ["compare"],
+  "/app/crises": ["stress"],
+  "/app/factors": ["factors"],
+  // Not "/app/trades": a trade list holds the amounts someone owns; a link should not.
 };
 
 function toBase64Url(bytes: Uint8Array): string {

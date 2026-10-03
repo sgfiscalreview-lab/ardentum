@@ -15,7 +15,7 @@ export interface WorkingPortfolio {
   spec?: Record<string, unknown>;
 }
 
-export type PageKey = "analytics" | "optimise" | "frontier" | "frontier_cvar" | "esg" | "simulate" | "backtest" | "compare";
+export type PageKey = "analytics" | "optimise" | "frontier" | "frontier_cvar" | "esg" | "simulate" | "backtest" | "compare" | "stress" | "factors" | "trades";
 
 export interface WorkspaceState {
   universe: UniverseSelection;
@@ -103,7 +103,7 @@ export function restoreState(raw: unknown): WorkspaceState | null {
   };
 }
 
-const PAGE_KEYS: readonly PageKey[] = ["analytics", "optimise", "frontier", "frontier_cvar", "esg", "simulate", "backtest", "compare"];
+const PAGE_KEYS: readonly PageKey[] = ["analytics", "optimise", "frontier", "frontier_cvar", "esg", "simulate", "backtest", "compare", "stress", "factors", "trades"];
 const SHARE_VERSION = 1;
 
 /** What a shareable link carries: the settings, the working portfolio and the given pages' calculations. */
@@ -189,6 +189,8 @@ interface WorkspaceContextValue {
   setWorking: (v: WorkingPortfolio | null) => void;
   submit: (page: PageKey, request: unknown) => void;
   reset: () => void;
+  /** Replace every setting at once (starting examples). */
+  replaceState: (next: WorkspaceState) => void;
   /** Set when this page was opened from a shared link. */
   shared: SharedLink | null;
   /** Keep the shared settings (or acknowledge an unreadable link). */
@@ -287,6 +289,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const setWorking = useCallback((value: WorkingPortfolio | null) => dispatch({ type: "working", value }), []);
   const submit = useCallback((page: PageKey, value: unknown) => dispatch({ type: "request", page, value }), []);
   const reset = useCallback(() => dispatch({ type: "reset" }), []);
+  const replaceState = useCallback((next: WorkspaceState) => dispatch({ type: "hydrate", value: next }), []);
   const dismissShared = useCallback(() => setShared(null), []);
   const restoreBeforeShare = useCallback(() => {
     if (shared?.status === "loaded") dispatch({ type: "hydrate", value: shared.previous });
@@ -304,11 +307,12 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       setWorking,
       submit,
       reset,
+      replaceState,
       shared,
       dismissShared,
       restoreBeforeShare,
     }),
-    [state, hydrated, setUniverse, setEstimation, setObjective, setConstraints, setWorking, submit, reset, shared, dismissShared, restoreBeforeShare],
+    [state, hydrated, setUniverse, setEstimation, setObjective, setConstraints, setWorking, submit, reset, replaceState, shared, dismissShared, restoreBeforeShare],
   );
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
 }

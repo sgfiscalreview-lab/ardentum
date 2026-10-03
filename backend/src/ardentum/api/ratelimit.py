@@ -48,6 +48,9 @@ COMPUTE_PATHS = frozenset(
         "/api/v1/montecarlo",
         "/api/v1/backtest",
         "/api/v1/compare",
+        "/api/v1/stress",
+        "/api/v1/factors",
+        "/api/v1/trades",
         "/api/v1/risk-free",
         "/api/v1/jobs",
     }
