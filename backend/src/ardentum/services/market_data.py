@@ -296,7 +296,10 @@ class MarketDataService:
 
     def kf_file(self, name: str) -> CachedPayload:
         return self.cache.get_or_fetch(
-            "kenfrench", name, KF_MAX_AGE, lambda: kenfrench.download(name)
+            "kenfrench",
+            name,
+            KF_MAX_AGE,
+            lambda: kenfrench.download(name, base_url=self.settings.kenfrench_base_url),
         )
 
     def _kf_returns(
@@ -312,6 +315,16 @@ class MarketDataService:
             cached = industries.join(factors[[kenfrench.MARKET_TICKER]], how="left")
             _PARSED_CACHE.put(key, cached)
         return cached, ind, fac  # type: ignore[return-value]
+
+    def fama_french_factors(self) -> tuple[pd.DataFrame, CachedPayload]:
+        """Daily Fama-French three factors and risk-free rate (decimals), cached."""
+        fac = self.kf_file(kenfrench.FACTORS_DAILY)
+        key = ("ff3", fac.fetched_at)
+        cached = _PARSED_CACHE.get(key)
+        if cached is None:
+            cached = kenfrench.three_factors(kenfrench.unzip_text(fac.payload))
+            _PARSED_CACHE.put(key, cached)
+        return cached, fac  # type: ignore[return-value]
 
     def _kf_prices(
         self,

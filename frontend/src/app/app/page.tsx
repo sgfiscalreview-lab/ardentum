@@ -2,6 +2,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { BlackLittermanEditor, DEFAULT_BLACK_LITTERMAN } from "@/components/black-litterman";
@@ -11,6 +12,7 @@ import { api, ApiError, unwrap } from "@/lib/api/client";
 import type { AssetOut, EstimationSettings, RiskFreeOut, UniverseSelection } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth";
 import { date as fmtDate, ESTIMATOR_LABELS, pct } from "@/lib/format";
+import { PRESETS } from "@/lib/presets";
 import { useWorkspace } from "@/lib/workspace";
 
 /** Currencies with ECB reference rates (conversion source: Frankfurter). */
@@ -51,6 +53,7 @@ export default function UniversePage() {
       />
       <SyntheticBanner dataset={ds.data} />
       <ErrorCallout error={datasets.error ?? ds.error} />
+      <Examples />
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="space-y-4">
           <Card title="Dataset" subtitle="Where prices (and sector/ESG metadata) come from.">
@@ -90,7 +93,7 @@ export default function UniversePage() {
             </div>
           </Card>
 
-          {ds.data?.kind === "provider" ? (
+          {ds.data?.kind === "provider" && ds.data.assets.length === 0 ? (
             <TickerEntry tickers={u.tickers} onChange={(t) => setUniverse({ tickers: t })} />
           ) : (
             <Card
@@ -145,6 +148,34 @@ export default function UniversePage() {
         </div>
       </div>
     </>
+  );
+}
+
+function Examples() {
+  const { replaceState } = useWorkspace();
+  const router = useRouter();
+  return (
+    <Card id="examples" className="mb-4" title="Start from an example" subtitle="Each one sets up the data and a portfolio, then opens a finished result. It replaces your current settings.">
+      <div className="grid gap-2 sm:grid-cols-2 2xl:grid-cols-4">
+        {PRESETS.map((p) => (
+          <button
+            key={p.key}
+            type="button"
+            onClick={() => {
+              replaceState(p.build());
+              router.push(p.href);
+            }}
+            className="rounded-md border border-line p-3 text-left hover:bg-surface-2"
+          >
+            <span className="flex items-center justify-between gap-2">
+              <span className="text-sm font-medium text-ink">{p.title}</span>
+              {p.real ? <Badge tone="accent">Real data</Badge> : <Badge tone="synthetic">Synthetic</Badge>}
+            </span>
+            <span className="mt-1 block text-xs text-ink-2">{p.description}</span>
+          </button>
+        ))}
+      </div>
+    </Card>
   );
 }
 

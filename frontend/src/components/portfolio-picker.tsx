@@ -67,16 +67,19 @@ export function PortfolioPicker({
         </Select>
       </Field>
       {current && (
-        <ul className="max-h-40 overflow-y-auto rounded-md border border-line bg-surface-2/50 px-2 py-1.5 text-xs">
-          {Object.entries(current.weights)
-            .sort((a, b) => b[1] - a[1])
-            .map(([t, w]) => (
-              <li key={t} className="flex justify-between tabular text-ink-2">
-                <span>{t}</span>
-                <span className="text-ink">{pct(w, 1)}</span>
-              </li>
-            ))}
-        </ul>
+        // Focusable so keyboard users can scroll a long list (WCAG 2.1.1).
+        <div tabIndex={0} role="region" aria-label={`Weights of ${current.name}`} className="max-h-40 overflow-y-auto rounded-md border border-line bg-surface-2/50 px-2 py-1.5 text-xs">
+          <ul>
+            {Object.entries(current.weights)
+              .sort((a, b) => b[1] - a[1])
+              .map(([t, w]) => (
+                <li key={t} className="flex justify-between tabular text-ink-2">
+                  <span>{t}</span>
+                  <span className="text-ink">{pct(w, 1)}</span>
+                </li>
+              ))}
+          </ul>
+        </div>
       )}
     </div>
   );

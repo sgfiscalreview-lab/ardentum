@@ -1,7 +1,9 @@
-"""A local stand-in for the WikiRate API, serving the test fixtures (for E2E tests).
+"""A local stand-in for WikiRate and the Kenneth French Data Library (for E2E tests).
 
 Run: ``uv run python -m tests.fixtures.wikirate_mock_server 8765`` and point the API at
-it with ``ARDENTUM_WIKIRATE_BASE_URL=http://localhost:8765``.
+it with ``ARDENTUM_WIKIRATE_BASE_URL=http://localhost:8765`` and
+``ARDENTUM_KENFRENCH_BASE_URL=http://localhost:8765/kenfrench/``. The Ken French files
+are the generated test fixtures (400 business days from 2020-01-02), not real data.
 """
 
 from __future__ import annotations
@@ -11,6 +13,13 @@ import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
+from ardentum.data.providers import kenfrench as kf
+from tests.fixtures.kenfrench import (
+    factors_daily_text,
+    industries_daily_text,
+    industries_monthly_text,
+    zipped,
+)
 from tests.fixtures.wikirate import (
     answer_item,
     answers_payload,
@@ -74,9 +83,25 @@ def respond(path: str, query: dict[str, list[str]]) -> bytes | None:
     return None
 
 
+KENFRENCH = {
+    f"/kenfrench/{kf.FACTORS_DAILY}_CSV.zip": lambda: zipped("f", factors_daily_text(400)),
+    "/kenfrench/12_Industry_Portfolios_daily_CSV.zip": lambda: zipped(
+        "d", industries_daily_text(400)
+    ),
+    "/kenfrench/12_Industry_Portfolios_CSV.zip": lambda: zipped("m", industries_monthly_text()),
+}
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         url = urlparse(self.path)
+        if url.path.startswith("/kenfrench/"):
+            make = KENFRENCH.get(url.path)
+            self.send_response(200 if make else 404)
+            self.send_header("Content-Type", "application/zip")
+            self.end_headers()
+            self.wfile.write(make() if make else b"")
+            return
         body = respond(url.path, parse_qs(url.query))
         self.send_response(200 if body is not None else 404)
         self.send_header("Content-Type", "application/json")

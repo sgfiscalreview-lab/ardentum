@@ -23,6 +23,9 @@ export const STEPS: { href: string; label: string; hint: string }[] = [
   { href: "/app/simulate", label: "Monte Carlo", hint: "Range of outcomes" },
   { href: "/app/backtest", label: "Backtest", hint: "Out-of-sample history" },
   { href: "/app/compare", label: "Compare", hint: "Side by side" },
+  { href: "/app/crises", label: "Crises", hint: "Held through past crashes" },
+  { href: "/app/factors", label: "Factors", hint: "Market, size and value" },
+  { href: "/app/trades", label: "Trade list", hint: "From holdings to target" },
 ];
 
 // --------------------------------------------------------------------------- data hooks

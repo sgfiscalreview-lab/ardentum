@@ -239,6 +239,65 @@ export const GLOSSARY: GlossaryEntry[] = [
     method: "returns-and-risk",
   },
   {
+    id: "crisis-replay",
+    term: "Crisis replay (historical stress test)",
+    definition:
+      "Buying a portfolio just before a past crash and holding it without trading, to see how far it fell, its worst day and how long it took to get back to its previous high.",
+    method: "crises-factors-trades",
+  },
+  {
+    id: "buy-and-hold",
+    term: "Buy and hold",
+    definition:
+      "Buying once and not trading afterwards, so each holding's weight drifts with its price. The opposite of rebalancing back to fixed weights.",
+    method: "crises-factors-trades",
+  },
+  {
+    id: "factor-loading",
+    term: "Factor loading",
+    labels: ["Market loading", "Size loading", "Value loading"],
+    definition:
+      "How much a portfolio moved, on average, when a factor moved by one unit. A market loading of 1.2 means about 1.2% when the market rose 1% above the risk-free rate.",
+    method: "crises-factors-trades",
+  },
+  {
+    id: "fama-french",
+    term: "Fama-French factors",
+    definition:
+      "Three return series that explain much of how shares move: the market above the risk-free rate, small companies minus large ones (size) and cheap shares minus expensive ones (value).",
+    method: "crises-factors-trades",
+  },
+  {
+    id: "alpha",
+    term: "Alpha",
+    labels: ["Alpha"],
+    definition:
+      "The part of the average return that the factors do not explain. It is estimated with error: an alpha that is not clearly different from zero may be chance.",
+    method: "crises-factors-trades",
+  },
+  {
+    id: "r-squared",
+    term: "R-squared",
+    labels: ["R-squared"],
+    definition: "The share of a portfolio's ups and downs that the factors account for, from 0% to 100%.",
+    method: "crises-factors-trades",
+  },
+  {
+    id: "t-statistic",
+    term: "t-statistic and p-value",
+    definition:
+      "How many standard errors an estimate lies from zero, and how often an estimate that far would appear by chance if the true value were zero. Ardentum calls a value clear when the p-value is below 5%.",
+    method: "crises-factors-trades",
+  },
+  {
+    id: "trade-list",
+    term: "Trade list",
+    labels: ["Trading costs"],
+    definition:
+      "The purchases and sales that turn current holdings into a target portfolio. Costs are paid out of the portfolio, so slightly less is invested afterwards.",
+    method: "crises-factors-trades",
+  },
+  {
     id: "esg-score",
     term: "ESG score",
     labels: ["ESG score"],

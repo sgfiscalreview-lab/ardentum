@@ -34,6 +34,7 @@ dev = [
   "respx>=0.21",
   "pyportfolioopt>=1.6.0",
   "httpx2>=2.13.1",
+  "statsmodels>=0.14",
 ]
 
 [build-system]

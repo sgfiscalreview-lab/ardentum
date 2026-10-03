@@ -19,6 +19,9 @@ Every financial calculation in Ardentum is covered by automated tests with indep
 | Monte Carlo | Analytic lognormal mean and median; i.i.d.-bootstrap expectation; autocorrelation preserved by the block bootstrap and destroyed by the i.i.d. bootstrap; bit-identical reproducibility with a seed |
 | Backtesting | Manual replication of rebalanced portfolios; transaction-cost accounting; **look-ahead invariance**; strategy only sees the trailing window |
 | Attribution | Linked contributions sum to the compounded return; Brinson–Fachler effects sum to the active return |
+| Crisis replay | Closed-form value paths (constant returns); a brute-force share-count calculation; the general buy-and-hold function; contributions sum to the return; nothing before the purchase affects the result |
+| Factor exposure | statsmodels OLS with Newey-West (HAC) standard errors, t-statistics and p-values; least-squares identities (the average return splits exactly; portfolio loadings are weighted asset loadings); hand-compounded weekly factors |
+| Trade list | Closed forms for all-purchase and full-switch cases; the cash identity and target weights for random inputs |
 | API | Every endpoint end-to-end on SQLite and PostgreSQL, including authentication, ownership isolation and error messages |
 
 The test suite runs on every change in continuous integration. A calculation is not considered valid until it has such a test.

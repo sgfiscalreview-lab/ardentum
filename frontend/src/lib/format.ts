@@ -21,7 +21,9 @@ export function signedPct(x: number | null | undefined, digits = 2): string {
 
 export function num(x: number | null | undefined, digits = 2): string {
   if (x === null || x === undefined || !Number.isFinite(x)) return DASH;
-  return x.toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  // Avoid "-0.00" for tiny negative values that round to zero.
+  const v = Number(x.toFixed(digits)) === 0 ? 0 : x;
+  return v.toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits });
 }
 
 export function signedNum(x: number | null | undefined, digits = 2): string {
@@ -54,6 +56,14 @@ export function date(d: string | null | undefined): string {
 }
 
 /** "2026-10" as "Oct 2026". */
+/** A number of calendar days in words: "45 days", "5 months", "2.3 years". */
+export function duration(days: number | null | undefined): string {
+  if (days === null || days === undefined || !Number.isFinite(days)) return DASH;
+  if (days < 60) return `${days} days`;
+  if (days < 730) return `${Math.round(days / 30.44)} months`;
+  return `${(days / 365.25).toFixed(1)} years`;
+}
+
 export function month(m: string | null | undefined): string {
   if (!m) return DASH;
   const [y, mo] = m.split("-").map(Number);

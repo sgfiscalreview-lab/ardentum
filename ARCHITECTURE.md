@@ -64,13 +64,17 @@ by tests. The frontend never re-derives a metric.
 | `backtest.py` | walk-forward backtest (no look-ahead), rebalancing schedules, costs, strategy protocol |
 | `attribution.py` | contributions, Carino linking, Brinson–Fachler |
 | `explain.py` | KKT-based explanations, assumptions, bootstrap weight stability |
+| `stress.py` | crisis replay: buy and hold through a period, contributions, largest fall, worst day, recovery |
+| `factors.py` | Fama-French three-factor regression (OLS, Newey-West errors), factor returns compounded to any period |
+| `trades.py` | trade list from current holdings to target weights with costs paid out of the portfolio |
 
 ### `data/`
 
 * `providers/demo.py` — deterministic **synthetic** universe (fictional `.SYN` tickers,
   illustrative ESG scores), labelled synthetic everywhere.
 * `providers/csv_upload.py` — strict parsing of user CSVs (wide or long), metadata with ESG provenance.
-* `providers/kenfrench.py` — Kenneth French Data Library: industry portfolios (kf12, kf49), market and risk-free returns, market caps (D-018).
+* `providers/kenfrench.py` — Kenneth French Data Library: industry portfolios (kf12, kf49), market and risk-free returns, the three Fama-French factors, market caps (D-018).
+* `crises.py` — the historical crises replayed (market high and low dates, D-040).
 * `providers/fx.py` — ECB reference rates via Frankfurter (D-021).
 * `providers/wikirate.py` — WikiRate open ESG data: metrics, companies (ISINs), answers (D-026).
 * `providers/tiingo.py`, `providers/fred.py` — keyed adapters (Tiingo needs a licence for commercial use, D-004).
@@ -86,6 +90,7 @@ by tests. The frontend never re-derives a metric.
 * `open_esg.py` — WikiRate matching, scoring and saved ESG overlays.
 * `jobs.py` — background jobs claimed by long-polls, heartbeat and recovery (D-025).
 * `analysis.py` — maps API requests → quant calls → API responses (applies ESG overlays).
+* `portfolio_tools.py` — the same for crisis replay, factor exposure and trade lists (D-040).
 * `usage.py` — anonymous daily counts of completed calculations, saves and exports (D-035).
 
 ### `api/`
@@ -135,12 +140,13 @@ restrict.
 Next.js (App Router) + TypeScript (strict) + Tailwind. API types are generated from the
 backend OpenAPI schema (`npm run gen:api`). Pages: landing, workspace (universe →
 analytics → optimise → frontier → ESG data → ESG impact → Monte Carlo → backtest →
-compare), saved portfolios, research/methodology, sign-in (Google/GitHub OAuth). Long
+compare → crises → factors → trade list), saved portfolios, research/methodology, sign-in (Google/GitHub OAuth). Long
 calculations go through background jobs (`runJob`). The app builds either as a static
 export (`NEXT_OUTPUT=export`, calling the API directly) or as a Node server that proxies
 `/api/v1`.
 
-Workspace settings live in the browser (`lib/workspace.tsx`, localStorage). "Copy link"
+Starting examples (`lib/presets.ts`) replace the settings and open a page with its
+calculation already submitted. Workspace settings live in the browser (`lib/workspace.tsx`, localStorage). "Copy link"
 puts them, with the current page's calculation, deflate-compressed in the URL fragment
 (`lib/share.ts`): nothing is stored on a server, and opening the link recomputes the
 result. `lib/api/server-status.ts` notices when requests wait for a sleeping API (free

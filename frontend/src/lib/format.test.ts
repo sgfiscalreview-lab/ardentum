@@ -1,4 +1,4 @@
-import { date, humanise, money, month, num, pct, signedPct } from "./format";
+import { date, duration, humanise, money, month, num, pct, signedPct } from "./format";
 
 describe("format", () => {
   it("formats percentages and handles missing values", () => {
@@ -17,9 +17,19 @@ describe("format", () => {
   });
 });
 
+describe("duration", () => {
+  it("puts calendar days in words", () => {
+    expect(duration(12)).toBe("12 days");
+    expect(duration(152)).toBe("5 months");
+    expect(duration(1461)).toBe("4.0 years");
+    expect(duration(null)).toBe("n/a");
+  });
+});
+
 describe("pct rounding", () => {
   it("never shows negative zero", () => {
     expect(pct(-1e-7, 1)).toBe("0.0%");
+    expect(num(-0.004, 2)).toBe("0.00");
   });
 });
 

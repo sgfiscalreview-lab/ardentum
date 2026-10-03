@@ -46,6 +46,7 @@ class Settings(BaseSettings):
     fred_api_key: str | None = None
     wikirate_api_key: str | None = None  # free account at wikirate.org
     wikirate_base_url: str = "https://wikirate.org"
+    kenfrench_base_url: str = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/"
 
     max_upload_bytes: int = 5 * 1024 * 1024
     compute_rate_limit: int = 60  # compute requests per client per minute (0 disables)

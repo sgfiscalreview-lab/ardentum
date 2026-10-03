@@ -336,6 +336,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/stress/crises": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Crises List
+         * @description The historical crises the replay covers (market high to low).
+         */
+        get: operations["crises_list_api_v1_stress_crises_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stress
+         * @description Crisis replay: a fixed portfolio bought before historical crises and held through them.
+         */
+        post: operations["stress_api_v1_stress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/factors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Factors
+         * @description Fama-French three-factor exposure of a fixed-weight portfolio.
+         */
+        post: operations["factors_api_v1_factors_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trades": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Trades
+         * @description Trades (with costs) that move current holdings to target weights.
+         */
+        post: operations["trades_api_v1_trades_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/risk-free/sources": {
         parameters: {
             query?: never;
@@ -661,6 +741,21 @@ export interface components {
             normalised_prices: {
                 [key: string]: number[];
             };
+        };
+        /** AssetFactorOut */
+        AssetFactorOut: {
+            /** Ticker */
+            ticker: string;
+            /** Weight */
+            weight: number;
+            /** Alpha */
+            alpha: number;
+            /** Loadings */
+            loadings: {
+                [key: string]: number;
+            };
+            /** R Squared */
+            r_squared: number;
         };
         /** AssetOut */
         AssetOut: {
@@ -1078,6 +1173,43 @@ export interface components {
          * @enum {string}
          */
         CovarianceEstimator: "sample" | "ledoit_wolf" | "ledoit_wolf_constant_correlation";
+        /** CrisisOut */
+        CrisisOut: {
+            /** Key */
+            key: string;
+            /** Name */
+            name: string;
+            /** Summary */
+            summary: string;
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+        };
+        /** CustomPeriodIn */
+        CustomPeriodIn: {
+            /**
+             * Name
+             * @default Your period
+             */
+            name: string;
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+        };
         /** CvarFrontierAssetOut */
         CvarFrontierAssetOut: {
             /** Ticker */
@@ -1253,6 +1385,66 @@ export interface components {
             /** Email */
             email: string;
         };
+        /** EpisodeAssetOut */
+        EpisodeAssetOut: {
+            /** Ticker */
+            ticker: string;
+            /** Weight */
+            weight: number;
+            /** Total Return */
+            total_return: number;
+            /** Contribution */
+            contribution: number;
+        };
+        /** EpisodeOut */
+        EpisodeOut: {
+            /** Key */
+            key: string;
+            /** Name */
+            name: string;
+            /** Summary */
+            summary: string;
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /** Available */
+            available: boolean;
+            /** Reason */
+            reason: string | null;
+            /** Total Return */
+            total_return: number | null;
+            /** Max Drawdown */
+            max_drawdown: number | null;
+            /** Worst Day Return */
+            worst_day_return: number | null;
+            /** Worst Day */
+            worst_day: string | null;
+            /** Trough Date */
+            trough_date: string | null;
+            /** Recovery Date */
+            recovery_date: string | null;
+            /** Recovery Days */
+            recovery_days: number | null;
+            /** Benchmark Total Return */
+            benchmark_total_return: number | null;
+            /** Trading Days */
+            trading_days: number | null;
+            /** Assets */
+            assets: components["schemas"]["EpisodeAssetOut"][];
+            /** Dates */
+            dates: string[];
+            /** Portfolio Path */
+            portfolio_path: number[];
+            /** Benchmark Path */
+            benchmark_path: number[] | null;
+        };
         /** EqualWeightStrategyIn */
         EqualWeightStrategyIn: {
             /**
@@ -1398,6 +1590,78 @@ export interface components {
             /** Assumptions */
             assumptions: string[];
         };
+        /** FactorLoadingOut */
+        FactorLoadingOut: {
+            /** Key */
+            key: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Loading */
+            loading: number;
+            /** Std Error */
+            std_error: number;
+            /** T Stat */
+            t_stat: number;
+            /** P Value */
+            p_value: number;
+            /** Factor Mean */
+            factor_mean: number;
+            /** Contribution */
+            contribution: number;
+        };
+        /** FactorRequest */
+        FactorRequest: {
+            universe: components["schemas"]["UniverseSelection"];
+            portfolio: components["schemas"]["PortfolioSpecIn"];
+        };
+        /** FactorResponse */
+        FactorResponse: {
+            /** Portfolio Name */
+            portfolio_name: string;
+            /** Alpha */
+            alpha: number;
+            /** Alpha Std Error */
+            alpha_std_error: number;
+            /** Alpha T Stat */
+            alpha_t_stat: number;
+            /** Alpha P Value */
+            alpha_p_value: number;
+            /** Factors */
+            factors: components["schemas"]["FactorLoadingOut"][];
+            /** R Squared */
+            r_squared: number;
+            /** Adj R Squared */
+            adj_r_squared: number;
+            /** Residual Volatility */
+            residual_volatility: number;
+            /** Mean Excess Return */
+            mean_excess_return: number;
+            /** Observations */
+            observations: number;
+            /** Newey West Lags */
+            newey_west_lags: number;
+            /**
+             * First Period
+             * Format: date
+             */
+            first_period: string;
+            /**
+             * Last Period
+             * Format: date
+             */
+            last_period: string;
+            /** Assets */
+            assets: components["schemas"]["AssetFactorOut"][];
+            /** Factor Source */
+            factor_source: string;
+            /** Method */
+            method: string;
+            /** Notes */
+            notes: string[];
+            data: components["schemas"]["DataWindowOut"];
+        };
         /** FixedStrategyIn */
         FixedStrategyIn: {
             /**
@@ -1526,7 +1790,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "analytics" | "optimise" | "frontier" | "cvar_frontier" | "esg_impact" | "montecarlo" | "backtest" | "compare";
+            kind: "analytics" | "optimise" | "frontier" | "cvar_frontier" | "esg_impact" | "montecarlo" | "backtest" | "compare" | "stress" | "factors";
             /**
              * Request
              * @description The body of the corresponding POST endpoint.
@@ -2245,6 +2509,39 @@ export interface components {
             /** Frequency Held */
             frequency_held: number;
         };
+        /** StressRequest */
+        StressRequest: {
+            /** @description Dataset and currency; the window is ignored (each period sets its own). */
+            universe: components["schemas"]["UniverseSelection"];
+            portfolio: components["schemas"]["PortfolioSpecIn"];
+            /**
+             * Episodes
+             * @description Keys of historical crises to replay; all when omitted.
+             */
+            episodes?: string[] | null;
+            custom?: components["schemas"]["CustomPeriodIn"] | null;
+        };
+        /** StressResponse */
+        StressResponse: {
+            /** Portfolio Name */
+            portfolio_name: string;
+            /** Benchmark Ticker */
+            benchmark_ticker: string | null;
+            /** Benchmark Name */
+            benchmark_name: string | null;
+            /** Episodes */
+            episodes: components["schemas"]["EpisodeOut"][];
+            /**
+             * Data End
+             * Format: date
+             */
+            data_end: string;
+            /** Method */
+            method: string;
+            /** Source */
+            source: string;
+            data: components["schemas"]["DataWindowOut"];
+        };
         /** TokenOut */
         TokenOut: {
             /** Access Token */
@@ -2275,6 +2572,69 @@ export interface components {
             };
             /** Max Tracking Error */
             max_tracking_error: number;
+        };
+        /** TradeOut */
+        TradeOut: {
+            /** Ticker */
+            ticker: string;
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "buy" | "sell" | "hold";
+            /** Current Value */
+            current_value: number;
+            /** Current Weight */
+            current_weight: number | null;
+            /** Target Weight */
+            target_weight: number;
+            /** Target Value */
+            target_value: number;
+            /** Trade */
+            trade: number;
+            /** Cost */
+            cost: number;
+        };
+        /** TradesRequest */
+        TradesRequest: {
+            /**
+             * Holdings
+             * @description Current value of each holding.
+             */
+            holdings?: {
+                [key: string]: number;
+            };
+            target: components["schemas"]["PortfolioSpecIn"];
+            /**
+             * New Money
+             * @description Money added (positive) or withdrawn (negative).
+             * @default 0
+             */
+            new_money: number;
+            /**
+             * Transaction Cost Bps
+             * @default 0
+             */
+            transaction_cost_bps: number;
+        };
+        /** TradesResponse */
+        TradesResponse: {
+            /** Trades */
+            trades: components["schemas"]["TradeOut"][];
+            /** Value Before */
+            value_before: number;
+            /** New Money */
+            new_money: number;
+            /** Value After */
+            value_after: number;
+            /** Total Costs */
+            total_costs: number;
+            /** Bought */
+            bought: number;
+            /** Sold */
+            sold: number;
+            /** Method */
+            method: string;
         };
         /** UniverseSelection */
         UniverseSelection: {
@@ -3019,6 +3379,129 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CompareResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    crises_list_api_v1_stress_crises_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CrisisOut"][];
+                };
+            };
+        };
+    };
+    stress_api_v1_stress_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StressRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StressResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    factors_api_v1_factors_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FactorRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    trades_api_v1_trades_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TradesRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TradesResponse"];
                 };
             };
             /** @description Validation Error */
