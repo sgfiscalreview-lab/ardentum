@@ -295,6 +295,71 @@ def check_api(rep: Report, api: str, site: str) -> None:
         else:
             rep.fail("Optimisation", f"weights sum to {total}")
 
+    def crisis_replay() -> None:
+        body = {
+            "universe": KF_UNIVERSE,
+            "portfolio": {"name": "Smoke", "weights": {"NODUR": 0.4, "HLTH": 0.3, "MONEY": 0.3}},
+            "episodes": ["covid_2020"],
+        }
+        r = request("POST", f"{v1}/stress", body, timeout=300)
+        if r.status != 200:
+            rep.fail("Crisis replay", f"HTTP {r.status}: {error_message(r)}")
+            return
+        e = r.json()["episodes"][0]
+        if not e["available"]:
+            rep.fail("Crisis replay", f"COVID-19 crash not available: {e['reason']}")
+            return
+        split = sum(a["contribution"] for a in e["assets"])
+        market = e["benchmark_total_return"]
+        if abs(split - e["total_return"]) > 1e-9 or market is None or market >= 0:
+            rep.fail("Crisis replay", f"inconsistent result (market return {market})")
+            return
+        rep.ok(
+            "Crisis replay",
+            f"COVID-19 crash: portfolio {e['total_return']:.1%}, market {market:.1%}",
+        )
+
+    def factor_exposure() -> None:
+        body = {
+            "universe": KF_UNIVERSE,
+            "portfolio": {"name": "Smoke", "weights": {"NODUR": 0.4, "HLTH": 0.3, "MONEY": 0.3}},
+        }
+        r = request("POST", f"{v1}/factors", body, timeout=300)
+        if r.status != 200:
+            rep.fail("Factor exposure", f"HTTP {r.status}: {error_message(r)}")
+            return
+        d = r.json()
+        market = next(f["loading"] for f in d["factors"] if f["key"] == "MKT_RF")
+        # Three large US industries move with the market: a loading far from 1 or a low
+        # R-squared would mean misaligned dates or factors.
+        if not (0.4 < market < 1.6 and d["r_squared"] > 0.5):
+            rep.fail(
+                "Factor exposure", f"market loading {market:.2f}, R-squared {d['r_squared']:.2f}"
+            )
+            return
+        rep.ok(
+            "Factor exposure",
+            f"market loading {market:.2f}, R-squared {d['r_squared']:.0%}, "
+            f"{d['observations']} months",
+        )
+
+    def trade_list() -> None:
+        body = {
+            "holdings": {"A": 6000.0, "B": 4000.0},
+            "target": {"name": "Smoke", "weights": {"A": 0.5, "B": 0.5}},
+            "new_money": 0,
+            "transaction_cost_bps": 0,
+        }
+        r = request("POST", f"{v1}/trades", body)
+        if r.status != 200:
+            rep.fail("Trade list", f"HTTP {r.status}: {error_message(r)}")
+            return
+        trades = {t["ticker"]: t["trade"] for t in r.json()["trades"]}
+        if abs(trades["A"] + 1000) < 1e-6 and abs(trades["B"] - 1000) < 1e-6:
+            rep.ok("Trade list", "sell 1,000 of A, buy 1,000 of B, as expected")
+        else:
+            rep.fail("Trade list", f"unexpected trades {trades}")
+
     def background_job() -> None:
         body = {
             "kind": "montecarlo",
@@ -349,6 +414,9 @@ def check_api(rep: Report, api: str, site: str) -> None:
         ("ECB exchange rates (Frankfurter)", fx),
         ("WikiRate open ESG data", wikirate),
         ("Optimisation", optimise),
+        ("Crisis replay", crisis_replay),
+        ("Factor exposure", factor_exposure),
+        ("Trade list", trade_list),
         ("Background job", background_job),
         ("Usage counts", usage),
     ]:
@@ -439,6 +507,9 @@ def check_site(rep: Report, site: str, api: str, supabase: str | None, key: str 
             ("/classroom", "Teach with Ardentum"),
             ("/classroom/worksheet", "the optimiser"),
             ("/glossary", "What the terms mean"),
+            ("/app/crises", "Crisis replay"),
+            ("/app/factors", "Factor exposure"),
+            ("/app/trades", "Trade list"),
         ):
             r = request("GET", base + path)
             if r.status == 200 and heading in r.text:
@@ -455,7 +526,7 @@ def check_site(rep: Report, site: str, api: str, supabase: str | None, key: str 
 
     rep.check("Website", pages)
     rep.check("Legal pages", legal)
-    rep.check("Tour, usage, classroom and glossary pages", public_pages)
+    rep.check("Public and new workspace pages", public_pages)
     rep.check("Screenshots", screenshots)
 
 
