@@ -32,6 +32,9 @@ CALCULATIONS = (
     "montecarlo",
     "backtest",
     "compare",
+    "stress",
+    "factors",
+    "trades",
 )
 OTHER_EVENTS = ("portfolio_saved", "portfolio_exported", "dataset_uploaded")
 EVENTS = CALCULATIONS + OTHER_EVENTS
@@ -45,6 +48,9 @@ _POST_EVENTS = {
     "/api/v1/montecarlo": "montecarlo",
     "/api/v1/backtest": "backtest",
     "/api/v1/compare": "compare",
+    "/api/v1/stress": "stress",
+    "/api/v1/factors": "factors",
+    "/api/v1/trades": "trades",
     "/api/v1/portfolios": "portfolio_saved",
     "/api/v1/datasets": "dataset_uploaded",
 }

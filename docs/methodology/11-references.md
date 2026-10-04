@@ -39,6 +39,9 @@ Primary sources for the methods used in Ardentum.
 - Rockafellar, R. T., & Uryasev, S. (2000). Optimization of conditional value-at-risk. *Journal of Risk*, 2(3), 21–41.
 - Rockafellar, R. T., & Uryasev, S. (2002). Conditional value-at-risk for general loss distributions. *Journal of Banking & Finance*, 26(7), 1443–1471.
 - Spinu, F. (2013). An algorithm for computing risk parity weights. SSRN Working Paper 2297383.
+- Newey, W. K., & West, K. D. (1987). A simple, positive semi-definite, heteroskedasticity and autocorrelation consistent covariance matrix. *Econometrica*, 55(3), 703–708.
+- Newey, W. K., & West, K. D. (1994). Automatic lag selection in covariance matrix estimation. *Review of Economic Studies*, 61(4), 631–653.
+- Brent, R. P. (1973). *Algorithms for Minimization without Derivatives*. Prentice-Hall.
 
 ## Data sources
 
@@ -46,4 +49,5 @@ Primary sources for the methods used in Ardentum.
 - Bank for International Settlements. Central bank policy rates (WS_CBPOL). BIS Data Portal, https://data.bis.org/topics/CBPOL.
 - European Central Bank. Euro foreign exchange reference rates. Served by Frankfurter (frankfurter.dev).
 - Fama, E. F., & French, K. R. (1993). Common risk factors in the returns on stocks and bonds. *Journal of Financial Economics*, 33(1), 3–56.
+- S&P Dow Jones Indices. S&P 500 and Dow Jones Industrial Average closing levels (crisis high and low dates).
 - French, K. R. Data Library: industry portfolios and Fama/French factors. Tuck School of Business, Dartmouth College. https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/data_library.html

@@ -205,8 +205,13 @@ def unzip_text(payload: bytes) -> str:
         return raw.decode("cp1252")
 
 
-def download(name: str, client: httpx.Client | None = None, timeout: float = 60.0) -> bytes:
-    url = f"{BASE_URL}{name}_CSV.zip"
+def download(
+    name: str,
+    client: httpx.Client | None = None,
+    timeout: float = 60.0,
+    base_url: str = BASE_URL,
+) -> bytes:
+    url = f"{base_url}{name}_CSV.zip"
     c = client or shared_client()
     try:
         resp = c.get(url, timeout=timeout)
@@ -240,6 +245,19 @@ def factor_returns(factors_text: str) -> pd.DataFrame:
     )
     df.index = daily_index(t.frame.index)
     return df
+
+
+def three_factors(factors_text: str) -> pd.DataFrame:
+    """Daily Fama-French factors as decimals: ``MKT_RF``, ``SMB``, ``HML`` and ``RF``."""
+    t = parse_tables(factors_text)[0]
+    cols = {c.upper(): c for c in t.frame.columns}
+    need = {"MKT-RF": "MKT_RF", "SMB": "SMB", "HML": "HML", "RF": "RF"}
+    missing = [k for k in need if k not in cols]
+    if missing:
+        raise DataProviderError(f"Kenneth French factors file lacks columns: {', '.join(missing)}.")
+    df = pd.DataFrame({out: t.frame[cols[k]] / 100.0 for k, out in need.items()})
+    df.index = daily_index(t.frame.index)
+    return df.dropna()
 
 
 def market_caps(monthly_text: str) -> dict[str, float]:

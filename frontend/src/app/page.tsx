@@ -58,7 +58,11 @@ export default function Home() {
           </Link>
         </div>
         <p className="mt-4 max-w-2xl text-sm text-muted">
-          The workspace opens on a synthetic demo universe, labelled as such on every page, and can switch to real US industry data at any time. Sign in with Google or GitHub to upload your own prices and save portfolios. The service is free.
+          The workspace opens on a synthetic demo universe, labelled as such on every page, and can switch to real US industry data at any time.{" "}
+          <Link href="/app#examples" className="text-accent-ink underline underline-offset-2">
+            Start from an example
+          </Link>{" "}
+          to see a finished result in one click. Sign in with Google or GitHub to upload your own prices and save portfolios. The service is free.
         </p>
       </section>
 

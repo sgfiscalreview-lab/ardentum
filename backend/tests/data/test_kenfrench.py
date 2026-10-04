@@ -39,6 +39,18 @@ def test_factor_returns_market_is_excess_plus_rf() -> None:
     assert len(f) == 5  # copyright footer is not data
 
 
+def test_three_factors_are_decimals() -> None:
+    text = factors_daily_text(n_days=6)
+    t = kf.parse_tables(text)[0]
+    f = kf.three_factors(text)
+    assert list(f.columns) == ["MKT_RF", "SMB", "HML", "RF"]
+    np.testing.assert_allclose(f["SMB"].to_numpy(), t.frame["SMB"].to_numpy() / 100)
+    np.testing.assert_allclose(f["MKT_RF"].to_numpy(), t.frame["Mkt-RF"].to_numpy() / 100)
+    assert len(f) == 6
+    with pytest.raises(DataProviderError, match="HML"):
+        kf.three_factors("x\r\n\r\n,Mkt-RF,SMB,RF\r\n20200102, 1.0, 0.1, 0.01\r\n")
+
+
 def test_market_caps_use_latest_month() -> None:
     caps = kf.market_caps(industries_monthly_text())
     assert caps["NODUR"] == pytest.approx(100 * 1000)

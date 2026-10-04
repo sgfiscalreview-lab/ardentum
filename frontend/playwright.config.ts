@@ -20,7 +20,8 @@ export default defineConfig({
   },
   webServer: [
     {
-      // Stand-in for the WikiRate API (open ESG data), serving recorded-format fixtures.
+      // Stand-in for the WikiRate API (open ESG data) and the Kenneth French Data Library,
+      // serving generated fixtures in the published formats.
       command: "cd ../backend && uv run python -m tests.fixtures.wikirate_mock_server 8765",
       port: 8765,
       reuseExistingServer: reuse,
@@ -29,7 +30,7 @@ export default defineConfig({
     {
       // Backend in dev-auth mode with a throwaway SQLite database.
       command:
-        "cd ../backend && rm -f /tmp/ardentum-e2e.sqlite3 && ARDENTUM_DATABASE_URL=sqlite:////tmp/ardentum-e2e.sqlite3 ARDENTUM_ENV=test ARDENTUM_WIKIRATE_BASE_URL=http://127.0.0.1:8765 uv run uvicorn ardentum.api.main:create_app --factory --port 8000",
+        "cd ../backend && rm -f /tmp/ardentum-e2e.sqlite3 && ARDENTUM_DATABASE_URL=sqlite:////tmp/ardentum-e2e.sqlite3 ARDENTUM_ENV=test ARDENTUM_WIKIRATE_BASE_URL=http://127.0.0.1:8765 ARDENTUM_KENFRENCH_BASE_URL=http://127.0.0.1:8765/kenfrench/ uv run uvicorn ardentum.api.main:create_app --factory --port 8000",
       url: "http://localhost:8000/api/v1/health",
       reuseExistingServer: reuse,
       timeout: 120_000,

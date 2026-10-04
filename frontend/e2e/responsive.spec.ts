@@ -4,7 +4,7 @@ import { expect, test, type Page } from "@playwright/test";
 // makes every page awkward to use. Wide tables scroll inside their own frames instead.
 test.use({ viewport: { width: 375, height: 800 } });
 
-const PAGES = ["/", "/app", "/app/analytics", "/app/optimise", "/app/frontier", "/app/esg", "/app/esg-data", "/app/simulate", "/app/backtest", "/app/compare", "/portfolios", "/research", "/research/optimisation", "/login", "/account", "/terms", "/privacy", "/cookies", "/licences", "/tour", "/app/optimise?tour=3", "/usage", "/classroom", "/classroom/worksheet", "/glossary"];
+const PAGES = ["/", "/app", "/app/analytics", "/app/optimise", "/app/frontier", "/app/esg", "/app/esg-data", "/app/simulate", "/app/backtest", "/app/compare", "/portfolios", "/research", "/research/optimisation", "/login", "/account", "/terms", "/privacy", "/cookies", "/licences", "/tour", "/app/optimise?tour=3", "/usage", "/classroom", "/classroom/worksheet", "/glossary", "/app/crises", "/app/factors", "/app/trades"];
 
 const overflow = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 

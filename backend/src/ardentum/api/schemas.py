@@ -305,6 +305,47 @@ class CompareRequest(RequestModel):
     transaction_cost_bps: float = Field(0.0, ge=0.0, le=500.0)
 
 
+class CustomPeriodIn(RequestModel):
+    name: str = Field("Your period", min_length=1, max_length=80)
+    start: dt.date
+    end: dt.date
+
+    @model_validator(mode="after")
+    def _order(self) -> CustomPeriodIn:
+        if self.start >= self.end:
+            raise ValueError("The period's start must be before its end.")
+        return self
+
+
+class StressRequest(RequestModel):
+    universe: UniverseSelection = Field(
+        description="Dataset and currency; the window is ignored (each period sets its own)."
+    )
+    portfolio: PortfolioSpecIn
+    episodes: list[str] | None = Field(
+        None, max_length=20, description="Keys of historical crises to replay; all when omitted."
+    )
+    custom: CustomPeriodIn | None = None
+
+
+class FactorRequest(RequestModel):
+    universe: UniverseSelection
+    portfolio: PortfolioSpecIn
+
+
+class TradesRequest(RequestModel):
+    holdings: dict[Ticker, Annotated[float, Field(ge=0.0, le=1e12)]] = Field(
+        default_factory=dict,
+        max_length=2 * MAX_ASSETS,
+        description="Current value of each holding.",
+    )
+    target: PortfolioSpecIn
+    new_money: float = Field(
+        0.0, ge=-1e12, le=1e12, description="Money added (positive) or withdrawn (negative)."
+    )
+    transaction_cost_bps: float = Field(0.0, ge=0.0, le=500.0)
+
+
 class PortfolioIn(RequestModel):
     name: str = Field(min_length=1, max_length=120)
     description: str | None = Field(None, max_length=2000)
@@ -798,6 +839,119 @@ class CompareResponse(ResponseModel):
     data: DataWindowOut
 
 
+class EpisodeAssetOut(ResponseModel):
+    ticker: str
+    weight: float
+    total_return: float
+    contribution: float  # weight x total return; contributions sum to the portfolio's
+
+
+class EpisodeOut(ResponseModel):
+    key: str
+    name: str
+    summary: str
+    start: dt.date
+    end: dt.date
+    available: bool
+    reason: str | None = None  # why the period could not be replayed
+    total_return: float | None = None
+    max_drawdown: float | None = None
+    worst_day_return: float | None = None
+    worst_day: dt.date | None = None
+    trough_date: dt.date | None = None
+    recovery_date: dt.date | None = None
+    recovery_days: int | None = None  # calendar days from the low back to the prior high
+    benchmark_total_return: float | None = None
+    trading_days: int | None = None
+    assets: list[EpisodeAssetOut] = Field(default_factory=list)
+    dates: list[dt.date] = Field(default_factory=list)  # purchase date, then each day
+    portfolio_path: list[float] = Field(default_factory=list)  # value, starting at 1
+    benchmark_path: list[float] | None = None
+
+
+class CrisisOut(ResponseModel):
+    key: str
+    name: str
+    summary: str
+    start: dt.date
+    end: dt.date
+
+
+class StressResponse(ResponseModel):
+    portfolio_name: str
+    benchmark_ticker: str | None
+    benchmark_name: str | None
+    episodes: list[EpisodeOut]
+    data_end: dt.date
+    method: str
+    source: str
+    data: DataWindowOut
+
+
+class FactorLoadingOut(ResponseModel):
+    key: str
+    name: str
+    description: str
+    loading: float
+    std_error: float
+    t_stat: float
+    p_value: float
+    factor_mean: float  # annualised average factor return in the window
+    contribution: float  # loading x factor mean: its part of the average excess return
+
+
+class AssetFactorOut(ResponseModel):
+    ticker: str
+    weight: float
+    alpha: float
+    loadings: dict[str, float]
+    r_squared: float
+
+
+class FactorResponse(ResponseModel):
+    portfolio_name: str
+    alpha: float  # annualised
+    alpha_std_error: float  # annualised
+    alpha_t_stat: float
+    alpha_p_value: float
+    factors: list[FactorLoadingOut]
+    r_squared: float
+    adj_r_squared: float
+    residual_volatility: float
+    mean_excess_return: float
+    observations: int
+    newey_west_lags: int
+    first_period: dt.date
+    last_period: dt.date
+    assets: list[AssetFactorOut]
+    factor_source: str
+    method: str
+    notes: list[str]
+    data: DataWindowOut
+
+
+class TradeOut(ResponseModel):
+    ticker: str
+    action: Literal["buy", "sell", "hold"]
+    current_value: float
+    current_weight: float | None  # None when nothing is held yet
+    target_weight: float
+    target_value: float
+    trade: float  # positive: buy
+    cost: float
+
+
+class TradesResponse(ResponseModel):
+    trades: list[TradeOut]
+    value_before: float
+    new_money: float
+    value_after: float
+    total_costs: float
+    bought: float
+    sold: float
+    method: str
+
+
 class PortfolioOut(ResponseModel):
     id: str
     name: str
@@ -896,6 +1050,8 @@ JobKind = Literal[
     "montecarlo",
     "backtest",
     "compare",
+    "stress",
+    "factors",
 ]
 
 
