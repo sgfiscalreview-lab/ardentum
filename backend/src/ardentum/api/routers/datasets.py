@@ -85,8 +85,8 @@ def get_dataset(dataset_id: str, service: MarketService) -> s.DatasetOut:
     return dataset_out(info, owned)
 
 
-async def _read_limited(f: UploadFile, limit: int) -> bytes:
-    data = await f.read(limit + 1)
+def _read_limited(f: UploadFile, limit: int) -> bytes:
+    data = f.file.read(limit + 1)
     if len(data) > limit:
         raise InvalidInputError(
             f"{f.filename or 'File'} exceeds the {limit // (1024 * 1024)} MB limit."
@@ -94,8 +94,10 @@ async def _read_limited(f: UploadFile, limit: int) -> bytes:
     return data
 
 
+# A plain function, so FastAPI runs it in a worker thread: parsing a large CSV must not
+# hold up every other request on the event loop.
 @router.post("", response_model=s.DatasetOut, status_code=status.HTTP_201_CREATED)
-async def upload_dataset(
+def upload_dataset(
     principal: RequiredPrincipal,
     db: DbDep,
     settings: SettingsDep,
@@ -111,7 +113,7 @@ async def upload_dataset(
         raise InvalidInputError(
             f"You can store at most {MAX_DATASETS_PER_USER} datasets; delete one first."
         )
-    panel = parse_price_csv(await _read_limited(prices, settings.max_upload_bytes))
+    panel = parse_price_csv(_read_limited(prices, settings.max_upload_bytes))
     short = [str(c) for c in panel.columns if panel[c].notna().sum() < MIN_OBSERVATIONS + 1]
     if short:
         raise InvalidInputError(
@@ -119,7 +121,7 @@ async def upload_dataset(
         )
     meta_by_ticker: dict[str, AssetInfo] = {}
     if metadata is not None and metadata.filename:
-        for a in parse_metadata_csv(await _read_limited(metadata, settings.max_upload_bytes)):
+        for a in parse_metadata_csv(_read_limited(metadata, settings.max_upload_bytes)):
             if a.ticker not in panel.columns:
                 raise InvalidInputError(
                     f"Metadata ticker {a.ticker} does not appear in the price file."

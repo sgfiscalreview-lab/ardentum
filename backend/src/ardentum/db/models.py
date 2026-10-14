@@ -60,7 +60,8 @@ class Dataset(Base):
     name: Mapped[str] = mapped_column(String(120))
     description: Mapped[str | None] = mapped_column(Text)
     source_filename: Mapped[str | None] = mapped_column(String(255))
-    prices_csv_gz: Mapped[bytes] = mapped_column(LargeBinary)
+    # Deferred: listing datasets or computing from the in-memory copy never reads the file.
+    prices_csv_gz: Mapped[bytes] = mapped_column(LargeBinary, deferred=True)
     assets: Mapped[list[dict[str, Any]]] = mapped_column(JsonType, default=list)
     start_date: Mapped[dt.date | None]
     end_date: Mapped[dt.date | None]

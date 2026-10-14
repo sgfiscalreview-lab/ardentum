@@ -38,6 +38,7 @@ from ardentum.data.providers.tiingo import TiingoProvider, parse_history
 from ardentum.data.providers.tiingo import provenance as tiingo_provenance
 from ardentum.data.validation import QualityReport, align_prices
 from ardentum.db.models import Dataset
+from ardentum.db.session import end_read
 from ardentum.quant.currency import convert_prices, convert_prices_hedged
 from ardentum.quant.errors import InsufficientDataError, InvalidInputError
 from ardentum.quant.frequency import Frequency
@@ -233,6 +234,7 @@ class MarketDataService:
                 .where(Dataset.owner_id == self.principal.user_id)
                 .order_by(Dataset.created_at.desc())
             ).all()
+            end_read(self.session)
             out.extend((upload_info(r), True) for r in rows)
         return out
 
@@ -244,6 +246,7 @@ class MarketDataService:
         if self.principal is None or self.session is None:
             raise NotFoundError("Sign in to use uploaded datasets.")
         row = self.session.get(Dataset, uid)
+        end_read(self.session)
         if row is None or row.owner_id != self.principal.user_id:
             raise NotFoundError(f"Dataset {dataset_id!r} not found.")
         return row
@@ -274,7 +277,8 @@ class MarketDataService:
         row = self._upload_row(dataset_id)
         cached_df = _UPLOAD_CACHE.get(row.id)
         if cached_df is None:
-            cached_df = decode_prices(row.prices_csv_gz)
+            cached_df = decode_prices(row.prices_csv_gz)  # deferred column: loaded only here
+            end_read(self.session)
             _UPLOAD_CACHE.put(row.id, cached_df)
         df: pd.DataFrame = cached_df  # type: ignore[assignment]
         missing = [t for t in tickers if t not in df.columns]

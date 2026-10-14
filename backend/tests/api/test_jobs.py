@@ -7,6 +7,7 @@ import time
 import uuid
 from typing import Any
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import update
 
@@ -126,3 +127,36 @@ def test_running_job_with_fresh_heartbeat_is_not_claimed(client: TestClient) -> 
     assert r["status"] == "running"
     assert r["attempts"] == 1
     assert time.monotonic() - start >= 0.9  # the long-poll waited
+
+
+def test_jobs_run_two_at_a_time_and_hold_no_transaction_while_computing(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Ten jobs at once used to hold ten connections idle in a transaction for their whole
+    # run and exhaust the pool. Now at most MAX_RUNNING run, the rest wait queued and start
+    # on a later poll, and a running job's session is out of its transaction.
+    import threading
+
+    from ardentum.api import schemas as s
+    from ardentum.services import jobs
+
+    lock = threading.Lock()
+    running = {"now": 0, "max": 0, "in_transaction": 0}
+
+    def slow(service: Any, req: s.AnalyticsRequest) -> s.AnalyticsRequest:
+        with lock:
+            running["now"] += 1
+            running["max"] = max(running["max"], running["now"])
+            running["in_transaction"] += int(service.session.in_transaction())
+        time.sleep(0.3)
+        with lock:
+            running["now"] -= 1
+        return req
+
+    monkeypatch.setitem(jobs.KINDS, "analytics", (s.AnalyticsRequest, slow))
+    body = {"kind": "analytics", "request": {"universe": universe()}}
+    ids = [client.post("/api/v1/jobs", json=body).json()["id"] for _ in range(6)]
+    results = [_wait(client, i) for i in ids]
+    assert [r["status"] for r in results] == ["succeeded"] * 6
+    assert running["max"] <= jobs.MAX_RUNNING
+    assert running["in_transaction"] == 0

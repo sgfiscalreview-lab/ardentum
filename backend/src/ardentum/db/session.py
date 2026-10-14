@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from sqlalchemy import URL, Engine, create_engine, event, make_url
+from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
 # Query options that ORMs add to connection strings but libpq rejects
@@ -48,3 +49,19 @@ def make_engine(url: str, require_tls: bool = False) -> Engine:
         max_overflow=5,
         connect_args={"prepare_threshold": None},
     )
+
+
+def end_read(session: Session | None) -> None:
+    """Ends a read-only transaction so its connection goes back to the pool at once.
+
+    A session keeps its connection, idle inside a transaction, from its first query until
+    commit or close. Code that reads and then computes or calls another service for a long
+    time (a background job, a provider download) would otherwise hold one of the pool's
+    few connections throughout. Sessions here do not expire objects on commit, so what was
+    read stays usable. A transaction with pending changes is left alone for its owner.
+    """
+    if session is None or not session.in_transaction():
+        return
+    if session.new or session.dirty or session.deleted:
+        return
+    session.commit()

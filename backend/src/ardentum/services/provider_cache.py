@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 
 from ardentum.data.errors import DataProviderError
 from ardentum.db.models import ProviderCache as CacheRow
+from ardentum.db.session import end_read
 
 log = logging.getLogger("ardentum.cache")
 _MEMORY: OrderedDict[tuple[str, str], tuple[bytes, dt.datetime]] = OrderedDict()
@@ -76,6 +77,8 @@ class ProviderCache:
             except SQLAlchemyError:
                 log.warning("provider cache read failed for %s/%s", provider, key, exc_info=True)
                 self.session.rollback()
+            # The download below can take many seconds: do not hold a connection meanwhile.
+            end_read(self.session)
         if row is not None and now - _aware(row.fetched_at) <= max_age:
             payload = gzip.decompress(row.payload)
             _remember(k, payload, _aware(row.fetched_at))

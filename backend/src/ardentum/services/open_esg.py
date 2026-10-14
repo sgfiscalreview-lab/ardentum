@@ -36,6 +36,7 @@ from ardentum.data.errors import DataProviderError
 from ardentum.data.models import AssetInfo, DatasetInfo, EsgRecord
 from ardentum.data.providers import demo, kenfrench, wikirate
 from ardentum.db.models import EsgOverlay, User
+from ardentum.db.session import end_read
 from ardentum.quant.errors import InvalidInputError
 from ardentum.quant.esg import composite_scores, percentile_scores, scale_linear
 from ardentum.services.market_data import MarketDataService, NotFoundError
@@ -496,6 +497,7 @@ def get_overlay(market: MarketDataService, overlay_id: str) -> EsgOverlay:
     if market.principal is None or market.session is None:
         raise NotFoundError("Sign in to use saved ESG overlays.")
     row = market.session.get(EsgOverlay, oid)
+    end_read(market.session)
     if row is None or row.owner_id != market.principal.user_id:
         raise NotFoundError("ESG overlay not found.")
     return row
