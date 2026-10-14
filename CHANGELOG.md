@@ -55,6 +55,9 @@ All notable changes to Ardentum are recorded here. Versions follow
 - Browser tests serve the Kenneth French files from a local stand-in.
 
 ### Fixed
+- Landing-page screenshots showed doubled frames, mismatched corners and a card cut off
+  at the bottom; they now show whole cards with their own edges only. Nested panels
+  use concentric corners.
 - Opening the steps sheet on a phone flung it far past the top of the screen before it
   settled.
 - Wide formulas on the methodology pages can be scrolled with the keyboard on phones.

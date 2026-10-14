@@ -1,8 +1,9 @@
 import Link from "next/link";
 
 import { buttonClass } from "@/lib/classes";
+import SIZES from "@/lib/screenshots.json";
 
-const SHOTS = [
+const SHOTS: { id: keyof typeof SIZES; title: string; body: string; alt: string }[] = [
   {
     id: "optimise",
     title: "Optimisation with reasons",
@@ -29,13 +30,19 @@ const SHOTS = [
   },
 ];
 
-function Screenshot({ id, alt }: { id: string; alt: string }) {
+/**
+ * A real screenshot of the results, cut at whole cards and taken on the app's own page
+ * background: the cards carry their own corners, borders and shadows, so the picture gets
+ * no frame of its own (a frame around them would double every edge).
+ */
+function Screenshot({ id, alt }: { id: keyof typeof SIZES; alt: string }) {
+  const { width, height } = SIZES[id];
   return (
-    <figure className="min-w-0 overflow-hidden rounded-xl border border-line bg-surface elev-3">
+    <figure className="-m-2 min-w-0">
       {/* eslint-disable-next-line @next/next/no-img-element -- static export serves plain files */}
-      <img src={`/screenshots/${id}-light.png`} alt={alt} width={1224} height={930} loading="lazy" className="only-light block h-auto w-full" />
+      <img src={`/screenshots/${id}-light.png`} alt={alt} width={width} height={height} loading="lazy" className="only-light block h-auto w-full" />
       {/* eslint-disable-next-line @next/next/no-img-element -- static export serves plain files */}
-      <img src={`/screenshots/${id}-dark.png`} alt={alt} width={1224} height={930} loading="lazy" className="only-dark h-auto w-full" />
+      <img src={`/screenshots/${id}-dark.png`} alt={alt} width={width} height={height} loading="lazy" className="only-dark h-auto w-full" />
     </figure>
   );
 }

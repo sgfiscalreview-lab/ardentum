@@ -216,7 +216,7 @@ export function Sheet({
         tabIndex={-1}
         onKeyDown={onKeyDown}
         style={{ y, opacity }}
-        className="material-thick absolute inset-x-0 bottom-0 flex max-h-[85dvh] flex-col rounded-t-[22px] border-t border-line outline-none will-change-transform elev-3"
+        className="material-thick absolute inset-x-0 bottom-0 flex max-h-[85dvh] flex-col rounded-t-[20px] border-t border-line outline-none will-change-transform elev-3"
       >
         <div
           className="cursor-grab touch-none select-none px-4 pb-2 pt-2 active:cursor-grabbing"

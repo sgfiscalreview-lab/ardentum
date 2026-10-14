@@ -60,7 +60,7 @@ export default function UniversePage() {
             <div className="grid gap-2 sm:grid-cols-2">
               {datasets.isPending &&
                 Array.from({ length: 4 }, (_, i) => (
-                  <div key={i} role="status" aria-label="Loading datasets" className="rounded-lg border border-line p-3.5">
+                  <div key={i} role="status" aria-label="Loading datasets" className="rounded-md border border-line p-3.5">
                     <Skeleton className="h-4 w-2/3" />
                     <Skeleton className="mt-2 h-3 w-full" />
                     <Skeleton className="mt-1.5 h-3 w-1/2" />
@@ -76,7 +76,7 @@ export default function UniversePage() {
                     )
                   }
                   aria-pressed={d.id === u.dataset_id}
-                  className={cx("pressable-soft rounded-lg border p-3.5 text-left", d.id === u.dataset_id ? "border-accent bg-accent-wash" : "border-line bg-surface hover:bg-surface-2")}
+                  className={cx("pressable-soft rounded-md border p-3.5 text-left", d.id === u.dataset_id ? "border-accent bg-accent-wash" : "border-line bg-surface hover:bg-surface-2")}
                 >
                   <span className="flex items-center justify-between gap-2">
                     <span className="text-sm font-medium text-ink">{d.name}</span>
@@ -165,7 +165,7 @@ function Examples() {
               startFromExample(p.build(), p.title);
               router.push(p.href);
             }}
-            className="pressable-soft rounded-lg border border-line bg-surface p-3.5 text-left hover:bg-surface-2"
+            className="pressable-soft rounded-md border border-line bg-surface p-3.5 text-left hover:bg-surface-2"
           >
             <span className="flex items-center justify-between gap-2">
               <span className="text-sm font-medium text-ink">{p.title}</span>

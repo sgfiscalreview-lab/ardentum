@@ -1,0 +1,18 @@
+{
+  "optimise": {
+    "width": 796,
+    "height": 964
+  },
+  "frontier": {
+    "width": 796,
+    "height": 687
+  },
+  "simulate": {
+    "width": 796,
+    "height": 786
+  },
+  "backtest": {
+    "width": 796,
+    "height": 790
+  }
+}

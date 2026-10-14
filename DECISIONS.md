@@ -500,3 +500,11 @@ them and records the two parts deliberately left out.
   has no vibration support). Motion blur for very fast movement: it would repaint every
   frame, against the same skill's compositor-only rule, and the fastest motion here (a
   flicked sheet) is short.
+* **Corners and screenshots (founder review).** The landing screenshots sat in a 16 px
+  frame with its own border and shadow around a picture that already held the card's
+  12 px corners, border, shadow and a strip of page background, and cut off at the
+  bottom mid-card: two edges, corners on different centres, content missing. Pictures
+  are now taken card by card on the app's own background, end at the last whole card
+  and are shown with no frame, so the card's own edge is the only edge. Nested panels
+  follow concentric radii (inner = outer minus padding): tiles in cards 8 px, the
+  sidebar, sheet and popovers 20 px around 8 px rows.

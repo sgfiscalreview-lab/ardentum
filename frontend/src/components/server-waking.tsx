@@ -42,7 +42,7 @@ export function ServerWaking() {
             initial={{ opacity: 0, y: 24, ...MATERIAL_OUT }}
             animate={{ opacity: 1, y: 0, ...MATERIAL_IN }}
             exit={{ opacity: 0, y: 24, ...MATERIAL_OUT }}
-            className="material-thick pointer-events-auto w-full max-w-xl rounded-xl border border-line px-4 py-3 text-sm text-ink elev-3"
+            className="material-thick pointer-events-auto w-full max-w-xl rounded-[20px] border border-line px-4 py-3 text-sm text-ink elev-3"
           >
             <p>
               <span className="font-medium">Starting the calculation server ({waited} s).</span>{" "}

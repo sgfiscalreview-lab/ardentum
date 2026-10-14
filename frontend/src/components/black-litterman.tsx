@@ -67,7 +67,7 @@ export function BlackLittermanEditor({
         {rows.length === 0 && <p className="text-xs text-muted">No views: expected returns are the equilibrium returns.</p>}
         <ul className="space-y-2">
           {rows.map((r, i) => (
-            <li key={i} className="space-y-1.5 rounded-lg border border-line bg-surface-2/50 p-2.5 text-xs">
+            <li key={i} className="space-y-1.5 rounded-md border border-line bg-surface-2/50 p-2.5 text-xs">
               <div className="flex items-center gap-1.5">
                 <Select aria-label={`View ${i + 1} asset`} className="h-8 text-xs" value={r.a} onChange={(e) => update(i, { a: e.target.value })}>
                   {tickers.map((t) => (
