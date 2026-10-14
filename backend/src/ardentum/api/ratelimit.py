@@ -71,6 +71,15 @@ def budget_for(method: str, path: str) -> str | None:
     return None
 
 
+BUDGETS = ("compute", "write")
+
+
+def limiter_key(budget: str, client: str) -> str:
+    """The counter key for a client in a budget (``client`` is ``u:<user id>`` or an
+    address key); stored truncated to 80 characters."""
+    return f"{budget[0]}:{client}"[:80]
+
+
 class Limiter(Protocol):
     def check(self, key: str, now: float | None = None) -> float | None: ...
 

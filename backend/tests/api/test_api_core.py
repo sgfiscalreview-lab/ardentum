@@ -122,6 +122,17 @@ def test_validation_errors_are_consistent(client: TestClient) -> None:
     assert "target_return" in r.json()["error"]["message"]
 
 
+def test_dates_outside_1900_to_2100_are_refused(client: TestClient) -> None:
+    # Year 1 used to reach pandas and fail with a server error (out of timestamp range).
+    for start in ("0001-01-01", "1899-12-31"):
+        r = client.post("/api/v1/analytics", json={"universe": universe(start=start)})
+        assert r.status_code == 422, r.text
+        assert "1900-01-01" in r.json()["error"]["message"]
+    r = client.post("/api/v1/risk-free", json={"end": "9999-12-31"})
+    assert r.status_code == 422
+    assert "2100-12-31" in r.json()["error"]["message"]
+
+
 def test_unknown_ticker(client: TestClient) -> None:
     r = client.post("/api/v1/optimise", json={"universe": universe(tickers=["AAPL", "NWS.SYN"])})
     assert r.status_code == 422

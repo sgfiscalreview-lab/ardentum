@@ -109,3 +109,43 @@ def test_source_down_without_cache_is_clear_error(client: TestClient) -> None:
     )
     assert r.status_code == 502
     assert "unreachable" in r.json()["error"]["message"]
+
+
+@respx.mock
+def test_a_malformed_download_is_not_cached(client: TestClient) -> None:
+    # An error page served with status 200 used to be cached for a day, failing every
+    # request until it expired. Now it is refused, and the last good copy is served.
+    _mock_downloads()
+    body = {"universe": {"dataset_id": "kf12", "tickers": TICKERS}}
+    assert client.post("/api/v1/analytics", json=body).status_code == 200
+    engine = client.app.state.engine  # type: ignore[attr-defined]
+    with engine.begin() as conn:
+        conn.execute(
+            ProviderCache.__table__.update().values(
+                fetched_at=dt.datetime(2000, 1, 1, tzinfo=dt.UTC)
+            )
+        )
+    clear_memory()
+    market_data._PARSED_CACHE._data.clear()
+    respx.get(f"{kf.BASE_URL}12_Industry_Portfolios_daily_CSV.zip").mock(
+        return_value=httpx.Response(200, content=b"<html>Service unavailable</html>")
+    )
+    r = client.post("/api/v1/analytics", json=body)
+    assert r.status_code == 200, r.text
+    assert any("last cached copy" in n for n in r.json()["data"]["provenance"]["notes"])
+    with engine.connect() as conn:
+        stored = conn.execute(
+            ProviderCache.__table__.select().where(
+                ProviderCache.__table__.c.key == "12_Industry_Portfolios_daily"
+            )
+        ).one()
+    assert stored.fetched_at.year == 2000  # the bad payload did not replace it
+
+    # Without a good copy to fall back on, the error says what is wrong.
+    with engine.begin() as conn:
+        conn.execute(ProviderCache.__table__.delete())
+    clear_memory()
+    market_data._PARSED_CACHE._data.clear()
+    r = client.post("/api/v1/analytics", json=body)
+    assert r.status_code == 502
+    assert "not a valid zip file" in r.json()["error"]["message"]

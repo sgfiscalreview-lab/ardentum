@@ -119,23 +119,28 @@ class OpenEsgService:
             market.settings.wikirate_api_key, base_url=market.settings.wikirate_base_url
         )
 
-    def _get(self, path: str, params: list[tuple[str, str]]) -> CachedPayload:
+    def _get(
+        self, path: str, params: list[tuple[str, str]], *, persist: bool = True
+    ) -> CachedPayload:
         return self.market.cache.get_or_fetch(
             SOURCE,
             _cache_key(path, params),
             WIKIRATE_MAX_AGE,
             lambda: self.client.get(path, params),
+            wikirate.check_json,
+            persist=persist,
         )
 
     # ------------------------------------------------------------------ browse
 
     def search_metrics(self, q: str, limit: int = 20) -> list[wikirate.OpenMetric]:
-        return wikirate.parse_metrics(self._get(*wikirate.metrics_query(q, limit)).payload)
+        # Free-text searches stay in memory: every distinct query would be a database row.
+        path, params = wikirate.metrics_query(q, limit)
+        return wikirate.parse_metrics(self._get(path, params, persist=False).payload)
 
     def search_companies(self, q: str, limit: int = 10) -> list[wikirate.OpenCompany]:
-        return wikirate.parse_companies(
-            self._get(*wikirate.companies_by_name_query(q, limit)).payload
-        )
+        path, params = wikirate.companies_by_name_query(q, limit)
+        return wikirate.parse_companies(self._get(path, params, persist=False).payload)
 
     def metric(self, metric_id: int) -> wikirate.OpenMetric:
         return wikirate.parse_metric(self._get(wikirate.metric_path(metric_id), []).payload)

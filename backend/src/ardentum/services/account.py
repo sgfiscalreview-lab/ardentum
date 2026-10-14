@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from ardentum.api import schemas as s
 from ardentum.api.auth import Principal
+from ardentum.api.ratelimit import BUDGETS, limiter_key
 from ardentum.config import AuthMode, Settings
 from ardentum.db.models import Dataset, EsgOverlay, Job, Portfolio, RateLimitCounter, User
 
@@ -101,7 +102,8 @@ def delete_account(
     session.execute(delete(Dataset).where(Dataset.owner_id == uid))
     session.execute(delete(EsgOverlay).where(EsgOverlay.owner_id == uid))
     session.execute(delete(Job).where(Job.owner_id == uid))
-    session.execute(delete(RateLimitCounter).where(RateLimitCounter.key == f"u:{uid}"))
+    keys = [limiter_key(b, f"u:{uid}") for b in BUDGETS]
+    session.execute(delete(RateLimitCounter).where(RateLimitCounter.key.in_(keys)))
     session.execute(delete(User).where(User.id == uid))
     session.commit()
     identity = _delete_identity(settings, principal)

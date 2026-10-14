@@ -97,6 +97,16 @@ def _list(v: Any) -> list[str]:
     return [str(x) for x in v if isinstance(x, str)] if isinstance(v, list) else []
 
 
+def check_json(payload: bytes) -> None:
+    """Every WikiRate response used here is a JSON object; anything else is not cached."""
+    try:
+        data = json.loads(payload)
+    except ValueError as exc:
+        raise DataProviderError("Unexpected response format from WikiRate.") from exc
+    if not isinstance(data, dict):
+        raise DataProviderError("Unexpected response format from WikiRate.")
+
+
 def _items(payload: bytes) -> tuple[list[dict[str, Any]], str | None]:
     try:
         data = json.loads(payload)

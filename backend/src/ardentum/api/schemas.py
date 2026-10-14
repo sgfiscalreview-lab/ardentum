@@ -22,6 +22,8 @@ Ticker = Annotated[
     str, Field(min_length=1, max_length=24, pattern=r"^[A-Za-z0-9][A-Za-z0-9.\-_^=]*$")
 ]
 Weight = Annotated[float, Field(ge=-1.0, le=1.0)]
+# Request dates stay within what every data source and pandas' timestamps can represent.
+RequestDate = Annotated[dt.date, Field(ge=dt.date(1900, 1, 1), le=dt.date(2100, 12, 31))]
 MAX_ASSETS = 60
 MAX_SAVED_JSON = 64 * 1024  # bytes of settings or summary stored with a saved portfolio
 
@@ -44,8 +46,8 @@ class ResponseModel(BaseModel):
 class UniverseSelection(RequestModel):
     dataset_id: str = Field(min_length=1, max_length=64)
     tickers: list[Ticker] = Field(min_length=1, max_length=MAX_ASSETS)
-    start: dt.date | None = None
-    end: dt.date | None = None
+    start: RequestDate | None = None
+    end: RequestDate | None = None
     frequency: Literal["daily", "weekly", "monthly"] = "daily"
     esg_overlay_id: str | None = Field(
         None, max_length=64, description="Use ESG scores from this saved open-data overlay."
@@ -117,8 +119,8 @@ class EstimationSettings(RequestModel):
 
 class RiskFreeRequest(RequestModel):
     source: Literal["fred_dgs3mo", "kenfrench_rf"] = "kenfrench_rf"
-    start: dt.date | None = None
-    end: dt.date | None = None
+    start: RequestDate | None = None
+    end: RequestDate | None = None
 
     @model_validator(mode="after")
     def _dates(self) -> RiskFreeRequest:

@@ -6,8 +6,10 @@ import jwt
 import pandas as pd
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
 
 from ardentum.api.auth import DEV_ISSUER
+from ardentum.db.models import User
 from tests.api.conftest import login
 
 PORTFOLIO = {
@@ -168,3 +170,19 @@ def test_a_constant_asset_does_not_blank_the_other_correlations(
     assert corr[0][1] == pytest.approx(returns["AAA"].corr(returns["BBB"]))
     assert corr[2] == [None, None, None]
     assert "CASH" in r.json()["correlation_note"]
+
+
+def test_a_first_sign_in_racing_another_request_is_not_an_error(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    headers = login(client, "race@example.com")
+    assert client.get("/api/v1/portfolios", headers=headers).status_code == 200  # row created
+    # Another request inserted the user between this request's read and its insert.
+    real_get = Session.get
+
+    def miss_users(self: Session, entity: object, ident: object, **kw: object) -> object:
+        return None if entity is User else real_get(self, entity, ident, **kw)  # type: ignore[call-overload]
+
+    monkeypatch.setattr(Session, "get", miss_users)
+    r = client.get("/api/v1/portfolios", headers=headers)
+    assert r.status_code == 200, r.text

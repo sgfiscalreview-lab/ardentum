@@ -304,6 +304,7 @@ class MarketDataService:
             name,
             KF_MAX_AGE,
             lambda: kenfrench.download(name, base_url=self.settings.kenfrench_base_url),
+            lambda payload: kenfrench.check_payload(name, payload),
         )
 
     def _kf_returns(
@@ -387,6 +388,7 @@ class MarketDataService:
                 t.upper(),
                 TIINGO_MAX_AGE,
                 lambda t=t: provider.history_payload(t),  # type: ignore[misc]
+                lambda payload, t=t: parse_history(payload, t),  # type: ignore[misc]
             )
             series[t] = parse_history(got.payload, t)
             oldest = got.fetched_at if oldest is None else min(oldest, got.fetched_at)
@@ -412,6 +414,7 @@ class MarketDataService:
             f"{local}->{base}",
             FX_MAX_AGE,
             lambda: fx.timeseries_payload(local, base),
+            lambda payload: fx.parse_timeseries(payload, base),
         )
         key = ("fx", local, base, got.fetched_at)
         rates = _PARSED_CACHE.get(key)
@@ -425,7 +428,11 @@ class MarketDataService:
         cur = currency.upper()
         bis.area_for(cur)  # clear error before any network call
         got = self.cache.get_or_fetch(
-            "bis", f"policy-rate:{cur}", RATES_MAX_AGE, lambda: bis.rates_payload(cur)
+            "bis",
+            f"policy-rate:{cur}",
+            RATES_MAX_AGE,
+            lambda: bis.rates_payload(cur),
+            lambda payload: bis.parse_rates(payload, cur),
         )
         key = ("bis", cur, got.fetched_at)
         rates = _PARSED_CACHE.get(key)

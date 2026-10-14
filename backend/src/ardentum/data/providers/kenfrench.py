@@ -270,6 +270,18 @@ def market_caps(monthly_text: str) -> dict[str, float]:
     return {ticker_for(k): float(v) for k, v in caps.items() if np.isfinite(v) and v > 0}
 
 
+def check_payload(name: str, payload: bytes) -> None:
+    """Parse a downloaded file the way it will be used; raises DataProviderError if it
+    cannot be (so a bad download is not cached for a day)."""
+    text = unzip_text(payload)
+    if name == FACTORS_DAILY:
+        factor_returns(text)
+    elif any(name == d.daily_file for d in DATASETS.values()):
+        industry_returns(text)
+    elif any(name == d.monthly_file for d in DATASETS.values()):
+        market_caps(text)
+
+
 def market_cap_history(monthly_text: str) -> pd.DataFrame:
     """Industry market capitalisation ($m) for every month in the file, indexed by month end:
     number of firms x average firm size. A backtest uses, at each rebalance, only the

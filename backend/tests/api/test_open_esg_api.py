@@ -2,15 +2,18 @@
 
 from __future__ import annotations
 
+import datetime as dt
 from collections.abc import Iterator
 
 import httpx
 import pytest
 import respx
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
 
 from ardentum.data.providers import wikirate as wr
-from ardentum.services import market_data, open_esg
+from ardentum.db.models import ProviderCache
+from ardentum.services import market_data, open_esg, provider_cache
 from ardentum.services.provider_cache import clear_memory
 from tests.api.conftest import login
 from tests.api.test_api_auth_portfolios import PRICES
@@ -101,6 +104,33 @@ def test_search_metrics_and_companies(client: TestClient) -> None:
     _mock_wikirate()
     r = client.get("/api/v1/esg/open/companies?q=apple")
     assert r.json()[0]["isins"][0] == "US0378331005"
+    # Free-text searches are kept in memory only: a row per distinct query would grow forever.
+    engine = client.app.state.engine  # type: ignore[attr-defined]
+    with engine.connect() as conn:
+        assert conn.execute(ProviderCache.__table__.select()).all() == []
+
+
+def test_old_rows_of_growing_providers_are_purged(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(provider_cache, "PURGE_EVERY", 1)
+    engine = client.app.state.engine  # type: ignore[attr-defined]
+    old = dt.datetime(2000, 1, 1, tzinfo=dt.UTC)
+    with engine.begin() as conn:
+        for provider in ("wikirate", "kenfrench"):
+            conn.execute(
+                ProviderCache.__table__.insert().values(
+                    provider=provider, key="old", fetched_at=old, payload=b""
+                )
+            )
+    with Session(engine) as session:
+        provider_cache.ProviderCache(session).get_or_fetch(
+            "wikirate", "new", dt.timedelta(days=1), lambda: b"{}"
+        )
+    with engine.connect() as conn:
+        rows = {(r.provider, r.key) for r in conn.execute(ProviderCache.__table__.select())}
+    # Ken French keeps its old copy (the fallback when the source is down).
+    assert rows == {("wikirate", "new"), ("kenfrench", "old")}
 
 
 @respx.mock
