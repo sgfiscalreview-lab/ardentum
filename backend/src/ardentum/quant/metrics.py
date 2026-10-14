@@ -18,6 +18,11 @@ Definitions (``P`` = periods per year, ``n`` = number of observations):
 * Tracking error: ``std(r_p - r_b, ddof=1) * sqrt(P)``.
 * Historical VaR / CVaR at level ``c``: the loss not exceeded with probability ``c``
   and the mean loss beyond it, reported as positive fractions of value.
+* Sharpe ratio interval and difference test: delta method on the first two moments of
+  excess returns with a Newey-West (Bartlett kernel) long-run covariance, following
+  Lo (2002) and Ledoit & Wolf (2008, section 3.1). With independent normal returns the
+  standard error reduces to Lo's ``sqrt((1 + SR^2 / 2) / T)``; unlike that formula it
+  allows fat tails, skew and autocorrelation.
 """
 
 from __future__ import annotations
@@ -120,6 +125,129 @@ def sharpe_ratio(returns: ArrayLike1D, periods_per_year: int, risk_free_rate: fl
     if sd < _ZERO_VOL_TOL:
         raise UndefinedMetricError("Sharpe ratio is undefined: returns have zero volatility.")
     return float(excess.mean() / sd * np.sqrt(periods_per_year))
+
+
+# Fewer observations than this make the asymptotic Sharpe standard error unreliable.
+MIN_OBS_SHARPE_INFERENCE = 24
+
+
+def newey_west_lags(t: int) -> int:
+    """Newey and West (1994) rule of thumb for the number of autocovariance lags."""
+    return int(4 * (t / 100) ** (2 / 9))
+
+
+def _long_run_covariance(y: np.ndarray, lags: int) -> np.ndarray:
+    """Newey-West (Bartlett kernel) long-run covariance of the demeaned columns of ``y``."""
+    t = y.shape[0]
+    psi = y.T @ y / t
+    for j in range(1, lags + 1):
+        gamma = y[j:].T @ y[:-j] / t
+        psi += (1.0 - j / (lags + 1)) * (gamma + gamma.T)
+    return np.asarray(psi)
+
+
+def _excess_for_inference(
+    returns: ArrayLike1D, periods_per_year: int, risk_free_rate: float, name: str
+) -> np.ndarray:
+    r = _as_array(returns, name=name)
+    if r.shape[0] < MIN_OBS_SHARPE_INFERENCE:
+        raise UndefinedMetricError(
+            f"A Sharpe ratio interval needs at least {MIN_OBS_SHARPE_INFERENCE} returns; "
+            f"{name} has {r.shape[0]}."
+        )
+    return r - annual_rate_to_periodic(risk_free_rate, periods_per_year)
+
+
+@dataclass(frozen=True)
+class SharpeInterval:
+    """Confidence interval for an annualised Sharpe ratio (``low`` to ``high``)."""
+
+    sharpe: float
+    low: float
+    high: float
+    standard_error: float
+    confidence: float
+    lags: int
+
+
+def sharpe_ratio_interval(
+    returns: ArrayLike1D,
+    periods_per_year: int,
+    risk_free_rate: float = 0.0,
+    confidence: float = 0.95,
+    lags: int | None = None,
+) -> SharpeInterval:
+    """Symmetric confidence interval ``SR +/- z SE`` for the annualised Sharpe ratio.
+
+    ``SR = mu / sqrt(g - mu^2)`` with ``g = E[x^2]`` of the excess returns ``x``; the
+    gradient ``(g / v^1.5, -mu / (2 v^1.5))`` and the long-run covariance of
+    ``(x - mu, x^2 - g)`` give its variance by the delta method. ``lags`` defaults to
+    :func:`newey_west_lags`. Raises :class:`UndefinedMetricError` for constant returns or
+    fewer than :data:`MIN_OBS_SHARPE_INFERENCE` observations.
+    """
+    _check_confidence(confidence)
+    x = _excess_for_inference(returns, periods_per_year, risk_free_rate, "returns")
+    sr = sharpe_ratio(returns, periods_per_year, risk_free_rate)
+    t = x.shape[0]
+    lags = newey_west_lags(t) if lags is None else lags
+    mu, g = float(x.mean()), float((x**2).mean())
+    v = g - mu**2
+    grad = np.array([g / v**1.5, -0.5 * mu / v**1.5])
+    psi = _long_run_covariance(np.column_stack([x - mu, x**2 - g]), lags)
+    se = float(np.sqrt(max(float(grad @ psi @ grad), 0.0) / t) * np.sqrt(periods_per_year))
+    z = float(stats.norm.ppf(0.5 + confidence / 2.0))
+    return SharpeInterval(sr, sr - z * se, sr + z * se, se, confidence, lags)
+
+
+@dataclass(frozen=True)
+class SharpeDifference:
+    """Test of equal Sharpe ratios: ``difference`` is a minus b, annualised."""
+
+    difference: float
+    standard_error: float
+    z: float
+    p_value: float
+    lags: int
+
+
+def sharpe_difference_test(
+    returns_a: ArrayLike1D,
+    returns_b: ArrayLike1D,
+    periods_per_year: int,
+    risk_free_rate: float = 0.0,
+    lags: int | None = None,
+) -> SharpeDifference:
+    """Two-sided test that two strategies over the same dates have equal Sharpe ratios.
+
+    Ledoit and Wolf (2008, section 3.1): the difference is a function of the four
+    moments ``(mu_a, mu_b, g_a, g_b)``; its standard error comes from the delta method
+    with a Newey-West long-run covariance of those moments (Ledoit and Wolf prefer a
+    quadratic-spectral kernel with prewhitening; the Bartlett kernel is the simpler,
+    standard choice). Robust to fat tails, skew, autocorrelation and the correlation
+    between the two series, which the Jobson-Korkie-Memmel test assumes away.
+    """
+    a = _excess_for_inference(returns_a, periods_per_year, risk_free_rate, "strategy returns")
+    b = _excess_for_inference(returns_b, periods_per_year, risk_free_rate, "benchmark returns")
+    if a.shape != b.shape:
+        raise InvalidInputError("Both return series must cover the same dates.")
+    diff = sharpe_ratio(returns_a, periods_per_year, risk_free_rate) - sharpe_ratio(
+        returns_b, periods_per_year, risk_free_rate
+    )
+    t = a.shape[0]
+    lags = newey_west_lags(t) if lags is None else lags
+    mu_a, mu_b = float(a.mean()), float(b.mean())
+    g_a, g_b = float((a**2).mean()), float((b**2).mean())
+    v_a, v_b = g_a - mu_a**2, g_b - mu_b**2
+    grad = np.array(
+        [g_a / v_a**1.5, -g_b / v_b**1.5, -0.5 * mu_a / v_a**1.5, 0.5 * mu_b / v_b**1.5]
+    )
+    y = np.column_stack([a - mu_a, b - mu_b, a**2 - g_a, b**2 - g_b])
+    psi = _long_run_covariance(y, lags)
+    se = float(np.sqrt(max(float(grad @ psi @ grad), 0.0) / t) * np.sqrt(periods_per_year))
+    if se < 1e-12:  # the same series twice: no evidence of a difference
+        return SharpeDifference(0.0, 0.0, 0.0, 1.0, lags)
+    z = diff / se
+    return SharpeDifference(diff, se, z, float(2.0 * stats.norm.sf(abs(z))), lags)
 
 
 def downside_deviation(
@@ -272,6 +400,8 @@ class PerformanceSummary:
     beta: MetricValue | None = None
     tracking_error: float | None = None
     information_ratio: MetricValue | None = None
+    sharpe_interval: SharpeInterval | None = None
+    sharpe_interval_reason: str | None = None
 
 
 def _safe(fn: object, *args: object, **kwargs: object) -> MetricValue:
@@ -317,6 +447,11 @@ def performance_summary(
         worst_period=float(r.min()),
         positive_periods_fraction=float(np.mean(r > 0.0)),
     )
+    try:
+        interval = sharpe_ratio_interval(r, periods_per_year, risk_free_rate)
+        summary = replace(summary, sharpe_interval=interval)
+    except UndefinedMetricError as exc:
+        summary = replace(summary, sharpe_interval_reason=str(exc))
     if benchmark_returns is None:
         return summary
     b = _as_array(benchmark_returns, name="benchmark returns")

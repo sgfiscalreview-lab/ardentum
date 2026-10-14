@@ -29,7 +29,8 @@ from ardentum.quant.backtest import (
     run_backtest,
 )
 from ardentum.quant.black_litterman import BlackLittermanSpec, View
-from ardentum.quant.errors import InvalidInputError
+from ardentum.quant.errors import InvalidInputError, UndefinedMetricError
+from ardentum.quant.esg import portfolio_esg_score
 from ardentum.quant.estimation import MarketEstimates, MeanEstimator, estimate, risk_free_arithmetic
 from ardentum.quant.explain import explain, resampled_weight_intervals
 from ardentum.quant.frontier import (
@@ -84,6 +85,11 @@ def _finite(x: float) -> float:
 
 def _opt(x: float | None) -> float | None:
     return None if x is None else _finite(x)
+
+
+def _nan_none(x: float) -> float | None:
+    """NaN (undefined, with the reason given elsewhere in the response) becomes None."""
+    return None if math.isnan(x) else _finite(x)
 
 
 def _gappy(matrix: np.ndarray) -> list[list[float | None]]:
@@ -368,13 +374,17 @@ def portfolio_result_out(
     res: OptimisationResult, est: MarketEstimates, req: OptimisationRequest, data: LoadedData
 ) -> tuple[s.PortfolioResultOut, s.ExplanationOut]:
     ex = explain(res, est, req)
+    nan = np.full_like(res.weights, np.nan)
+    rc, rcp, mc = nan, nan, nan
+    div: float | None = None
+    risk_note: str | None = None
     try:
         rd = risk_decomposition(res.weights, est.covariance)
         rc, rcp, mc = rd.risk_contribution, rd.percent_contribution, rd.marginal_contribution
-        div: float | None = diversification_ratio(res.weights, est.covariance)
-    except Exception:
-        rc = rcp = mc = np.zeros_like(res.weights)
-        div = None
+        div = diversification_ratio(res.weights, est.covariance)
+    except UndefinedMetricError as exc:
+        # Shown as n/a with the reason, never as zeros that look like real contributions.
+        risk_note = str(exc)
     holdings = []
     for i, a in enumerate(ex.assets):
         info = data.asset(a.ticker)
@@ -387,9 +397,9 @@ def portfolio_result_out(
                 expected_return=_finite(a.expected_return),
                 volatility=_finite(a.volatility),
                 esg_score=info.esg.score if info.esg else None,
-                risk_contribution=_finite(float(rc[i])),
-                risk_contribution_pct=_finite(float(rcp[i])),
-                marginal_contribution=_finite(float(mc[i])),
+                risk_contribution=_nan_none(float(rc[i])),
+                risk_contribution_pct=_nan_none(float(rcp[i])),
+                marginal_contribution=_nan_none(float(mc[i])),
                 beta_to_portfolio=_finite(a.beta_to_portfolio),
                 required_return=_opt(a.required_return),
                 status=a.status,
@@ -405,6 +415,7 @@ def portfolio_result_out(
         esg_adjusted_return=_opt(res.esg_adjusted_return),
         risk_free_rate=res.risk_free_rate,
         diversification_ratio=_opt(div),
+        risk_contributions_note=risk_note,
         effective_number_of_assets=_finite(ex.effective_number_of_assets),
         holdings=holdings,
         sector_exposures=sector_exposures(res.tickers, res.weights, data),
@@ -1087,22 +1098,30 @@ def run_compare(service: MarketDataService, req: s.CompareRequest) -> s.CompareR
         w = weight_vector(tickers, p.weights)
         exp_r = portfolio_expected_return(w, est.expected_returns)
         vol = portfolio_volatility(w, est.covariance)
-        esg_vals = [data.asset(t).esg for t in tickers]
+        notes: list[str] = []
         held = [i for i in range(len(tickers)) if abs(w[i]) > 1e-9]
-        esg = (
-            float(sum(w[i] * esg_vals[i].score for i in held))  # type: ignore[union-attr]
-            if held and all(esg_vals[i] is not None for i in held) and (w >= -1e-12).all()
-            else None
-        )
+        unscored = [tickers[i] for i in held if data.asset(tickers[i]).esg is None]
+        esg: float | None = None
+        if unscored:
+            notes.append(
+                f"ESG score n/a: no ESG score for {', '.join(unscored)} (missing scores are "
+                "never imputed)."
+            )
+        else:
+            scores = np.array([e.score if (e := data.asset(t).esg) else 0.0 for t in tickers])
+            esg = portfolio_esg_score(np.where(np.abs(w) > 1e-9, w, 0.0), scores)
+        if vol < 1e-12:
+            notes.append("Sharpe ratio n/a: the expected volatility is zero.")
+        top: list[s.ContributionOut] = []
         try:
             rd = risk_decomposition(w, est.covariance)
-            order = np.argsort(-rd.percent_contribution)[:3]
+            order = [i for i in np.argsort(-rd.percent_contribution) if i in held][:3]
             top = [
                 s.ContributionOut(name=tickers[i], contribution=float(rd.percent_contribution[i]))
                 for i in order
             ]
-        except Exception:
-            top = []
+        except UndefinedMetricError as exc:
+            notes.append(f"Largest risk contributors n/a: {exc}")
         bt = run_backtest(data.returns, FixedWeightStrategy(tuple(w), name=p.name), cfg)
         dates = bt.dates
         start_date = bt.events[0].date
@@ -1120,6 +1139,7 @@ def run_compare(service: MarketDataService, req: s.CompareRequest) -> s.CompareR
                 historical=performance_out(bt.summary),
                 wealth=[_finite(float(x)) for x in bt.wealth],
                 drawdown=[_finite(float(x)) for x in drawdown_series(bt.returns)],
+                notes=notes,
             )
         )
     assert dates is not None

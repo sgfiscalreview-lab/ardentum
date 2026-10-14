@@ -563,9 +563,11 @@ class HoldingOut(ResponseModel):
     expected_return: float
     volatility: float
     esg_score: float | None
-    risk_contribution: float
-    risk_contribution_pct: float
-    marginal_contribution: float
+    # None when risk contributions are undefined (zero portfolio volatility); the result's
+    # risk_contributions_note says why.
+    risk_contribution: float | None
+    risk_contribution_pct: float | None
+    marginal_contribution: float | None
     beta_to_portfolio: float
     required_return: float | None
     status: str
@@ -604,6 +606,9 @@ class PortfolioResultOut(ResponseModel):
     esg_adjusted_return: float | None
     risk_free_rate: float
     diversification_ratio: float | None
+    risk_contributions_note: str | None = Field(
+        None, description="Why holdings' risk contributions are n/a, when they are."
+    )
     effective_number_of_assets: float
     holdings: list[HoldingOut]
     sector_exposures: list[SectorExposureOut]
@@ -832,6 +837,9 @@ class ComparedPortfolioOut(ResponseModel):
     historical: PerformanceOut
     wealth: list[float]
     drawdown: list[float]
+    notes: list[str] = Field(
+        default_factory=list, description="Why a figure above is n/a, one note per figure."
+    )
 
 
 class CompareResponse(ResponseModel):

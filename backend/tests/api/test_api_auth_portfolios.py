@@ -149,9 +149,7 @@ def test_upload_rejects_bad_csv(client: TestClient, auth: dict[str, str]) -> Non
     assert r.status_code == 401
 
 
-def test_a_constant_asset_does_not_blank_the_other_correlations(
-    client: TestClient, auth: dict[str, str]
-) -> None:
+def _upload_with_cash(client: TestClient, auth: dict[str, str]) -> tuple[str, str]:
     lines = PRICES.split("\n")
     prices = "\n".join([lines[0] + ",CASH", *(f"{line},100" for line in lines[1:])])
     up = client.post(
@@ -161,8 +159,15 @@ def test_a_constant_asset_does_not_blank_the_other_correlations(
         headers=auth,
     )
     assert up.status_code == 201, up.text
+    return up.json()["id"], prices
+
+
+def test_a_constant_asset_does_not_blank_the_other_correlations(
+    client: TestClient, auth: dict[str, str]
+) -> None:
+    dataset_id, prices = _upload_with_cash(client, auth)
     tickers = ["AAA", "BBB", "CASH"]
-    universe = {"dataset_id": up.json()["id"], "tickers": tickers}
+    universe = {"dataset_id": dataset_id, "tickers": tickers}
     r = client.post("/api/v1/analytics", json={"universe": universe}, headers=auth)
     assert r.status_code == 200, r.text
     corr = r.json()["correlation"]
@@ -186,3 +191,43 @@ def test_a_first_sign_in_racing_another_request_is_not_an_error(
     monkeypatch.setattr(Session, "get", miss_users)
     r = client.get("/api/v1/portfolios", headers=headers)
     assert r.status_code == 200, r.text
+
+
+def test_undefined_figures_are_na_with_a_reason_not_zero(
+    client: TestClient, auth: dict[str, str]
+) -> None:
+    dataset_id, _ = _upload_with_cash(client, auth)
+    universe = {"dataset_id": dataset_id, "tickers": ["AAA", "BBB", "CASH"]}
+    # Sample covariance keeps cash riskless (shrinkage would give it some variance).
+    sample = {"covariance_estimator": "sample"}
+    body = {
+        "universe": universe,
+        "estimation": sample,
+        "portfolios": [
+            {"name": "Cash", "weights": {"CASH": 1.0}},
+            {"name": "Mix", "weights": {"AAA": 0.5, "BBB": 0.5}},
+        ],
+    }
+    r = client.post("/api/v1/compare", json=body, headers=auth)
+    assert r.status_code == 200, r.text
+    cash, mix = r.json()["portfolios"]
+    assert cash["sharpe_ratio"] is None
+    assert cash["top_risk_contributors"] == []
+    assert any(n.startswith("Sharpe ratio n/a") for n in cash["notes"])
+    assert any(n.startswith("Largest risk contributors n/a") for n in cash["notes"])
+    assert any("no ESG score for CASH" in n for n in cash["notes"])
+    assert mix["sharpe_ratio"] is not None
+    assert len(mix["top_risk_contributors"]) == 2
+    assert "Cash" in r.json()["return_correlation_note"]
+
+    # Risk contributions of a riskless portfolio are n/a with the reason, not zeros.
+    opt = {
+        "universe": {**universe, "tickers": ["CASH"]},
+        "estimation": sample,
+        "objective": {"objective": "min_volatility"},
+    }
+    r = client.post("/api/v1/optimise", json=opt, headers=auth)
+    assert r.status_code == 200, r.text
+    result = r.json()["result"]
+    assert result["holdings"][0]["risk_contribution_pct"] is None
+    assert "zero volatility" in result["risk_contributions_note"]
