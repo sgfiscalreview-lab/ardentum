@@ -80,7 +80,7 @@ export default function FactorsPage() {
           <Card title="Portfolio">
             <PortfolioPicker value={pick} onChange={setPick} />
             <div className="mt-4">
-              <RunBar running={running} label="Estimate" onRun={submit} disabled={!portfolio} />
+              <RunBar running={running} label="Estimate" onRun={submit} disabled={!portfolio} note={!portfolio ? "Choose a portfolio first." : undefined} />
             </div>
           </Card>
           <Card title="The three factors">
@@ -158,7 +158,7 @@ function Results({ data }: { data: FactorResponse }) {
               <tr key={f.key}>
                 <Td>
                   <span className="font-medium text-ink">{f.name}</span>
-                  <span className="block text-[11px] text-muted">{f.description}</span>
+                  <span className="block text-caption2 text-muted">{f.description}</span>
                 </Td>
                 <Td align="right">{num(f.loading, 3)}</Td>
                 <Td align="right">{num(f.std_error, 3)}</Td>
@@ -170,7 +170,7 @@ function Results({ data }: { data: FactorResponse }) {
             <tr>
               <Td>
                 <span className="font-medium text-ink">Alpha (a year)</span>
-                <span className="block text-[11px] text-muted">Average return the factors do not explain.</span>
+                <span className="block text-caption2 text-muted">Average return the factors do not explain.</span>
               </Td>
               <Td align="right">{pct(data.alpha, 2)}</Td>
               <Td align="right">{pct(data.alpha_std_error, 2)}</Td>
@@ -180,7 +180,7 @@ function Results({ data }: { data: FactorResponse }) {
             </tr>
           </tbody>
         </Table>
-        <p className="px-4 py-2 text-[11px] text-muted">
+        <p className="px-4 py-2 text-caption2 text-muted">
           &quot;Clear&quot; means a p-value below 5%: a loading this far from zero would rarely appear by chance if the true loading were zero.
         </p>
       </Card>
@@ -235,7 +235,7 @@ function Results({ data }: { data: FactorResponse }) {
         <p className="mt-1">
           Residual volatility {pct(data.residual_volatility, 1)} a year · adjusted R-squared {pct(data.adj_r_squared, 0)} · {data.newey_west_lags} Newey-West lags.
         </p>
-        <p className="mt-1 text-[11px] text-muted">{data.factor_source}</p>
+        <p className="mt-1 text-caption2 text-muted">{data.factor_source}</p>
       </Callout>
       {data.notes.length > 0 && (
         <Callout tone="warning" title="Notes">

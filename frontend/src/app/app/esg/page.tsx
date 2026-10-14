@@ -169,7 +169,7 @@ function Impact({ data }: { data: EsgImpactResponse }) {
           ) : (
             <p className="px-2 text-sm text-ink-2">Not enough feasible ESG levels to draw the curve.</p>
           )}
-          <p className="px-2 text-[11px] text-muted">Horizontal axis: minimum portfolio ESG score. Levels above the best-scoring asset are infeasible.</p>
+          <p className="px-2 text-caption2 text-muted">Horizontal axis: minimum portfolio ESG score. Levels above the best-scoring asset are infeasible.</p>
         </ChartFrame>
       </div>
 

@@ -23,6 +23,19 @@ function readChoice(): ThemeChoice {
   }
 }
 
+let easingTimer: number | undefined;
+
+/**
+ * Eases the colours while the theme changes instead of jumping in brightness: the
+ * `theme-easing` class turns on colour transitions (globals.css) for a moment, then goes
+ * so that no transition lingers on later interactions. A second switch restarts it.
+ */
+export function easeThemeChange(root: HTMLElement = document.documentElement, ms = 400) {
+  root.classList.add("theme-easing");
+  window.clearTimeout(easingTimer);
+  easingTimer = window.setTimeout(() => root.classList.remove("theme-easing"), ms);
+}
+
 function subscribeChoice(cb: () => void) {
   listeners.add(cb);
   return () => listeners.delete(cb);
@@ -49,6 +62,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [choice]);
 
   const setChoice = useCallback((c: ThemeChoice) => {
+    easeThemeChange();
     try {
       if (c === "system") window.localStorage.removeItem(KEY);
       else window.localStorage.setItem(KEY, c);

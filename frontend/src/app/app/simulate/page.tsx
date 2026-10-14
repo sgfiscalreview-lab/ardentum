@@ -128,10 +128,10 @@ export default function SimulatePage() {
                   </Field>
                 </div>
               )}
-              <Field label="Random seed" htmlFor="seed" hint="Same seed and inputs ⇒ identical results. Leave empty for a random seed (it will be reported).">
+              <Field label="Random seed" htmlFor="seed" hint="The same seed and inputs give identical results. Leave empty for a random seed (it will be reported).">
                 <NumberInput id="seed" value={seed} onChange={(v) => setSeed(v == null ? null : Math.round(v))} min={0} max={2147483647} allowEmpty placeholder="Random" />
               </Field>
-              <RunBar running={running} label="Simulate" onRun={submit} disabled={!portfolio} />
+              <RunBar running={running} label="Simulate" onRun={submit} disabled={!portfolio} note={!portfolio ? "Choose a portfolio first." : undefined} />
             </div>
           </Card>
         </aside>

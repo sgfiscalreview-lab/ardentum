@@ -134,7 +134,14 @@ export function stateFromShare(payload: unknown): WorkspaceState | null {
 }
 
 /** After a shared link was opened: what to offer the visitor. */
-export type SharedLink = { status: "loaded"; previous: WorkspaceState } | { status: "unreadable" };
+/**
+ * Settings replaced from outside the page (a shared link, or a starting example), with
+ * what was there before so the user can go back.
+ */
+export type SharedLink =
+  | { status: "loaded"; previous: WorkspaceState; source: "link" }
+  | { status: "loaded"; previous: WorkspaceState; source: "example"; title: string }
+  | { status: "unreadable" };
 
 type Action =
   | { type: "universe"; value: Partial<UniverseSelection> }
@@ -189,13 +196,13 @@ interface WorkspaceContextValue {
   setWorking: (v: WorkingPortfolio | null) => void;
   submit: (page: PageKey, request: unknown) => void;
   reset: () => void;
-  /** Replace every setting at once (starting examples). */
-  replaceState: (next: WorkspaceState) => void;
-  /** Set when this page was opened from a shared link. */
+  /** Replace every setting with a starting example; the previous ones can be restored. */
+  startFromExample: (next: WorkspaceState, title: string) => void;
+  /** Set when a shared link or a starting example replaced the settings. */
   shared: SharedLink | null;
-  /** Keep the shared settings (or acknowledge an unreadable link). */
+  /** Keep the new settings (or acknowledge an unreadable link). */
   dismissShared: () => void;
-  /** Return to the settings this browser had before the shared link replaced them. */
+  /** Return to the settings this browser had before they were replaced. */
   restoreBeforeShare: () => void;
 }
 
@@ -224,7 +231,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           const incoming = stateFromShare(payload);
           if (!incoming) throw new Error("not a shared workspace");
           dispatch({ type: "hydrate", value: incoming });
-          setShared({ status: "loaded", previous });
+          setShared({ status: "loaded", previous, source: "link" });
         })
         .catch(() => setShared({ status: "unreadable" }));
     };
@@ -260,7 +267,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         if (!incoming) throw new Error("not a shared workspace");
         if (cancelled) return;
         dispatch({ type: "hydrate", value: incoming });
-        setShared({ status: "loaded", previous: local ?? DEFAULT_STATE });
+        setShared({ status: "loaded", previous: local ?? DEFAULT_STATE, source: "link" });
       })
       .catch(() => {
         if (!cancelled) setShared({ status: "unreadable" });
@@ -289,7 +296,13 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const setWorking = useCallback((value: WorkingPortfolio | null) => dispatch({ type: "working", value }), []);
   const submit = useCallback((page: PageKey, value: unknown) => dispatch({ type: "request", page, value }), []);
   const reset = useCallback(() => dispatch({ type: "reset" }), []);
-  const replaceState = useCallback((next: WorkspaceState) => dispatch({ type: "hydrate", value: next }), []);
+  // Forgiveness: an example replaces everything in one click, so the way back is kept. Trying
+  // several examples in a row still leads back to the settings from before the first.
+  const startFromExample = useCallback((next: WorkspaceState, title: string) => {
+    const current = latest.current;
+    setShared((s) => ({ status: "loaded", previous: s?.status === "loaded" ? s.previous : current, source: "example", title }));
+    dispatch({ type: "hydrate", value: next });
+  }, []);
   const dismissShared = useCallback(() => setShared(null), []);
   const restoreBeforeShare = useCallback(() => {
     if (shared?.status === "loaded") dispatch({ type: "hydrate", value: shared.previous });
@@ -307,12 +320,12 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       setWorking,
       submit,
       reset,
-      replaceState,
+      startFromExample,
       shared,
       dismissShared,
       restoreBeforeShare,
     }),
-    [state, hydrated, setUniverse, setEstimation, setObjective, setConstraints, setWorking, submit, reset, replaceState, shared, dismissShared, restoreBeforeShare],
+    [state, hydrated, setUniverse, setEstimation, setObjective, setConstraints, setWorking, submit, reset, startFromExample, shared, dismissShared, restoreBeforeShare],
   );
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
 }

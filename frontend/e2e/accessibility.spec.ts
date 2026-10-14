@@ -3,18 +3,35 @@ import { expect, test } from "@playwright/test";
 
 const PAGES = ["/", "/app", "/app/optimise", "/app/frontier", "/app/esg-data", "/research/optimisation", "/login", "/terms", "/privacy", "/cookies", "/licences", "/account", "/app/compare", "/tour", "/app/analytics?tour=2", "/usage", "/classroom", "/classroom/worksheet", "/glossary", "/app/crises", "/app/factors", "/app/trades", "/app/simulate", "/app/backtest"];
 
+// WCAG 2.2 AA includes the minimum size of things to press (target-size).
+const TAGS = ["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"];
+
 for (const theme of ["light", "dark"] as const) {
   for (const path of PAGES) {
     test(`${path} has no serious accessibility violations (${theme})`, async ({ page }) => {
       await page.emulateMedia({ colorScheme: theme });
       await page.goto(path);
       await page.waitForLoadState("networkidle");
-      const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
-      const serious = results.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
+      const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
+      const serious = results.violations.filter((v) => v.impact === "serious" || v.impact === "critical" || v.id === "target-size");
       expect(serious.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).slice(0, 3).join(", ")}`)).toEqual([]);
     });
   }
 }
+
+// Phones get their own layout (wrapped header, steps sheet, formulas that scroll sideways).
+test.describe("on a phone", () => {
+  test.use({ viewport: { width: 375, height: 800 } });
+  for (const path of PAGES) {
+    test(`${path} has no serious accessibility violations at phone width`, async ({ page }) => {
+      await page.goto(path);
+      await page.waitForLoadState("networkidle");
+      const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
+      const serious = results.violations.filter((v) => v.impact === "serious" || v.impact === "critical" || v.id === "target-size");
+      expect(serious.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).slice(0, 3).join(", ")}`)).toEqual([]);
+    });
+  }
+});
 
 test("optimise results have no serious accessibility violations", async ({ page }) => {
   await page.goto("/app/optimise");

@@ -17,7 +17,7 @@ const BUTTON: Record<ButtonVariant, string> = {
 export function buttonClass(variant: ButtonVariant = "secondary", size: "sm" | "md" | "lg" = "md"): string {
   return cx(
     "pressable inline-flex select-none items-center justify-center gap-2 rounded-md font-medium whitespace-nowrap",
-    size === "sm" ? "h-8 px-3.5 text-[13px]" : size === "lg" ? "h-11 rounded-full px-6 text-[15px]" : "h-9 px-4 text-sm",
+    size === "sm" ? "h-8 px-3.5 text-footnote" : size === "lg" ? "h-11 rounded-full px-6 text-subheadline" : "h-9 px-4 text-sm",
     BUTTON[variant],
   );
 }

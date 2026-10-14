@@ -101,7 +101,15 @@ export default function CrisesPage() {
                 label="Replay"
                 onRun={submit}
                 disabled={!portfolio || (selected.length === 0 && !custom) || !customReady}
-                note={!customReady ? "Enter a start before the end." : undefined}
+                note={
+                  !portfolio
+                    ? "Choose a portfolio first."
+                    : selected.length === 0 && !custom
+                      ? "Choose a crisis or enter your own dates."
+                      : !customReady
+                        ? "Enter a start before the end."
+                        : undefined
+                }
               />
             </div>
           </Card>
@@ -172,7 +180,7 @@ function Results({ data }: { data: StressResponse }) {
                 <tr key={e.key}>
                   <Td>
                     <span className="font-medium text-ink">{e.name}</span>
-                    <span className="block text-[11px] text-muted">
+                    <span className="block text-caption2 text-muted">
                       {fmtDate(e.start)} to {fmtDate(e.end)}
                     </span>
                   </Td>
@@ -181,7 +189,7 @@ function Results({ data }: { data: StressResponse }) {
                   <Td align="right">{pct(e.max_drawdown, 1)}</Td>
                   <Td align="right">
                     {pct(e.worst_day_return, 1)}
-                    <span className="block text-[11px] text-muted">{fmtDate(e.worst_day)}</span>
+                    <span className="block text-caption2 text-muted">{fmtDate(e.worst_day)}</span>
                   </Td>
                   <Td className="text-ink-2">{recovery(e, data.data_end)}</Td>
                 </tr>
@@ -189,7 +197,7 @@ function Results({ data }: { data: StressResponse }) {
                 <tr key={e.key}>
                   <Td>
                     <span className="font-medium text-ink">{e.name}</span>
-                    <span className="block text-[11px] text-muted">
+                    <span className="block text-caption2 text-muted">
                       {fmtDate(e.start)} to {fmtDate(e.end)}
                     </span>
                   </Td>
@@ -212,7 +220,7 @@ function Results({ data }: { data: StressResponse }) {
       )}
       <Callout tone="info" title="How the replay works">
         <p>{data.method}</p>
-        <p className="mt-1 text-[11px] text-muted">{data.source}</p>
+        <p className="mt-1 text-caption2 text-muted">{data.source}</p>
       </Callout>
       <DataNotes data={data.data} />
     </div>

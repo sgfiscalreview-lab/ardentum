@@ -358,13 +358,13 @@ export default function EsgDataPage() {
                       <tr key={e.ticker}>
                         <Td>
                           <span className="font-medium">{e.ticker}</span>
-                          <span className="block text-[11px] text-muted">{e.isin ?? "no ISIN"}</span>
+                          <span className="block text-caption2 text-muted">{e.isin ?? "no ISIN"}</span>
                         </Td>
                         <Td>
                           {e.company ? (
                             <>
                               {e.company}
-                              <span className="block text-[11px] text-muted">{e.matched_by === "isin" ? "matched by ISIN" : "chosen by you"}</span>
+                              <span className="block text-caption2 text-muted">{e.matched_by === "isin" ? "matched by ISIN" : "chosen by you"}</span>
                             </>
                           ) : (
                             <CompanyPicker ticker={e.ticker} initial={e.asset_name} onPick={(c) => pickCompany(e.ticker, c)} />
@@ -384,13 +384,13 @@ export default function EsgDataPage() {
                         </Td>
                         <Td>
                           <Badge tone={STATUS[e.status].tone}>{STATUS[e.status].label}</Badge>
-                          <span className="block text-[11px] text-muted">{e.note}</span>
+                          <span className="block text-caption2 text-muted">{e.note}</span>
                         </Td>
                       </tr>
                     ))}
                   </tbody>
                 </Table>
-                <p className="px-4 py-2 text-[11px] text-muted">{preview.attribution}</p>
+                <p className="px-4 py-2 text-caption2 text-muted">{preview.attribution}</p>
               </Card>
             </>
           )}
@@ -453,10 +453,10 @@ function CompanyPicker({ ticker, initial, onPick }: { ticker: string; initial: s
       </div>
       {results && (
         <ul className="space-y-0.5">
-          {results.length === 0 && <li className="text-[11px] text-muted">No companies found.</li>}
+          {results.length === 0 && <li className="text-caption2 text-muted">No companies found.</li>}
           {results.map((c) => (
             <li key={c.id}>
-              <button type="button" className="text-left text-[11px] text-accent-ink underline underline-offset-2" onClick={() => onPick(c)}>
+              <button type="button" className="text-left text-caption2 text-accent-ink underline underline-offset-2" onClick={() => onPick(c)}>
                 {c.name}
                 {c.headquarters ? ` (${c.headquarters})` : ""}
               </button>
@@ -553,7 +553,7 @@ function CompositeView({ data, onPick }: { data: CompositePreviewOut; onPick: (t
                   <span className="block max-w-40 truncate" title={c.metric.title}>
                     {c.metric.title}
                   </span>
-                  <span className="block text-[11px] font-normal text-muted">weight {(c.weight * 100).toFixed(0)}%</span>
+                  <span className="block text-caption2 font-normal text-muted">weight {(c.weight * 100).toFixed(0)}%</span>
                 </Th>
               ))}
               <Th align="right">Composite</Th>
@@ -565,13 +565,13 @@ function CompositeView({ data, onPick }: { data: CompositePreviewOut; onPick: (t
               <tr key={e.ticker}>
                 <Td>
                   <span className="font-medium">{e.ticker}</span>
-                  <span className="block text-[11px] text-muted">{e.isin ?? "no ISIN"}</span>
+                  <span className="block text-caption2 text-muted">{e.isin ?? "no ISIN"}</span>
                 </Td>
                 <Td>
                   {e.company ? (
                     <>
                       {e.company}
-                      <span className="block text-[11px] text-muted">{e.matched_by === "isin" ? "matched by ISIN" : "chosen by you"}</span>
+                      <span className="block text-caption2 text-muted">{e.matched_by === "isin" ? "matched by ISIN" : "chosen by you"}</span>
                     </>
                   ) : (
                     <CompanyPicker ticker={e.ticker} initial={e.asset_name} onPick={(c) => onPick(e.ticker, c)} />
@@ -582,9 +582,9 @@ function CompositeView({ data, onPick }: { data: CompositePreviewOut; onPick: (t
                   return (
                     <Td key={c.metric.id} align="right">
                       {part?.score != null ? part.score.toFixed(0) : "n/a"}
-                      {part?.year != null && <span className="block text-[11px] text-muted">{part.year}</span>}
+                      {part?.year != null && <span className="block text-caption2 text-muted">{part.year}</span>}
                       {part?.answer_url && (
-                        <a href={part.answer_url} target="_blank" rel="noreferrer" className="text-[11px] text-accent-ink underline underline-offset-2">
+                        <a href={part.answer_url} target="_blank" rel="noreferrer" className="text-caption2 text-accent-ink underline underline-offset-2">
                           source
                         </a>
                       )}
@@ -596,13 +596,13 @@ function CompositeView({ data, onPick }: { data: CompositePreviewOut; onPick: (t
                 </Td>
                 <Td>
                   <Badge tone={STATUS[e.status].tone}>{STATUS[e.status].label}</Badge>
-                  <span className="block text-[11px] text-muted">{e.note}</span>
+                  <span className="block text-caption2 text-muted">{e.note}</span>
                 </Td>
               </tr>
             ))}
           </tbody>
         </Table>
-        <p className="px-4 py-2 text-[11px] text-muted">{data.attribution}</p>
+        <p className="px-4 py-2 text-caption2 text-muted">{data.attribution}</p>
       </Card>
     </>
   );

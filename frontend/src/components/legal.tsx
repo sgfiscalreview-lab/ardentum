@@ -48,7 +48,7 @@ export function SiteFooter() {
   ];
   return (
     <footer className="mt-20 border-t border-line print:hidden">
-      <div className="mx-auto flex max-w-[1600px] flex-col gap-4 px-4 py-8 text-xs text-muted sm:flex-row sm:items-start sm:justify-between lg:px-6">
+      <div className="mx-auto flex max-w-[100rem] flex-col gap-4 px-4 py-8 text-xs text-muted sm:flex-row sm:items-start sm:justify-between lg:px-6">
         <div className="max-w-2xl space-y-2 leading-relaxed">
           <p>
             Ardentum is an analytical tool for education and research. It does not give investment advice. Model outputs are estimates based on historical data and stated assumptions; past performance does not predict future results.
@@ -70,11 +70,11 @@ export function SiteFooter() {
         </div>
         <nav aria-label="Footer" className="flex shrink-0 flex-wrap gap-x-4 gap-y-2">
           {links.map((l) => (
-            <Link key={l.href} href={l.href} className="underline-offset-2 hover:underline">
+            <Link key={l.href} href={l.href} className="hit underline-offset-2 hover:underline">
               {l.label}
             </Link>
           ))}
-          <a href={SOURCE_URL} className="underline-offset-2 hover:underline">
+          <a href={SOURCE_URL} className="hit underline-offset-2 hover:underline">
             Source code
           </a>
         </nav>

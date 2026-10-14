@@ -29,6 +29,13 @@ All notable changes to Ardentum are recorded here. Versions follow
 - The live smoke test also checks the usage counts and the tour, usage and classroom pages.
 
 ### Changed
+- The interface design is complete against the apple-design skill: on phones the page
+  steps back behind the steps sheet, which can be caught while closing and starts to
+  move only after a 10 px drag; popovers and notices form as they arrive and never block
+  clicks while leaving; the server notice floats instead of pushing the page down; the
+  header edge softens instead of showing a line; light and dark ease into each other;
+  text sizes follow the browser's text-size setting; small controls get touch margins;
+  starting from an example can be undone; disabled buttons say why.
 - Redesigned interface after Apple's fluid-interface guidance: a translucent header that
   content scrolls under, soft depth and rounder corners, spring motion that can be
   interrupted, press feedback, sliding segmented controls, popovers that grow from their
@@ -46,6 +53,11 @@ All notable changes to Ardentum are recorded here. Versions follow
 - Choosing a real industry dataset lists its industries to pick from (it showed a ticker
   box meant for live data).
 - Browser tests serve the Kenneth French files from a local stand-in.
+
+### Fixed
+- Opening the steps sheet on a phone flung it far past the top of the screen before it
+  settled.
+- Wide formulas on the methodology pages can be scrolled with the keyboard on phones.
 
 ### Security
 - The database is closed to Supabase's public Data API: row-level security on every table

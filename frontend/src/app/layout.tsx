@@ -28,10 +28,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           Skip to content
         </a>
         <Providers>
-          <SiteHeader />
+          {/* The page as one card, so a sheet can push it back (components/sheet.tsx). */}
+          <div id="page">
+            <SiteHeader />
+            <div id="main">{children}</div>
+            <SiteFooter />
+          </div>
           <ServerWaking />
-          <div id="main">{children}</div>
-          <SiteFooter />
         </Providers>
       </body>
     </html>

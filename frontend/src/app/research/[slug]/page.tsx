@@ -47,7 +47,7 @@ export default async function ResearchDoc({ params }: { params: Promise<{ slug: 
         </ol>
       </nav>
       <article className="prose-doc min-w-0 max-w-3xl">
-        <p className="text-[13px] font-semibold text-accent-ink">
+        <p className="text-footnote font-semibold text-accent-ink">
           <Link href="/research">Methodology</Link>
         </p>
         <h1 className="mt-2">{doc.title}</h1>
@@ -57,6 +57,11 @@ export default async function ResearchDoc({ params }: { params: Promise<{ slug: 
           rehypePlugins={[rehypeKatex]}
           components={{
             h1: () => null,
+            // Wide formulas scroll sideways on narrow screens: keyboard users can reach them too.
+            span: ({ node, className, ...props }) => {
+              void node; // the syntax-tree node, not an attribute
+              return <span className={className} tabIndex={className?.split(" ").includes("katex-display") ? 0 : undefined} {...props} />;
+            },
             a: ({ href, children }) =>
               href?.startsWith("/") ? (
                 <Link href={href}>{children}</Link>

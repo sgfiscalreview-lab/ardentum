@@ -84,7 +84,7 @@ export default function UniversePage() {
                   </span>
                   <span className="mt-1 line-clamp-2 block text-xs text-ink-2">{d.description}</span>
                   {d.start && (
-                    <span className="mt-1 block text-[11px] text-muted">
+                    <span className="mt-1 block text-caption2 text-muted">
                       {d.n_assets} assets · {fmtDate(d.start)} – {fmtDate(d.end)}
                     </span>
                   )}
@@ -152,17 +152,17 @@ export default function UniversePage() {
 }
 
 function Examples() {
-  const { replaceState } = useWorkspace();
+  const { startFromExample } = useWorkspace();
   const router = useRouter();
   return (
-    <Card id="examples" className="mb-4" title="Start from an example" subtitle="Each one sets up the data and a portfolio, then opens a finished result. It replaces your current settings.">
+    <Card id="examples" className="mb-4" title="Start from an example" subtitle="Each one sets up the data and a portfolio, then opens a finished result. It replaces your current settings, with a way back.">
       <div className="grid gap-2 sm:grid-cols-2 2xl:grid-cols-4">
         {PRESETS.map((p) => (
           <button
             key={p.key}
             type="button"
             onClick={() => {
-              replaceState(p.build());
+              startFromExample(p.build(), p.title);
               router.push(p.href);
             }}
             className="pressable-soft rounded-lg border border-line bg-surface p-3.5 text-left hover:bg-surface-2"
@@ -319,7 +319,7 @@ function RiskFreeFetch({ universe, onChange }: { universe: UniverseSelection; on
           {busy ? "Fetching…" : "Use"}
         </Button>
       </div>
-      <p className="text-[11px] text-muted">
+      <p className="text-caption2 text-muted">
         Average over the estimation window (last 5 years if none is set), as an effective annual rate.
         {last && ` Retrieved ${fmtDate(last.retrieved_at.slice(0, 10))}${last.stale ? " (cached copy; source unreachable)" : ""}. Source: ${last.source.citation}`}
       </p>
@@ -446,7 +446,7 @@ function UploadCard() {
         </Field>
         {error && <Callout tone="error" title="Upload rejected">{error.message}</Callout>}
         {ok && <Callout tone="success">{ok}</Callout>}
-        <p className="text-[11px] text-muted">By uploading you confirm you have the right to use this data. It is visible only to you.</p>
+        <p className="text-caption2 text-muted">By uploading you confirm you have the right to use this data. It is visible only to you.</p>
         <Button variant="primary" onClick={() => void submit()} busy={busy} disabled={!prices || !name.trim()}>
           Upload
         </Button>

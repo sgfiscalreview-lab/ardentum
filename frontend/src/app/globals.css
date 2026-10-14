@@ -39,6 +39,9 @@
   --material-thick: rgba(252, 251, 249, 0.9);
   --scrim: rgba(29, 30, 32, 0.3);
   --focus-ring: rgba(31, 79, 130, 0.32);
+  --material-edge: rgba(255, 253, 248, 0.7);
+  --sidebar: #e8e5de;
+  --backdrop: #1d1e20;
   --shadow-1: 0 1px 2px rgba(29, 30, 32, 0.05), 0 1px 3px rgba(29, 30, 32, 0.04);
   --shadow-2: 0 1px 2px rgba(29, 30, 32, 0.09), 0 3px 8px rgba(29, 30, 32, 0.07);
   --shadow-3: 0 2px 6px rgba(29, 30, 32, 0.07), 0 14px 36px rgba(29, 30, 32, 0.16);
@@ -88,6 +91,9 @@
     --material-thick: rgba(33, 35, 39, 0.9);
     --scrim: rgba(0, 0, 0, 0.5);
     --focus-ring: rgba(157, 187, 220, 0.42);
+    --material-edge: rgba(255, 255, 255, 0.07);
+    --sidebar: #191a1d;
+    --backdrop: #0b0c0e;
     --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.32);
     --shadow-2: 0 1px 2px rgba(0, 0, 0, 0.4), 0 3px 8px rgba(0, 0, 0, 0.3);
     --shadow-3: 0 2px 8px rgba(0, 0, 0, 0.36), 0 16px 40px rgba(0, 0, 0, 0.52);
@@ -137,6 +143,9 @@
   --material-thick: rgba(33, 35, 39, 0.9);
   --scrim: rgba(0, 0, 0, 0.5);
   --focus-ring: rgba(157, 187, 220, 0.42);
+  --material-edge: rgba(255, 255, 255, 0.07);
+  --sidebar: #191a1d;
+  --backdrop: #0b0c0e;
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.32);
   --shadow-2: 0 1px 2px rgba(0, 0, 0, 0.4), 0 3px 8px rgba(0, 0, 0, 0.3);
   --shadow-3: 0 2px 8px rgba(0, 0, 0, 0.36), 0 16px 40px rgba(0, 0, 0, 0.52);
@@ -182,6 +191,14 @@
   --color-material: var(--material);
   --color-material-thick: var(--material-thick);
   --color-scrim: var(--scrim);
+  --color-sidebar: var(--sidebar);
+  /* Text sizes in rem, so they follow the reader's own text-size setting. Named after
+     Apple's text styles; at the default size they are 10, 11, 12, 13 and 15 px. */
+  --text-2xs: 0.625rem;
+  --text-caption2: 0.6875rem;
+  --text-caption1: 0.75rem;
+  --text-footnote: 0.8125rem;
+  --text-subheadline: 0.9375rem;
   /* Operating-system fonts: no web-font download, no trend typefaces. On Apple devices
      this is San Francisco, which switches between its Text and Display cuts by size. */
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -260,26 +277,95 @@ body {
 
 /* ---------------------------------------------------------------- materials & depth
    Chrome is a translucent material that content scrolls under; the thicker material is
-   for surfaces that float above content (popovers, sheets, tooltips). Elevation is soft:
-   bigger, more separate surfaces cast deeper shadows. */
-.material {
-  background-color: var(--material);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-  backdrop-filter: saturate(180%) blur(20px);
+   for surfaces that float above content (popovers, sheets, tooltips, notices). Elevation
+   is soft: bigger, more separate surfaces cast deeper shadows. A material's top edge
+   catches the light. Its blur radius is a variable so a surface can materialize: blur
+   and scale arrive together rather than a plain fade. */
+@property --elev {
+  syntax: "*";
+  inherits: false;
 }
-.material-thick {
-  background-color: var(--material-thick);
-  -webkit-backdrop-filter: saturate(180%) blur(28px);
-  backdrop-filter: saturate(180%) blur(28px);
+@property --material-blur {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 20px;
 }
 .elev-1 {
-  box-shadow: var(--shadow-1);
+  --elev: var(--shadow-1);
+  box-shadow: var(--elev);
 }
 .elev-2 {
-  box-shadow: var(--shadow-2);
+  --elev: var(--shadow-2);
+  box-shadow: var(--elev);
 }
 .elev-3 {
-  box-shadow: var(--shadow-3);
+  --elev: var(--shadow-3);
+  box-shadow: var(--elev);
+}
+.material,
+.material-thick {
+  background-color: var(--material);
+  -webkit-backdrop-filter: saturate(180%) blur(var(--material-blur, 20px));
+  backdrop-filter: saturate(180%) blur(var(--material-blur, 20px));
+  box-shadow: inset 0 1px 0 var(--material-edge), var(--elev, 0 0 #0000);
+}
+.material-thick {
+  --material-blur: 28px;
+  background-color: var(--material-thick);
+}
+
+/* Scroll edge: where content passes under the header it softens into the material
+   instead of meeting a ruled line. A short band of blur that fades out downwards (a
+   mask: nothing is coloured), shown only while content is actually underneath. */
+.scroll-edge {
+  position: absolute;
+  inset-inline: 0;
+  top: 100%;
+  height: 0.875rem;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 150ms ease;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  -webkit-mask-image: linear-gradient(to bottom, #000, transparent);
+  mask-image: linear-gradient(to bottom, #000, transparent);
+}
+.scroll-edge[data-on] {
+  opacity: 1;
+}
+
+/* Touch screens: small controls get an invisible margin to aim at (the visible control
+   stays the same size). */
+@media (pointer: coarse) {
+  .hit {
+    position: relative;
+  }
+  .hit::after {
+    content: "";
+    position: absolute;
+    inset: -0.375rem -0.125rem;
+  }
+}
+
+/* Switching between light and dark eases the colours over a moment instead of jumping
+   in brightness. Colour only: nothing moves. */
+html.theme-easing,
+html.theme-easing *,
+html.theme-easing *::before,
+html.theme-easing *::after {
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow !important;
+  transition-duration: 280ms !important;
+  transition-timing-function: ease !important;
+}
+
+/* While a sheet is open the page behind it is pushed back: it becomes a card on a dark
+   backdrop (components/sheet.tsx). */
+html[data-sheet],
+html[data-sheet] body {
+  background: var(--backdrop);
+}
+#page {
+  background: var(--plane);
 }
 
 /* Press feedback: on pointer-down, at once (no waiting for the click). */
@@ -297,7 +383,8 @@ body {
 }
 
 /* Without translucency (the user asked for less, or the browser cannot blur), materials
-   are solid; with more contrast requested, borders get stronger too. */
+   are solid and the scroll edge is a plain rule; with more contrast requested, borders
+   get stronger too and the edge light goes. */
 @media (prefers-reduced-transparency: reduce) {
   .material,
   .material-thick {
@@ -305,11 +392,25 @@ body {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
+  .scroll-edge {
+    height: 1px;
+    background: var(--border);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
 }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .material,
   .material-thick {
     background-color: var(--surface);
+  }
+  .scroll-edge {
+    height: 1px;
+    background: var(--border);
+    -webkit-mask-image: none;
+    mask-image: none;
   }
 }
 @media (prefers-contrast: more) {
@@ -323,6 +424,15 @@ body {
     background-color: var(--surface);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
+    box-shadow: var(--elev, 0 0 #0000);
+  }
+  .scroll-edge {
+    height: 1px;
+    background: var(--border);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    -webkit-mask-image: none;
+    mask-image: none;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -342,7 +452,7 @@ body {
 }
 .recharts-text {
   fill: var(--muted);
-  font-size: 11px;
+  font-size: 0.6875rem;
 }
 .recharts-wrapper:focus,
 .recharts-surface:focus {

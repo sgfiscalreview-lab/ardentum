@@ -63,7 +63,7 @@ export default function TradesPage() {
                 <div key={t} className="grid grid-cols-[minmax(0,1fr)_9rem] items-center gap-2">
                   <label htmlFor={`h-${t}`} className="truncate text-sm text-ink">
                     {t}
-                    {target?.weights[t] ? <span className="ml-1.5 text-[11px] text-muted">target {pct(target.weights[t], 1)}</span> : null}
+                    {target?.weights[t] ? <span className="ml-1.5 text-caption2 text-muted">target {pct(target.weights[t], 1)}</span> : null}
                   </label>
                   <NumberInput
                     id={`h-${t}`}
@@ -101,7 +101,7 @@ export default function TradesPage() {
                 label="Make trade list"
                 onRun={submit}
                 disabled={!target || held + newMoney <= 0}
-                note={held + newMoney <= 0 ? "Enter what you hold or some new money." : undefined}
+                note={!target ? "Choose a target portfolio first." : held + newMoney <= 0 ? "Enter what you hold or some new money." : undefined}
               />
             </div>
           </Card>
@@ -161,7 +161,7 @@ function Results({ data, notTradable }: { data: TradesResponse; notTradable: boo
                 <Td className="font-medium">{t.ticker}</Td>
                 <Td align="right">
                   {amount(t.current_value)}
-                  <span className="block text-[11px] text-muted">{t.current_weight == null ? "n/a" : pct(t.current_weight, 1)}</span>
+                  <span className="block text-caption2 text-muted">{t.current_weight == null ? "n/a" : pct(t.current_weight, 1)}</span>
                 </Td>
                 <Td align="right">{pct(t.target_weight, 1)}</Td>
                 <Td align="right">{amount(t.target_value)}</Td>
@@ -177,7 +177,7 @@ function Results({ data, notTradable }: { data: TradesResponse; notTradable: boo
               <Td align="right">{amount(data.value_after)}</Td>
               <Td align="right">
                 bought {amount(data.bought)}
-                <span className="block text-[11px] text-muted">sold {amount(data.sold)}</span>
+                <span className="block text-caption2 text-muted">sold {amount(data.sold)}</span>
               </Td>
               <Td align="right">{amount(data.total_costs)}</Td>
             </tr>
