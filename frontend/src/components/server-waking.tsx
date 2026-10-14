@@ -1,11 +1,13 @@
 "use client";
 
-import { AnimatePresence, m, useReducedMotion } from "motion/react";
+import { AnimatePresence } from "motion/react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 
 import { wakeApi } from "@/lib/api/client";
 import { subscribe, wakingSince } from "@/lib/api/server-status";
-import { REDUCED_UNFOLD, SPRING } from "@/lib/motion";
+import { MATERIAL_IN, MATERIAL_OUT } from "@/lib/motion";
+
+import { Departing } from "./ui";
 
 /** Seconds a request may wait before the notice appears (a warm API answers in well under one). */
 const SHOW_AFTER_S = 3;
@@ -17,7 +19,6 @@ const SHOW_AFTER_S = 3;
 export function ServerWaking() {
   const since = useSyncExternalStore(subscribe, wakingSince, () => null);
   const [now, setNow] = useState(() => Date.now());
-  const reduced = useReducedMotion();
 
   useEffect(() => wakeApi(), []);
 
@@ -30,27 +31,29 @@ export function ServerWaking() {
   const waited = since === null ? 0 : Math.max(0, Math.floor((now - since) / 1000));
   const shown = since !== null && waited >= SHOW_AFTER_S;
   return (
-    // Unfolds below the header and folds back into it once the server answers.
-    <AnimatePresence initial={false}>
-      {shown && (
-        <m.div
-          key="waking"
-          role="status"
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: "auto", opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          transition={reduced ? REDUCED_UNFOLD : SPRING}
-          className="overflow-hidden border-b border-accent/25 bg-accent-wash text-sm text-ink print:hidden"
-        >
-          <p className="mx-auto max-w-6xl px-4 py-2.5">
-            <span className="font-medium">Starting the calculation server ({waited} s).</span>{" "}
-            <span className="text-ink-2">
-              The free server sleeps when nobody has used it for a while and takes up to a minute to start. Your request
-              continues on its own.
-            </span>
-          </p>
-        </m.div>
-      )}
-    </AnimatePresence>
+    // A notice that floats above the page rather than pushing it down: it rises from the
+    // bottom edge and returns there once the server answers. Nothing on the page moves.
+    <div className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center px-4 print:hidden">
+      <AnimatePresence>
+        {shown && (
+          <Departing
+            key="waking"
+            role="status"
+            initial={{ opacity: 0, y: 24, ...MATERIAL_OUT }}
+            animate={{ opacity: 1, y: 0, ...MATERIAL_IN }}
+            exit={{ opacity: 0, y: 24, ...MATERIAL_OUT }}
+            className="material-thick pointer-events-auto w-full max-w-xl rounded-xl border border-line px-4 py-3 text-sm text-ink elev-3"
+          >
+            <p>
+              <span className="font-medium">Starting the calculation server ({waited} s).</span>{" "}
+              <span className="text-ink-2">
+                The free server sleeps when nobody has used it for a while and takes up to a minute to start. Your request
+                continues on its own.
+              </span>
+            </p>
+          </Departing>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

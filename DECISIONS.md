@@ -468,3 +468,35 @@ system fonts, the plain copy and the other UI rules stay.
   tracking: negative for display and titles, slightly positive for captions.
 * **Library.** Motion (`motion`, MIT) for springs, presence and shared-layout animation;
   loaded lazily through `LazyMotion` so pages that do not animate pay little for it.
+
+## D-042 Completing the fluid interface
+A review of D-041 against every section of the apple-design skill left gaps; this closes
+them and records the two parts deliberately left out.
+* **Sheet.** The page behind is pushed back (scaled to 95% with rounded corners on a
+  charcoal backdrop) in step with the sheet, so dragging the sheet also moves the page.
+  A closing sheet can be caught and pulled back up. A press becomes a drag after 10 px.
+  The sheet is slightly see-through while it travels. A frame-by-frame recording of the
+  opening found it flung 5,700 px past the top and falling back: parking it at the
+  screen edge with `set()` implied a huge velocity that the spring inherited. It is now
+  placed with `jump()`, and the recording shows a monotonic rise from 800 to 120 px.
+* **Only transform and opacity animate.** Disclosures and the server notice no longer
+  animate height. The notice floats above the page instead of pushing it down.
+  Departing surfaces stop taking clicks as they start to leave.
+* **Materials.** Popovers and the notice materialize: their blur radius grows with scale
+  and opacity. Materials have a light top edge. The header's ruled line became a scroll
+  edge: a short band of blur that fades out, shown only while content is underneath.
+  The fade is a mask on the blur and colours nothing, so the no-gradients rule holds.
+  The workspace sidebar is an inset, opaque tint, as a structural region.
+* **Accessibility and type.** Light and dark switch with a 280 ms colour ease instead of a
+  brightness jump. Every text size is in rem, so a larger text setting enlarges it.
+  Small controls get touch margins; axe now checks WCAG 2.2 AA (target size) and also
+  runs at phone width, which found wide formulas on methodology pages that scrolled but
+  could not be reached by keyboard (now focusable).
+* **Forgiveness.** Starting from an example keeps the way back, like a shared link: the
+  notice offers "Go back to my settings", and trying several examples still leads back
+  to the settings from before the first. Disabled run buttons say why beside them.
+* **Left out.** Sound and haptics: the skill's own utility rule says to add them only
+  where they earn their place, and in an analysis tool they do not (iPhone Safari also
+  has no vibration support). Motion blur for very fast movement: it would repaint every
+  frame, against the same skill's compositor-only rule, and the fastest motion here (a
+  flicked sheet) is short.

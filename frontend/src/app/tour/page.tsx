@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "Guided tour" };
 export default function TourPage() {
   return (
     <main className="mx-auto max-w-4xl px-4 py-10">
-      <p className="text-[13px] font-semibold text-accent-ink">Guided tour</p>
+      <p className="text-footnote font-semibold text-accent-ink">Guided tour</p>
       <h1 className="type-title-1 mt-2 text-ink">Ardentum in eight steps</h1>
       <p className="mt-2 max-w-2xl text-ink-2">
         About fifteen minutes, from choosing data to testing a portfolio out of sample. It runs on the synthetic demo universe, so nothing needs signing in and nothing you do is saved. Each step opens the page with a short note at the top saying what to try and what to look for.

@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, m, useReducedMotion } from "motion/react";
+import { AnimatePresence, m, useIsPresent } from "motion/react";
 import Link from "next/link";
 import {
   forwardRef,
@@ -10,6 +10,7 @@ import {
   useRef,
   useState,
   type ButtonHTMLAttributes,
+  type ComponentProps,
   type InputHTMLAttributes,
   type ReactNode,
   type RefObject,
@@ -18,7 +19,7 @@ import {
 
 import { buttonClass, cx, type ButtonVariant } from "@/lib/classes";
 import { glossaryIdFor } from "@/lib/glossary";
-import { REDUCED_UNFOLD, SPRING, SPRING_SNAPPY } from "@/lib/motion";
+import { MATERIAL_IN, MATERIAL_OUT, SPRING, SPRING_SNAPPY } from "@/lib/motion";
 
 export { buttonClass, cx } from "@/lib/classes";
 
@@ -76,7 +77,7 @@ export function Card({
         <header className="flex flex-wrap items-start justify-between gap-3 border-b border-line px-4 py-3">
           <div className="min-w-0">
             {title && <h2 className="type-headline text-ink">{title}</h2>}
-            {subtitle && <p className="mt-0.5 text-[13px] leading-snug text-ink-2">{subtitle}</p>}
+            {subtitle && <p className="mt-0.5 text-footnote leading-snug text-ink-2">{subtitle}</p>}
           </div>
           {actions && <div className="flex items-center gap-2">{actions}</div>}
         </header>
@@ -103,7 +104,7 @@ export function Field({
 }) {
   return (
     <div className={cx("flex flex-col gap-1", className)}>
-      <label htmlFor={htmlFor} className="text-[13px] font-medium text-ink-2">
+      <label htmlFor={htmlFor} className="text-footnote font-medium text-ink-2">
         {label}
       </label>
       {children}
@@ -300,7 +301,7 @@ export function Badge({
   return (
     <span
       title={title}
-      className={cx("inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium", cls)}
+      className={cx("inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-caption2 font-medium", cls)}
     >
       {children}
     </span>
@@ -426,8 +427,8 @@ function SegmentedButtons<T extends string>({
               }
             }}
             className={cx(
-              "relative rounded-[7px] font-medium whitespace-nowrap",
-              size === "xs" ? "px-2 py-0.5 text-[12px] sm:px-2.5" : "px-3 py-1 text-xs",
+              "hit relative rounded-[7px] font-medium whitespace-nowrap",
+              size === "xs" ? "px-2 py-0.5 text-caption1 sm:px-2.5" : "px-3 py-1 text-xs",
               selected ? "text-ink" : "text-ink-2 hover:text-ink",
             )}
           >
@@ -536,7 +537,6 @@ export function DisclosureHint() {
 export function Disclosure({ summary, children, defaultOpen }: { summary: ReactNode; children: ReactNode; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(Boolean(defaultOpen));
   const region = useId();
-  const reduced = useReducedMotion();
   return (
     <section className="rounded-lg border border-line bg-surface elev-1">
       <button
@@ -551,17 +551,17 @@ export function Disclosure({ summary, children, defaultOpen }: { summary: ReactN
           {open ? "Hide" : "Show"}
         </span>
       </button>
-      {/* The body unfolds from the header and folds back into it on the same path. */}
+      {/* The body comes out of the header and goes back into it on the same path. Only
+          opacity and position animate (no layout per frame); the card takes its new
+          size at once. */}
       <AnimatePresence initial={false}>
         {open && (
           <m.div
             key="body"
             id={region}
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={reduced ? REDUCED_UNFOLD : SPRING}
-            className="overflow-hidden"
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0, transition: SPRING }}
+            exit={{ opacity: 0, y: -6, transition: SPRING_SNAPPY }}
           >
             <div className="border-t border-line px-4 py-3">{children}</div>
           </m.div>
@@ -598,7 +598,8 @@ export function useDismiss(ref: RefObject<HTMLElement | null>, open: boolean, on
 
 /**
  * A panel anchored under the control that opened it: it grows out of that control and
- * returns into it. Place it in a relatively positioned wrapper with the trigger.
+ * returns into it, its material forming as it arrives. Place it in a relatively
+ * positioned wrapper with the trigger.
  */
 export function PopoverPanel({
   open,
@@ -615,10 +616,11 @@ export function PopoverPanel({
   return (
     <AnimatePresence>
       {open && (
-        <m.div
-          initial={{ opacity: 0, scale: 0.96, y: -6 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.96, y: -6 }}
+        <Departing
+          key="popover"
+          initial={{ opacity: 0, scale: 0.96, y: -6, ...MATERIAL_OUT }}
+          animate={{ opacity: 1, scale: 1, y: 0, ...MATERIAL_IN }}
+          exit={{ opacity: 0, scale: 0.96, y: -6, ...MATERIAL_OUT }}
           className={cx(
             "material-thick absolute top-full z-20 mt-2 w-72 rounded-xl border border-line p-3 elev-3",
             align === "start"
@@ -630,10 +632,19 @@ export function PopoverPanel({
           )}
         >
           {children}
-        </m.div>
+        </Departing>
       )}
     </AnimatePresence>
   );
+}
+
+/**
+ * A surface inside AnimatePresence that stops taking clicks the moment it starts to
+ * leave: input is never held up by an exit animation, even a nearly invisible one.
+ */
+export function Departing({ style, ...props }: ComponentProps<typeof m.div>) {
+  const present = useIsPresent();
+  return <m.div {...props} style={{ ...style, pointerEvents: present ? undefined : "none" }} />;
 }
 
 // --------------------------------------------------------------------------- Skeleton

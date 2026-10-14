@@ -23,28 +23,45 @@ Read this first, then `ARCHITECTURE.md`, `DECISIONS.md`, `PROGRESS.md`, `TODO.md
 
 * Colours only from the tokens in `frontend/src/app/globals.css`: warm paper and charcoal
   (never pure white or black backgrounds), one navy accent, muted earth-tone chart series.
-  No purple, neon, pastel or rainbow palettes; no gradients, orbs or dot-grid backdrops.
-* Depth and motion follow `.claude/skills/apple-design` (DECISIONS D-041). Translucent
-  materials (`.material`, `.material-thick`) only for floating chrome: header, popovers,
-  tooltips, sheets; never one translucent layer on another. Elevation from `.elev-1`
-  (cards), `.elev-2` (controls), `.elev-3` (floating layers); radii from the `--radius-*`
-  tokens (controls 6px, cards 8 to 12px, sheets 22px).
+  No purple, neon, pastel or rainbow palettes; no gradients, orbs or dot-grid backdrops
+  (the header's scroll edge uses a fading mask on a blur, which colours nothing).
+* Depth and motion follow `.claude/skills/apple-design` (DECISIONS D-041, D-042).
+  Translucent materials (`.material`, `.material-thick`) only for floating chrome:
+  header, popovers, tooltips, sheets, notices; never one translucent layer on another.
+  Elevation from `.elev-1` (cards), `.elev-2` (controls), `.elev-3` (floating layers);
+  radii from the `--radius-*` tokens (controls 6px, cards 8 to 12px, sheets 22px). The
+  header has no ruled edge, only the scroll edge (`.scroll-edge`). Structural regions
+  (the workspace sidebar) are an opaque tint (`bg-sidebar`), not a material.
 * Everything that moves uses a spring from `frontend/src/lib/motion.ts`: `SPRING` by
   default (critically damped), `SPRING_SNAPPY` for small selections, `SPRING_MOMENTUM`
   only after a drag or flick. No keyframes or fixed-duration transitions for movement,
   except the 100 ms press scale of `.pressable` / `.pressable-soft`, which gives feedback
-  on pointer-down. Popovers grow from their trigger (`PopoverPanel`) and leave the same
-  way. No decorative motion: nothing moves on hover, no animated arrows or chevrons, no
+  on pointer-down. Popovers grow from their trigger (`PopoverPanel`), their material
+  forming as they arrive (`MATERIAL_IN`/`MATERIAL_OUT`), and leave the same way.
+  Anything leaving inside AnimatePresence uses `Departing`, so an exit never blocks
+  input. Animate only transform and opacity (no height or layout per frame); place a
+  value with `jump()`, not `set()`, when it must not carry velocity into the next spring.
+  No decorative motion: nothing moves on hover, no animated arrows or chevrons, no
   decorative loops (the busy spinner is the only one); charts render without animation.
+  Light and dark switch with a short colour ease (`easeThemeChange`).
 * Reduced motion turns movement into fades; reduced transparency and more contrast make
   materials solid (`globals.css`). Keyboard paths for every gesture (arrow keys in
   segmented controls, Escape closes popovers and sheets, focus returns to the opener).
+  Small controls get touch margins (`.hit`); pages pass axe WCAG 2.2 AA (target size
+  included) at desktop and phone widths. Review new motion frame by frame (record the
+  element's position on every animation frame) before shipping it.
+* Forgiveness over confirmation: an action that replaces the user's settings keeps a way
+  back (the notice after a shared link or a starting example); confirm only what cannot
+  be undone (deleting a saved portfolio or the account). Disabled actions say why, next
+  to the button.
 * No icon sets (e.g. Lucide), emojis, sparkle icons, checkmark bullets or arrow glyphs;
   use words. No em dashes in user-facing text (backend messages and methodology docs
   included); missing values display as "n/a".
 * Operating-system fonts only (`--font-sans`, also for titles); the `.type-*` classes set
   size-specific tracking (negative for large text, slightly positive for captions).
-  Never Inter, Geist or Space Grotesk.
+  Text sizes in rem so they follow the reader's text-size setting: `text-2xs`,
+  `text-caption2`, `text-caption1`, `text-footnote`, `text-subheadline` or Tailwind's
+  sizes, never `text-[13px]`. Never Inter, Geist or Space Grotesk.
 * No feature-card rows, bento grids, terminal windows, testimonials or pricing tables.
   Show the real product (`npm run screenshots` in `frontend/` with the app running
   captures the landing-page screenshots) and plain statements; avoid "it's not X, it's Y"

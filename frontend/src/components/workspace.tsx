@@ -79,7 +79,7 @@ export function StepNav({ onNavigate }: { onNavigate?: () => void }) {
                 onClick={onNavigate}
                 className={cx(
                   "pressable-soft flex items-start gap-2.5 rounded-md px-2.5 py-1.5",
-                  active ? "bg-accent text-on-accent" : "text-ink hover:bg-surface-2",
+                  active ? "bg-accent text-on-accent" : "text-ink hover:bg-ink/5",
                 )}
               >
                 <span className={cx("mt-px w-4 shrink-0 text-right text-xs tabular", active ? "font-semibold text-on-accent/90" : "text-muted")}>
@@ -87,7 +87,7 @@ export function StepNav({ onNavigate }: { onNavigate?: () => void }) {
                 </span>
                 <span className="min-w-0">
                   <span className={cx("block text-sm", active && "font-medium")}>{s.label}</span>
-                  <span className={cx("block truncate text-[11px]", active ? "text-on-accent/90" : "text-muted")}>{s.hint}</span>
+                  <span className={cx("block truncate text-caption2", active ? "text-on-accent/90" : "text-muted")}>{s.hint}</span>
                 </span>
               </Link>
             </li>
@@ -109,7 +109,7 @@ export function MobileStepNav() {
   const current = STEPS[index];
   return (
     <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-line bg-surface px-3.5 py-2 elev-1 lg:hidden print:hidden">
-      <p className="min-w-0 truncate text-[13px] text-ink-2">
+      <p className="min-w-0 truncate text-footnote text-ink-2">
         {current ? (
           <>
             Step {index + 1} of {STEPS.length}: <span className="font-medium text-ink">{current.label}</span>
@@ -121,7 +121,7 @@ export function MobileStepNav() {
       <Button size="sm" variant="secondary" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
         All steps
       </Button>
-      <Sheet open={open} onClose={() => setOpen(false)} title="Workspace steps">
+      <Sheet open={open} onOpenChange={setOpen} title="Workspace steps">
         <StepNav onNavigate={() => setOpen(false)} />
       </Sheet>
     </div>
@@ -214,7 +214,7 @@ export function PageHeader({ title, description, actions }: { title: string; des
     <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
       <div className="min-w-0 max-w-3xl">
         <h1 className="type-title-1 text-ink">{title}</h1>
-        <p className="mt-1.5 text-[15px] leading-relaxed text-ink-2">{description}</p>
+        <p className="mt-1.5 text-subheadline leading-relaxed text-ink-2">{description}</p>
       </div>
       <div className="flex flex-wrap items-center gap-2 print:hidden">
         <ShareButton />
@@ -276,7 +276,7 @@ export function ShareButton() {
             </label>
           ) : null}
           {privateParts.length > 0 && <p className="mt-1.5">It uses {privateParts.join(" and ")}, which only you can open.</p>}
-          <button type="button" onClick={() => setResult(null)} className="mt-1.5 font-medium text-accent-ink underline-offset-2 hover:underline">
+          <button type="button" onClick={() => setResult(null)} className="hit mt-1.5 font-medium text-accent-ink underline-offset-2 hover:underline">
             Close
           </button>
         </PopoverPanel>
@@ -285,7 +285,7 @@ export function ShareButton() {
   );
 }
 
-/** After a shared link: say what happened and offer the way back. */
+/** After a shared link or a starting example: say what happened and offer the way back. */
 export function SharedLinkNotice() {
   const { shared, dismissShared, restoreBeforeShare } = useWorkspace();
   if (!shared) return null;
@@ -299,9 +299,12 @@ export function SharedLinkNotice() {
       </Callout>
     );
   }
+  const example = shared.source === "example";
   return (
-    <Callout tone="info" title="You opened a shared link" className="mb-4">
-      Its settings now replace yours in this browser, and results are recomputed from them.
+    <Callout tone="info" title={example ? `You started from the example "${shared.title}"` : "You opened a shared link"} className="mb-4">
+      {example
+        ? "Its settings replaced yours in this browser."
+        : "Its settings now replace yours in this browser, and results are recomputed from them."}
       <span className="mt-2 flex flex-wrap gap-2">
         <Button size="sm" onClick={dismissShared}>
           Keep these settings

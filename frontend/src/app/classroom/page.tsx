@@ -55,7 +55,7 @@ const KEY = [
 export default function ClassroomPage() {
   return (
     <main className="mx-auto max-w-4xl px-4 py-10">
-      <p className="text-[13px] font-semibold text-accent-ink">Classroom</p>
+      <p className="text-footnote font-semibold text-accent-ink">Classroom</p>
       <h1 className="type-title-1 mt-2 text-ink">Teach with Ardentum</h1>
       <p className="mt-2 max-w-2xl text-ink-2">
         A ready-made 45-minute lesson on diversification, estimation error and risk. Students run real portfolio calculations themselves, on invented demo assets, and discover why a simple equal split is hard to beat.

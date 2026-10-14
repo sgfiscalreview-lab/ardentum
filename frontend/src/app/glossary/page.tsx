@@ -16,7 +16,7 @@ export default function GlossaryPage() {
   const entries = [...GLOSSARY].sort((a, b) => a.term.localeCompare(b.term));
   return (
     <main className="mx-auto max-w-3xl px-4 py-10">
-      <p className="text-[13px] font-semibold text-accent-ink">Glossary</p>
+      <p className="text-footnote font-semibold text-accent-ink">Glossary</p>
       <h1 className="type-title-1 mt-2 text-ink">What the terms mean</h1>
       <p className="mt-2 text-ink-2">
         Short definitions of the terms on Ardentum&apos;s pages. Labels with a dotted underline in the workspace link

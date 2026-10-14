@@ -131,7 +131,7 @@ function Chips({
 function Section({ title, children, defaultOpen = true }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
   return (
     <details open={defaultOpen} className="group border-t border-line pt-3">
-      <summary className="mb-2 flex cursor-pointer list-none items-center justify-between text-[13px] font-semibold text-ink">
+      <summary className="mb-2 flex cursor-pointer list-none items-center justify-between text-footnote font-semibold text-ink">
         {title}
         <DisclosureHint />
       </summary>
@@ -288,5 +288,5 @@ export function StatusBadge({ status }: { status: string }) {
     excluded: { label: "Excluded", cls: "bg-surface-2 text-ink-2" },
   };
   const m = map[status] ?? { label: status, cls: "bg-surface-2 text-ink-2" };
-  return <span className={cx("inline-block rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap", m.cls)}>{m.label}</span>;
+  return <span className={cx("inline-block rounded-full px-2 py-0.5 text-caption2 font-medium whitespace-nowrap", m.cls)}>{m.label}</span>;
 }

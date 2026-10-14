@@ -37,7 +37,7 @@ export function seriesColor(i: number): string {
 }
 
 const AXIS = { stroke: "var(--axis)" };
-const TICK = { fill: "var(--muted)", fontSize: 11 };
+const TICK = { fill: "var(--muted)", fontSize: "0.6875rem" };
 
 // --------------------------------------------------------------------------- frame & legend
 
@@ -96,7 +96,7 @@ export function ChartFrame({
           <h3 id={headingId} className="type-headline text-ink">
             {title}
           </h3>
-          {subtitle && <p className="mt-0.5 text-[13px] leading-snug text-ink-2">{subtitle}</p>}
+          {subtitle && <p className="mt-0.5 text-footnote leading-snug text-ink-2">{subtitle}</p>}
         </div>
         <div className="flex items-center gap-2">
           {actions}
@@ -447,7 +447,7 @@ export function FrontierChart({
           axisLine={AXIS}
           tickLine={false}
           tick={TICK}
-          label={{ value: xAxis.label, position: "insideBottom", offset: -10, fill: "var(--muted)", fontSize: 11 }}
+          label={{ value: xAxis.label, position: "insideBottom", offset: -10, fill: "var(--muted)", fontSize: "0.6875rem" }}
         />
         <YAxis
           type="number"
@@ -522,7 +522,7 @@ export function BarList({ rows, max, ariaLabel }: { rows: BarRow[]; max?: number
           <li key={r.key} className="grid grid-cols-[minmax(6rem,11rem)_1fr_4.5rem] items-center gap-3 text-sm">
             <div className="min-w-0 truncate text-ink" title={typeof r.label === "string" ? r.label : undefined}>
               {r.label}
-              {r.sub && <span className="block truncate text-[11px] text-muted">{r.sub}</span>}
+              {r.sub && <span className="block truncate text-caption2 text-muted">{r.sub}</span>}
             </div>
             <div className="relative h-4" aria-hidden>
               {hasNeg && <div className="absolute inset-y-0 left-1/2 w-px bg-[var(--axis)]" />}
@@ -585,14 +585,14 @@ export function Heatmap({ labels, matrix, dark }: { labels: string[]; matrix: nu
         <div />
         {labels.map((l) => (
           <div key={l} className="flex h-16 items-end justify-center pb-1" aria-hidden>
-            <span className="rotate-180 whitespace-nowrap text-[10px] leading-none text-ink-2" style={{ writingMode: "vertical-rl" }}>
+            <span className="rotate-180 whitespace-nowrap text-2xs leading-none text-ink-2" style={{ writingMode: "vertical-rl" }}>
               {l.replace(".SYN", "")}
             </span>
           </div>
         ))}
         {labels.map((row, i) => (
           <div key={row} className="contents" role="row">
-            <div className="truncate pr-2 text-right text-[11px] leading-7 text-ink-2">{row.replace(".SYN", "")}</div>
+            <div className="truncate pr-2 text-right text-caption2 leading-7 text-ink-2">{row.replace(".SYN", "")}</div>
             {labels.map((col, j) => {
               const v = matrix[i]?.[j] ?? 0;
               return (
@@ -612,7 +612,7 @@ export function Heatmap({ labels, matrix, dark }: { labels: string[]; matrix: nu
           </div>
         ))}
       </div>
-      <div className="mt-3 flex items-end gap-px text-[10px] text-ink-2" aria-hidden>
+      <div className="mt-3 flex items-end gap-px text-2xs text-ink-2" aria-hidden>
         {[-1, -0.5, 0, 0.5, 1].map((v) => (
           <span key={v} className="flex w-9 flex-col items-center gap-1">
             <span className="block h-2.5 w-full" style={{ background: correlationColor(v, dark) }} />

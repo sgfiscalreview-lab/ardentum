@@ -75,6 +75,7 @@ export default function FrontierPage() {
               running={running}
               label="Trace frontier"
               disabled={state.universe.tickers.length < 2}
+              note={state.universe.tickers.length < 2 ? "Select at least 2 assets." : undefined}
               onRun={() =>
                 measure === "cvar"
                   ? tail.run({ universe: state.universe, estimation: state.estimation, constraints: state.constraints, n_points: 20, cvar_confidence: confidence })

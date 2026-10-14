@@ -77,7 +77,7 @@ function LoginForm() {
           Continue with GitHub
         </Button>
         {error && <Callout tone="error">{error}</Callout>}
-        <p className="text-center text-[11px] text-muted">Ardentum stores only your email address and an account identifier.</p>
+        <p className="text-center text-caption2 text-muted">Ardentum stores only your email address and an account identifier.</p>
       </div>
     );
   }

@@ -131,7 +131,7 @@ function Results({
       <Card>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[13px] font-medium text-ink-2">{OBJECTIVE_LABELS[r.objective]}</p>
+            <p className="text-footnote font-medium text-ink-2">{OBJECTIVE_LABELS[r.objective]}</p>
             <p className="mt-1 text-lg font-semibold text-ink">{ex.headline}</p>
             <p className="mt-1 text-sm text-ink-2">{ex.objective_summary}</p>
           </div>
@@ -223,7 +223,7 @@ function Results({
                 <tr>
                   <Td continued>
                     <span className="font-medium text-ink">{h.ticker}</span>
-                    <span className="block text-[11px] text-muted">{h.sector ?? "n/a"}</span>
+                    <span className="block text-caption2 text-muted">{h.sector ?? "n/a"}</span>
                   </Td>
                   <Td continued>
                     <StatusBadge status={h.status} />
@@ -257,7 +257,7 @@ function Results({
           </ul>
           {binding.length > 0 && (
             <>
-              <h3 className="mt-4 text-[13px] font-semibold text-ink-2">Binding constraints</h3>
+              <h3 className="mt-4 text-footnote font-semibold text-ink-2">Binding constraints</h3>
               <Table className="mt-1">
                 <thead>
                   <tr>
@@ -278,7 +278,7 @@ function Results({
                   ))}
                 </tbody>
               </Table>
-              <p className="mt-1 text-[11px] text-muted">
+              <p className="mt-1 text-caption2 text-muted">
                 A binding constraint is active at the optimum: relaxing it would improve the objective. The shadow price is the marginal improvement per unit of relaxation.
               </p>
             </>
@@ -344,7 +344,7 @@ function Stability({ data }: { data: OptimiseResponse }) {
           </li>
         ))}
       </ul>
-      <p className="mt-2 px-2 text-[11px] text-muted">
+      <p className="mt-2 px-2 text-caption2 text-muted">
         Wide intervals mean the optimal weights are driven by noise in the estimated inputs. Prefer constraints, shrinkage estimators or minimum-volatility objectives when they are wide.
       </p>
     </ChartFrame>

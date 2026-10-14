@@ -55,6 +55,7 @@ export default function AnalyticsPage() {
             running={running}
             label={data ? "Recompute" : "Compute analytics"}
             disabled={state.universe.tickers.length < 1}
+            note={state.universe.tickers.length < 1 ? "Select at least one asset on the Universe page." : undefined}
             onRun={() => run({ universe: state.universe, estimation: state.estimation, benchmark })}
           />
         }
@@ -133,7 +134,7 @@ export default function AnalyticsPage() {
                     <tr key={a.ticker}>
                       <Td>
                         <span className="font-medium text-ink">{a.ticker}</span>
-                        <span className="block text-[11px] text-muted">{a.sector ?? "n/a"}</span>
+                        <span className="block text-caption2 text-muted">{a.sector ?? "n/a"}</span>
                       </Td>
                       <Td align="right">{pct(a.performance.cagr)}</Td>
                       <Td align="right">{pct(a.performance.arithmetic_annual_return)}</Td>
@@ -148,7 +149,7 @@ export default function AnalyticsPage() {
                   ))}
                 </tbody>
               </Table>
-              <p className="px-4 py-2 text-[11px] text-muted">
+              <p className="px-4 py-2 text-caption2 text-muted">
                 CAGR is the realised compound growth rate; &ldquo;mean&rdquo; is the annualised arithmetic average used as the expected-return estimate. VaR is the historical one-period loss not exceeded on 95% of {data.data.frequency} observations.
               </p>
             </Card>

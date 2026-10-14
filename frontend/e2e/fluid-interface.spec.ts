@@ -61,6 +61,68 @@ test.describe("on a phone", () => {
     await dragGrabber(page, sheet, 220); // a quick flick down, not past half its height
     await expect(sheet).toBeHidden();
   });
+
+  test("the page behind is pushed back while the sheet is up and comes forward after", async ({ page }) => {
+    await page.goto("/app");
+    await page.getByRole("button", { name: "All steps" }).click();
+    const sheet = page.getByRole("dialog", { name: "Workspace steps" });
+    await expect.poll(() => bottom(sheet)).toBe(800);
+    await expect(page.locator("#page")).toHaveCSS("transform", "matrix(0.95, 0, 0, 0.95, 0, 0)");
+    await page.keyboard.press("Escape");
+    await expect(sheet).toBeHidden();
+    await expect(page.locator("#page")).toHaveCSS("transform", "none");
+  });
+
+  test("a press becomes a drag only after 10 pixels, and a closing sheet can be caught and pulled back up", async ({ page }) => {
+    await page.clock.install();
+    await page.goto("/app");
+    await page.getByRole("button", { name: "All steps" }).click();
+    const sheet = page.getByRole("dialog", { name: "Workspace steps" });
+    await expect.poll(() => bottom(sheet)).toBe(800);
+    const heading = sheet.getByRole("heading", { name: "Workspace steps" });
+
+    let box = await heading.boundingBox();
+    if (!box) throw new Error("The sheet has no grabber.");
+    await page.mouse.move(box.x + 8, box.y + 4);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 8, box.y + 10); // 6 px: still a press
+    expect(await bottom(sheet)).toBe(800);
+    await page.mouse.up();
+
+    // Freeze time, start closing, let it travel a little, then catch it and pull it up.
+    const now = await page.evaluate(() => Date.now());
+    await page.clock.pauseAt(now + 1000);
+    await page.keyboard.press("Escape");
+    await page.clock.runFor(60);
+    expect(await bottom(sheet)).toBeGreaterThan(820); // on its way down
+    box = await heading.boundingBox();
+    if (!box) throw new Error("The sheet has no grabber.");
+    await page.mouse.move(box.x + 8, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 8, box.y - 200, { steps: 5 });
+    await page.mouse.up();
+    await page.clock.runFor(1500);
+    await expect(sheet).toBeVisible();
+    expect(await bottom(sheet)).toBe(800); // open again, at rest
+    await page.clock.resume();
+    await page.keyboard.press("Escape");
+    await expect(sheet).toBeHidden();
+  });
+});
+
+test("starting from an example can be undone", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.goto("/app");
+  const demo = page.getByRole("button", { name: /Synthetic demo/ });
+  await expect(demo).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: /Lowest-risk mix of US industries/ }).click();
+  await expect(page).toHaveURL(/\/app\/optimise$/);
+  await expect(page.getByText('You started from the example "Lowest-risk mix of US industries"')).toBeVisible();
+  await page.getByRole("button", { name: "Go back to my settings" }).click();
+  await expect(page.getByText("You started from the example")).toBeHidden();
+  await page.getByRole("navigation", { name: "Workspace steps" }).getByRole("link", { name: /Universe/ }).click();
+  await expect(demo).toHaveAttribute("aria-pressed", "true"); // the settings from before the example
 });
 
 test("the copied-link note is anchored to its button and put away by Escape or a press elsewhere", async ({ browser }) => {

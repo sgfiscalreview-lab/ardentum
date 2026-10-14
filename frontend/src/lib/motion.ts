@@ -29,8 +29,12 @@ export const SPRING = appleSpring(1, 0.35);
 export const SPRING_SNAPPY = appleSpring(1, 0.28);
 /** After a flick or a drag release only: the gesture carried momentum, so a slight overshoot reads as physical. */
 export const SPRING_MOMENTUM = appleSpring(0.8, 0.3);
-/** With reduced motion, for content that unfolds: its size changes at once and it fades in or out. */
-export const REDUCED_UNFOLD = { height: { duration: 0 }, default: { duration: 0.15, ease: "easeOut" } } as const;
+/**
+ * A glass surface arriving: its blur radius grows with its scale and opacity, so it reads
+ * as a material forming rather than a flat fade (globals.css reads `--material-blur`).
+ */
+export const MATERIAL_IN = { "--material-blur": "28px" } as const;
+export const MATERIAL_OUT = { "--material-blur": "0px" } as const;
 
 /**
  * Distance a flick travels before coming to rest, in pixels, for a release velocity in

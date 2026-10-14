@@ -72,13 +72,13 @@ export default function Home() {
         <h2 id="product" className="type-title-1 text-ink">
           What it looks like
         </h2>
-        <p className="mt-2 max-w-2xl text-[15px] text-ink-2">Screenshots of the application running on the synthetic demo dataset.</p>
+        <p className="mt-2 max-w-2xl text-subheadline text-ink-2">Screenshots of the application running on the synthetic demo dataset.</p>
         <div className="mt-10 space-y-20">
           {SHOTS.map((s) => (
             <article key={s.id} className="grid grid-cols-1 gap-5 lg:grid-cols-[18rem_minmax(0,1fr)] lg:gap-10">
               <div>
                 <h3 className="type-title-2 text-ink">{s.title}</h3>
-                <p className="mt-3 text-[15px] leading-relaxed text-ink-2">{s.body}</p>
+                <p className="mt-3 text-subheadline leading-relaxed text-ink-2">{s.body}</p>
               </div>
               <Screenshot id={s.id} alt={s.alt} />
             </article>
@@ -90,7 +90,7 @@ export default function Home() {
         <h2 id="basis" className="type-title-1 text-ink">
           What the numbers rest on
         </h2>
-        <dl className="mt-6 max-w-3xl space-y-6 text-[15px] leading-relaxed">
+        <dl className="mt-6 max-w-3xl space-y-6 text-subheadline leading-relaxed">
           <div>
             <dt className="font-semibold text-ink">Data</dt>
             <dd className="mt-1 text-ink-2">
@@ -120,7 +120,7 @@ export default function Home() {
         <h2 id="limits" className="type-title-1 text-ink">
           Limits
         </h2>
-        <div className="mt-4 max-w-3xl space-y-3 text-[15px] leading-relaxed text-ink-2">
+        <div className="mt-4 max-w-3xl space-y-3 text-subheadline leading-relaxed text-ink-2">
           <p>Expected returns estimated from history carry large errors, and an optimiser amplifies them. Minimum-volatility and minimum-CVaR objectives, shrinkage estimators and the weight-stability test exist for that reason.</p>
           <p>The built-in real data covers US industry portfolios. Individual securities need your own data or a licensed price feed.</p>
           <p>Simulations and backtests describe the stated model and the past. They cannot tell you what markets will do.</p>

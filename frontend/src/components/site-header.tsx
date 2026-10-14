@@ -23,7 +23,7 @@ const THEMES = [
 
 export function Logo() {
   return (
-    <span className="flex items-center gap-2 text-[15px] font-semibold tracking-[-0.01em] text-ink">
+    <span className="flex items-center gap-2 text-subheadline font-semibold tracking-[-0.01em] text-ink">
       <svg viewBox="0 0 24 24" className="size-5" aria-hidden>
         <path d="M3 20 L10 5 L13 11 L16 7 L21 20" fill="none" stroke="var(--accent)" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" />
       </svg>
@@ -37,7 +37,7 @@ function subscribeScroll(cb: () => void) {
   return () => window.removeEventListener("scroll", cb);
 }
 
-/** True once the page has scrolled under the header (shows its edge only then). */
+/** True once the page has scrolled under the header (its scroll edge shows only then). */
 function useScrolled(): boolean {
   return useSyncExternalStore(subscribeScroll, () => window.scrollY > 0, () => false);
 }
@@ -48,16 +48,12 @@ export function SiteHeader() {
   const { choice, setChoice } = useTheme();
   const scrolled = useScrolled();
   return (
-    // A translucent material: the page scrolls under it, and its lower edge appears only
-    // once content is actually beneath it.
-    <header
-      className={cx(
-        "material sticky top-0 z-30 border-b print:hidden",
-        scrolled ? "border-line" : "border-transparent",
-      )}
-    >
+    // A translucent material that the page scrolls under. Where content meets it, a short
+    // band of blur softens the edge (no ruled line), and only once content is beneath it.
+    <header className="material sticky top-0 z-30 print:hidden">
+      <div aria-hidden className="scroll-edge" data-on={scrolled || undefined} />
       {/* Below "sm" the menu moves to its own row so the header never exceeds the screen. */}
-      <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-3 px-4 sm:h-12 sm:flex-nowrap sm:gap-x-6 lg:px-6">
+      <div className="mx-auto flex max-w-[100rem] flex-wrap items-center gap-x-3 px-4 sm:h-12 sm:flex-nowrap sm:gap-x-6 lg:px-6">
         <Link href="/" aria-label="Ardentum home" className="flex h-12 items-center">
           <Logo />
         </Link>
@@ -70,8 +66,8 @@ export function SiteHeader() {
                 href={n.href}
                 aria-current={active ? "page" : undefined}
                 className={cx(
-                  "pressable whitespace-nowrap rounded-full px-3 py-1.5 text-[13px]",
-                  active ? "bg-surface-2 font-medium text-ink" : "text-ink-2 hover:bg-surface-2/70 hover:text-ink",
+                  "pressable whitespace-nowrap rounded-full px-3 py-1.5 text-footnote font-medium tracking-[0.004em]",
+                  active ? "bg-surface-2 text-ink" : "text-ink-2 hover:bg-surface-2/70 hover:text-ink",
                 )}
               >
                 {n.label}
@@ -83,7 +79,7 @@ export function SiteHeader() {
           <Segmented label="Colour theme" size="xs" value={choice} onChange={setChoice} items={[...THEMES]} />
           {status === "signed_in" ? (
             <>
-              <Link href="/account" className="hidden max-w-48 truncate text-xs text-ink-2 underline-offset-2 hover:underline sm:inline" title="Account settings">
+              <Link href="/account" className="hit hidden max-w-48 truncate text-xs text-ink-2 underline-offset-2 hover:underline sm:inline" title="Account settings">
                 {user?.email ?? "Account"}
               </Link>
               <Button variant="secondary" size="sm" onClick={() => void signOut()}>
