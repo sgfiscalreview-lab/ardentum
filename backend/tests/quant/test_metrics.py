@@ -11,6 +11,7 @@ from ardentum.quant.metrics import (
     calmar_ratio,
     conditional_value_at_risk,
     correlation_matrix,
+    correlation_matrix_with_gaps,
     covariance_matrix,
     downside_deviation,
     drawdown_series,
@@ -123,6 +124,24 @@ def test_correlation_undefined_for_constant_asset() -> None:
     df = pd.DataFrame({"A": [0.01, 0.02, 0.03], "B": [0.01, 0.01, 0.01]})
     with pytest.raises(UndefinedMetricError):
         correlation_matrix(df)
+
+
+def test_a_constant_asset_leaves_the_other_correlations_intact() -> None:
+    # Before, one constant series turned the whole matrix into the identity, showing zero
+    # correlation for pairs that move together.
+    rng = np.random.default_rng(3)
+    a = rng.normal(0.0, 0.01, 200)
+    b = 0.8 * a + rng.normal(0.0, 0.006, 200)
+    arr = np.column_stack([a, np.full(200, 0.001), b])
+    corr, constant = correlation_matrix_with_gaps(arr)
+    assert constant == [1]
+    assert np.isnan(corr[1]).all()
+    assert np.isnan(corr[:, 1]).all()
+    assert corr[0, 2] == pytest.approx(stats.pearsonr(a, b).statistic)
+    assert corr[0, 0] == corr[2, 2] == 1.0
+    full, none = correlation_matrix_with_gaps(arr[:, [0, 2]])
+    assert none == []
+    np.testing.assert_allclose(full, np.corrcoef(arr[:, [0, 2]], rowvar=False), atol=1e-12)
 
 
 def test_historical_var_and_cvar() -> None:

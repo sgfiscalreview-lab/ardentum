@@ -351,3 +351,22 @@ def test_min_cvar_optimise_and_backtest(client: TestClient) -> None:
         },
     )
     assert bt.status_code == 200, bt.text
+
+
+def test_an_incomplete_last_period_is_left_out(client: TestClient) -> None:
+    # Prices ending on Wednesday 2 June 2021: the June "month" held two days and the week
+    # three. They used to be labelled 30 June / 4 June and counted as full periods.
+    u = {**universe(), "start": "2016-01-04", "end": "2021-06-02"}
+    monthly = client.post(
+        "/api/v1/analytics", json={"universe": {**u, "frequency": "monthly"}}
+    ).json()
+    assert monthly["data"]["end"] == "2021-05-31"
+    assert any("incomplete" in n for n in monthly["data"]["provenance"]["notes"])
+    weekly = client.post(
+        "/api/v1/analytics", json={"universe": {**u, "frequency": "weekly"}}
+    ).json()
+    assert weekly["data"]["end"] == "2021-05-28"
+    complete = {**u, "end": "2021-06-30", "frequency": "monthly"}
+    full = client.post("/api/v1/analytics", json={"universe": complete}).json()
+    assert full["data"]["end"] == "2021-06-30"
+    assert not any("incomplete" in n for n in full["data"]["provenance"]["notes"])

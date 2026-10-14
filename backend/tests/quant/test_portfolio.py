@@ -10,6 +10,7 @@ from ardentum.quant.portfolio import (
     constant_mix_returns,
     diversification_ratio,
     effective_number_of_assets,
+    effective_number_of_positions,
     portfolio_expected_return,
     portfolio_volatility,
     risk_decomposition,
@@ -111,3 +112,13 @@ def test_constant_mix() -> None:
     np.testing.assert_allclose(
         constant_mix_returns(r, np.array([0.5, 0.5])).to_numpy(), [0.05, -0.2]
     )
+
+
+def test_effective_number_of_positions_counts_shorts() -> None:
+    assert effective_number_of_positions(np.array([0.25, 0.25, 0.25, 0.25])) == pytest.approx(4.0)
+    # 130/30: gross exposure 1.6, so the shares are 0.40625, 0.40625 and 0.1875.
+    w = np.array([0.65, 0.65, -0.3])
+    shares = np.abs(w) / 1.6
+    assert effective_number_of_positions(w) == pytest.approx(1 / float(np.sum(shares**2)))
+    assert effective_number_of_positions(w) > effective_number_of_assets(np.clip(w, 0, None))
+    assert effective_number_of_positions(np.zeros(3)) == 0.0

@@ -1,7 +1,10 @@
 import datetime as dt
+import io
 import uuid
 
 import jwt
+import pandas as pd
+import pytest
 from fastapi.testclient import TestClient
 
 from ardentum.api.auth import DEV_ISSUER
@@ -83,8 +86,10 @@ def test_portfolio_validation(client: TestClient, auth: dict[str, str]) -> None:
     assert "sum to 1" in r.json()["error"]["message"]
 
 
+# Trading days: daily statistics assume 252 a year, so calendar-day prices are refused.
+TRADING_DAYS = [d.date() for d in pd.bdate_range("2023-01-02", periods=120)]
 PRICES = "date,AAA,BBB,CCC\n" + "\n".join(
-    f"{(dt.date(2023, 1, 2) + dt.timedelta(days=i)).isoformat()},{100 + i * 0.1 + (i % 7) * 0.3:.4f},"
+    f"{TRADING_DAYS[i].isoformat()},{100 + i * 0.1 + (i % 7) * 0.3:.4f},"
     f"{50 + (i % 11) * 0.2 + i * 0.05:.4f},{20 + (i % 5) * 0.1 + i * 0.02:.4f}"
     for i in range(120)
 )
@@ -140,3 +145,26 @@ def test_upload_rejects_bad_csv(client: TestClient, auth: dict[str, str]) -> Non
         "/api/v1/datasets", data={"name": "x"}, files={"prices": ("p.csv", PRICES, "text/csv")}
     )
     assert r.status_code == 401
+
+
+def test_a_constant_asset_does_not_blank_the_other_correlations(
+    client: TestClient, auth: dict[str, str]
+) -> None:
+    lines = PRICES.split("\n")
+    prices = "\n".join([lines[0] + ",CASH", *(f"{line},100" for line in lines[1:])])
+    up = client.post(
+        "/api/v1/datasets",
+        data={"name": "With cash"},
+        files={"prices": ("p.csv", prices, "text/csv")},
+        headers=auth,
+    )
+    assert up.status_code == 201, up.text
+    tickers = ["AAA", "BBB", "CASH"]
+    universe = {"dataset_id": up.json()["id"], "tickers": tickers}
+    r = client.post("/api/v1/analytics", json={"universe": universe}, headers=auth)
+    assert r.status_code == 200, r.text
+    corr = r.json()["correlation"]
+    returns = pd.read_csv(io.StringIO(prices), index_col=0)[tickers].pct_change().dropna()
+    assert corr[0][1] == pytest.approx(returns["AAA"].corr(returns["BBB"]))
+    assert corr[2] == [None, None, None]
+    assert "CASH" in r.json()["correlation_note"]

@@ -80,6 +80,26 @@ def correlation_matrix(returns: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(corr, index=returns.columns, columns=returns.columns)
 
 
+def correlation_matrix_with_gaps(returns: np.ndarray) -> tuple[np.ndarray, list[int]]:
+    """Pearson correlations of the columns of ``returns``, NaN where undefined.
+
+    A column with constant returns has no correlation with anything (zero variance), so
+    its row and column are NaN; every other pair keeps its correlation. Returns the matrix
+    and the indices of the constant columns, so the caller can say why cells are missing.
+    """
+    arr = np.atleast_2d(np.asarray(returns, dtype=float))
+    validate_returns(arr, min_obs=2)
+    constant = [int(i) for i in np.flatnonzero(arr.std(axis=0, ddof=1) < _ZERO_VOL_TOL)]
+    n = arr.shape[1]
+    corr = np.full((n, n), np.nan)
+    live = [i for i in range(n) if i not in constant]
+    if live:
+        sub = np.atleast_2d(np.corrcoef(arr[:, live], rowvar=False))
+        np.fill_diagonal(sub, 1.0)
+        corr[np.ix_(live, live)] = np.clip(sub, -1.0, 1.0)
+    return corr, constant
+
+
 def beta(asset_returns: ArrayLike1D, market_returns: ArrayLike1D) -> float:
     """OLS beta of an asset against a market/benchmark return series."""
     a = _as_array(asset_returns, name="asset returns")

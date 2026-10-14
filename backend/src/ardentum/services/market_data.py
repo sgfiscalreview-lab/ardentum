@@ -41,7 +41,7 @@ from ardentum.db.models import Dataset
 from ardentum.db.session import end_read
 from ardentum.quant.currency import convert_prices, convert_prices_hedged
 from ardentum.quant.errors import InsufficientDataError, InvalidInputError
-from ardentum.quant.frequency import Frequency
+from ardentum.quant.frequency import Frequency, check_frequency
 from ardentum.quant.optimisation import AssetMetadata
 from ardentum.quant.returns import simple_returns
 from ardentum.services.provider_cache import CachedPayload, ProviderCache
@@ -365,6 +365,14 @@ class MarketDataService:
             return kenfrench.market_caps(kenfrench.unzip_text(monthly.payload))
         return None
 
+    def market_cap_history(self, dataset_id: str) -> pd.DataFrame | None:
+        """Market capitalisations through time (rows: month ends), when the source has them."""
+        if dataset_id in kenfrench.DATASETS:
+            spec = kenfrench.DATASETS[dataset_id]
+            monthly = self.kf_file(spec.monthly_file)
+            return kenfrench.market_cap_history(kenfrench.unzip_text(monthly.payload))
+        return None
+
     def _tiingo_prices(
         self, tickers: list[str], start: dt.date | None, end: dt.date | None
     ) -> tuple[pd.DataFrame, DataProvenance, DatasetInfo]:
@@ -521,12 +529,17 @@ class MarketDataService:
         )
         aligned, report = align_prices(raw)
         freq = Frequency(frequency)
-        if freq is Frequency.WEEKLY:
-            aligned = aligned.resample("W-FRI").last().dropna()
-        elif freq is Frequency.MONTHLY:
-            aligned = aligned.resample("ME").last().dropna()
-        elif freq is not Frequency.DAILY:
+        if freq not in (Frequency.DAILY, Frequency.WEEKLY, Frequency.MONTHLY):
             raise InvalidInputError(f"Unsupported frequency {frequency!r}.")
+        check_frequency(pd.DatetimeIndex(aligned.index), freq)
+        if freq is not Frequency.DAILY:
+            aligned, cut = _resample(aligned, freq)
+            if cut is not None:
+                provenance = _with_note(
+                    provenance,
+                    f"The last {freq.value.removesuffix('ly')} is incomplete (prices end on "
+                    f"{cut:%d %b %Y}) and is left out.",
+                )
         if len(aligned) < MIN_OBSERVATIONS + 1:
             raise InsufficientDataError(
                 f"Only {len(aligned) - 1} {freq.value} returns in the selected window; "
@@ -543,6 +556,22 @@ class MarketDataService:
             provenance=provenance,
             currency=currency,
         )
+
+
+def _resample(prices: pd.DataFrame, freq: Frequency) -> tuple[pd.DataFrame, dt.date | None]:
+    """Period-end prices (Friday weeks, month ends). A last period that the prices do not
+    reach the end of is dropped rather than labelled with a future date and counted as a
+    full period; returns the last price date in that case."""
+    rule, offset = (
+        ("W-FRI", pd.offsets.Week(weekday=4))
+        if freq is Frequency.WEEKLY
+        else ("ME", pd.offsets.BMonthEnd())
+    )
+    out = prices.resample(rule).last().dropna()
+    last = pd.Timestamp(prices.index[-1])
+    if len(out) and last < offset.rollback(out.index[-1]):
+        return out.iloc[:-1], last.date()
+    return out, None
 
 
 def _with_note(p: DataProvenance, note: str) -> DataProvenance:

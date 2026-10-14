@@ -103,6 +103,15 @@ def scale_linear(
     return s if higher_is_better else 100.0 - s
 
 
+def outside_scale(values: np.ndarray, lower: float, upper: float) -> np.ndarray:
+    """Which values :func:`scale_linear` clips to an end point (outside ``[lower, upper]``).
+
+    Clipped values all score 0 or 100, so differences between them are lost.
+    """
+    x = np.asarray(values, dtype=float)
+    return (x < lower) | (x > upper)
+
+
 def percentile_scores(values: np.ndarray, higher_is_better: bool = True) -> np.ndarray:
     """Percentile rank within the group on 0-100: ``100 (rank - 1) / (n - 1)``.
 

@@ -150,6 +150,20 @@ def test_user_confirmed_company_and_scores(client: TestClient, auth: dict[str, s
     assert rows["AAA"]["score"] == 0
     assert out["scored"] == 2
 
+    # A scale that ends below Apple's 800 scores it at the end point, and says so.
+    body = _preview(
+        ds,
+        company_overrides={"CCC": 300},
+        transform={"method": "linear", "lower": 0, "upper": 500, "higher_is_better": False},
+    )
+    out = client.post("/api/v1/esg/open/preview", json=body, headers=auth).json()
+    rows = {e["ticker"]: e for e in out["entries"]}
+    assert rows["AAA"]["score"] == 0
+    assert "outside the scale" in rows["AAA"]["note"]
+    assert rows["CCC"]["score"] == pytest.approx(20.0)  # Puma's 400 is inside
+    assert "outside the scale" not in rows["CCC"]["note"]
+    assert "1 of 2 values fall outside the scale (0 to 500)" in out["warnings"][0]
+
     # As of 2022 only Apple has an answer; a linear scale still works.
     body = _preview(
         ds,

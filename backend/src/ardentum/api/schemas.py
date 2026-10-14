@@ -533,7 +533,10 @@ class AnalyticsResponse(ResponseModel):
     benchmark: str | None
     assets: list[AssetStatsOut]
     tickers: list[str]
-    correlation: list[list[float]]
+    # None where a correlation is undefined (an asset whose returns never change);
+    # correlation_note says which.
+    correlation: list[list[float | None]]
+    correlation_note: str | None = None
     covariance: list[list[float]]
     price_dates: list[dt.date]
     normalised_prices: dict[str, list[float]]
@@ -833,7 +836,8 @@ class CompareResponse(ResponseModel):
     portfolios: list[ComparedPortfolioOut]
     dates: list[dt.date]
     wealth_dates: list[dt.date]  # start date followed by `dates` (wealth/drawdown axis)
-    return_correlation: list[list[float]]
+    return_correlation: list[list[float | None]]
+    return_correlation_note: str | None = None
     in_sample_warning: str
     estimation: EstimationOut
     data: DataWindowOut

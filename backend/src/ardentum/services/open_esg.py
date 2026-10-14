@@ -38,7 +38,12 @@ from ardentum.data.providers import demo, kenfrench, wikirate
 from ardentum.db.models import EsgOverlay, User
 from ardentum.db.session import end_read
 from ardentum.quant.errors import InvalidInputError
-from ardentum.quant.esg import composite_scores, percentile_scores, scale_linear
+from ardentum.quant.esg import (
+    composite_scores,
+    outside_scale,
+    percentile_scores,
+    scale_linear,
+)
 from ardentum.services.market_data import MarketDataService, NotFoundError
 from ardentum.services.provider_cache import CachedPayload
 
@@ -276,7 +281,19 @@ class OpenEsgService:
         if scored:
             raw = np.array([float(r["raw_value"]) for r in scored])  # type: ignore[arg-type]
             if t.method == "linear":
-                scores = scale_linear(raw, t.lower or 0.0, t.upper or 0.0, t.higher_is_better)
+                lo, hi = t.lower or 0.0, t.upper or 0.0
+                scores = scale_linear(raw, lo, hi, t.higher_is_better)
+                clipped = outside_scale(raw, lo, hi)
+                for r, out in zip(scored, clipped, strict=True):
+                    if out:
+                        r["note"] = f"{r['note']}; outside the scale, so scored at its end point"
+                if clipped.any():
+                    n = int(clipped.sum())
+                    warnings.append(
+                        f"{n} of {len(scored)} values fall outside the scale ({lo:g} to {hi:g}) "
+                        "and are scored at its end points (0 or 100), which hides the "
+                        "differences between them. Widen the scale to tell them apart."
+                    )
             elif len(scored) >= 2:
                 scores = percentile_scores(raw, t.higher_is_better)
             else:
