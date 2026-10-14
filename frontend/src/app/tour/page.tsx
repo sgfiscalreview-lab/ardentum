@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { buttonClass } from "@/lib/classes";
 import { TOUR, tourHref } from "@/lib/tour";
 
 export const metadata: Metadata = { title: "Guided tour" };
@@ -8,13 +9,13 @@ export const metadata: Metadata = { title: "Guided tour" };
 export default function TourPage() {
   return (
     <main className="mx-auto max-w-4xl px-4 py-10">
-      <p className="text-xs font-semibold uppercase tracking-widest text-accent-ink">Guided tour</p>
-      <h1 className="mt-2 font-display text-3xl font-semibold text-ink">Ardentum in eight steps</h1>
+      <p className="text-[13px] font-semibold text-accent-ink">Guided tour</p>
+      <h1 className="type-title-1 mt-2 text-ink">Ardentum in eight steps</h1>
       <p className="mt-2 max-w-2xl text-ink-2">
         About fifteen minutes, from choosing data to testing a portfolio out of sample. It runs on the synthetic demo universe, so nothing needs signing in and nothing you do is saved. Each step opens the page with a short note at the top saying what to try and what to look for.
       </p>
       <div className="mt-6">
-        <Link href={tourHref(1)} className="inline-flex h-10 items-center rounded-sm bg-accent px-5 text-sm font-medium text-on-accent hover:bg-accent-hover">
+        <Link href={tourHref(1)} className={buttonClass("primary", "lg")}>
           Start the tour
         </Link>
       </div>

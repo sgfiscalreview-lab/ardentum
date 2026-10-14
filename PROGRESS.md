@@ -1,6 +1,6 @@
 # Progress
 
-Status as of 2026-10-03.
+Status as of 2026-10-14.
 
 | Phase | Area | Status | Evidence |
 |---|---|---|---|
@@ -34,7 +34,7 @@ Status as of 2026-10-03.
 | Shared rate limiting (PostgreSQL), verified-user keys, forged-header protection | ✅ | `tests/api/test_ratelimit.py` (SQLite + PostgreSQL) |
 | Background jobs with long-polling and recovery of abandoned runs | ✅ | `tests/api/test_jobs.py` |
 | Open ESG data from WikiRate (CC BY 4.0): match by ISIN, score, save, apply | ✅ | `tests/data/test_wikirate.py`, `tests/api/test_open_esg_api.py`, `e2e/open-esg.spec.ts` |
-| Plain visual design (founder's list of patterns to avoid), real screenshots on the landing page, skeleton loaders | ✅ | CLAUDE.md UI rules, D-027; axe checks on every page in both themes |
+| Plain visual design (founder's list of patterns to avoid), real screenshots on the landing page, skeleton loaders | ✅ (look superseded by D-041) | CLAUDE.md UI rules, D-027; axe checks on every page in both themes |
 | Terms of Service, Privacy Policy, account export and deletion | ✅ | `tests/api/test_account.py`, E2E legal/account flow |
 | Founder setup guide (click by click) | ✅ | `docs/SETUP_GUIDE.md` |
 | Currency-hedged returns: rolling one-period forward by covered interest parity, BIS policy rates (free, keyless), hedging switch on the Universe page | ✅ | `tests/quant/test_currency_hedged.py` (closed forms, carry, no look-ahead), `tests/data/test_bis.py` (live-format fixtures), `tests/api/test_currency_hedged_api.py` (independent recomputation), E2E |
@@ -52,13 +52,14 @@ Status as of 2026-10-03.
 | Security pass (D-038): database closed to Supabase's Data API (confirmed live), rate limits, headers, secrets, dependencies | ✅ | `SECURITY.md`; live smoke "Database closed to the public key: all 9 tables refused" |
 | Product round (D-039): API wake-up notice, shareable links, risk parity, glossary, printable results, readable holdings reasons | ✅ | `tests/quant/test_risk_parity.py`, `tests/api/test_risk_parity_api.py`, `src/lib/share.test.ts`, `src/lib/api/server-status.test.ts`, `e2e/share.spec.ts`, `e2e/server-waking.spec.ts`, `e2e/risk-parity.spec.ts`, `e2e/glossary-print.spec.ts` |
 | Crisis replay, factor exposure, trade lists and starting examples (D-040); real industry datasets list their industries | ✅ | `tests/quant/test_stress.py` (closed forms, share-count brute force, no use of data before the purchase), `tests/quant/test_factors.py` (statsmodels OLS with Newey-West errors, exact decomposition), `tests/quant/test_trades.py` (closed forms, cash identity), `tests/api/test_portfolio_tools_api.py`, `src/lib/presets.test.ts`, `e2e/examples-crises-factors-trades.spec.ts` |
+| Redesign after Apple's fluid-interface guidance (D-041): translucent header, depth, springs, press feedback, segmented controls, anchored popovers, draggable steps sheet on phones; reduced motion, transparency and contrast respected | ✅ | `src/lib/motion.test.ts` (spring constants, projection and rubber-band closed forms), `e2e/fluid-interface.spec.ts` (sheet drag, flick and keyboard, popover dismissal, segmented keys), axe checks in both themes, phone-width checks |
 
 ## Test status
 - Backend: 426 tests passing (SQLite; 2 more run only on PostgreSQL); API suite (123 tests, including the database lock-down checks) also passing on PostgreSQL 16; ruff clean; mypy --strict clean. Migrations 0001–0007 upgrade, `alembic check` and downgrade cleanly on PostgreSQL.
 - Research: 13 tests for the study statistics and hedging set-up (`research/tests`), run by the Research workflow before each run.
-- Frontend: ESLint (incl. React Compiler rules) clean; `tsc --strict` clean; 27 Vitest unit tests passing; builds fail if a secret key reaches browser files.
+- Frontend: ESLint (incl. React Compiler rules) clean; `tsc --strict` clean; 33 Vitest unit tests passing; builds fail if a secret key reaches browser files.
 - Security: gitleaks finds no secrets in the history; pip-audit and npm audit report no known vulnerabilities (2026-10-01).
-- End-to-end (Node server with the full Content-Security-Policy): 82 Playwright tests passing (workflows incl. the starting examples, crisis replay, factor exposure, trade list, classroom kit, guided tour and usage counts, open ESG data, composite scores, CVaR frontier, currency hedging, shareable links, legal pages and account deletion; axe accessibility checks over 24 pages in light and dark; phone-width layout checks). Playwright starts the API, the web app and a local stand-in for WikiRate and the Kenneth French Data Library.
+- End-to-end (Node server with the full Content-Security-Policy): 86 Playwright tests passing (workflows incl. the starting examples, crisis replay, factor exposure, trade list, classroom kit, guided tour and usage counts, open ESG data, composite scores, CVaR frontier, currency hedging, shareable links, the phone steps sheet, popovers and segmented controls, legal pages and account deletion; axe accessibility checks over 24 pages in light and dark; phone-width layout checks). Playwright starts the API, the web app and a local stand-in for WikiRate and the Kenneth French Data Library.
 
 ## Performance (dev container, 14 assets, 10 years daily)
 | Request | Time |

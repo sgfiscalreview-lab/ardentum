@@ -154,6 +154,15 @@ hosting) and the layout says so; every page load also sends one wake-up request.
 glossary (`/glossary`, `lib/glossary.ts`) is linked from result labels. Workspace pages
 print their results only (print styles in `globals.css`).
 
+Interface motion (D-041): springs are defined by damping ratio and response in
+`lib/motion.ts`, which also holds the gesture maths (momentum projection, rubber-banding,
+release velocity); Motion (`motion/react`) runs them, loaded through `LazyMotion` in
+`components/motion.tsx` with the user's reduced-motion setting applied. `components/sheet.tsx`
+is the draggable bottom sheet (phone step list); `PopoverPanel` and `useDismiss` in
+`components/ui.tsx` anchor popovers to their trigger. Materials, elevation, radii and the
+type scale are tokens and classes in `globals.css`; `lib/classes.ts` gives server and
+client components the same button classes.
+
 ## Authentication
 
 Production: Supabase Auth issues JWTs; the backend verifies signature (JWKS for

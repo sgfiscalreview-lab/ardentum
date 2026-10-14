@@ -1,32 +1,28 @@
 "use client";
 
+import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import {
   forwardRef,
+  useEffect,
+  useEffectEvent,
   useId,
+  useRef,
   useState,
   type ButtonHTMLAttributes,
   type InputHTMLAttributes,
   type ReactNode,
+  type RefObject,
   type SelectHTMLAttributes,
 } from "react";
 
+import { buttonClass, cx, type ButtonVariant } from "@/lib/classes";
 import { glossaryIdFor } from "@/lib/glossary";
+import { REDUCED_UNFOLD, SPRING, SPRING_SNAPPY } from "@/lib/motion";
 
-export function cx(...parts: unknown[]): string {
-  return parts.filter((p): p is string => typeof p === "string" && p.length > 0).join(" ");
-}
+export { buttonClass, cx } from "@/lib/classes";
 
 // --------------------------------------------------------------------------- Button
-
-type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
-
-const BUTTON: Record<ButtonVariant, string> = {
-  primary: "bg-accent text-on-accent hover:bg-accent-hover disabled:opacity-50",
-  secondary: "bg-surface text-ink border border-line-strong hover:bg-surface-2 disabled:opacity-50",
-  ghost: "text-ink-2 hover:bg-surface-2 hover:text-ink disabled:opacity-50",
-  danger: "bg-surface text-critical border border-line-strong hover:bg-critical-wash disabled:opacity-50",
-};
 
 export const Button = forwardRef<
   HTMLButtonElement,
@@ -35,12 +31,7 @@ export const Button = forwardRef<
   return (
     <button
       ref={ref}
-      className={cx(
-        "inline-flex items-center justify-center gap-2 rounded-sm font-medium whitespace-nowrap",
-        size === "sm" ? "h-8 px-3 text-[13px]" : "h-9 px-4 text-sm",
-        BUTTON[variant],
-        className,
-      )}
+      className={cx(buttonClass(variant, size), className)}
       disabled={disabled || busy}
       aria-busy={busy || undefined}
       {...rest}
@@ -80,12 +71,12 @@ export function Card({
   id?: string;
 }) {
   return (
-    <section id={id} className={cx("rounded-lg border border-line bg-surface", className)}>
+    <section id={id} className={cx("rounded-lg border border-line bg-surface elev-1", className)}>
       {(title || actions) && (
         <header className="flex flex-wrap items-start justify-between gap-3 border-b border-line px-4 py-3">
           <div className="min-w-0">
-            {title && <h2 className="text-sm font-semibold text-ink">{title}</h2>}
-            {subtitle && <p className="mt-0.5 text-xs text-ink-2">{subtitle}</p>}
+            {title && <h2 className="type-headline text-ink">{title}</h2>}
+            {subtitle && <p className="mt-0.5 text-[13px] leading-snug text-ink-2">{subtitle}</p>}
           </div>
           {actions && <div className="flex items-center gap-2">{actions}</div>}
         </header>
@@ -112,17 +103,17 @@ export function Field({
 }) {
   return (
     <div className={cx("flex flex-col gap-1", className)}>
-      <label htmlFor={htmlFor} className="text-xs font-medium text-ink-2">
+      <label htmlFor={htmlFor} className="text-[13px] font-medium text-ink-2">
         {label}
       </label>
       {children}
-      {hint && <p className="text-[11px] leading-snug text-muted">{hint}</p>}
+      {hint && <p className="type-caption text-muted">{hint}</p>}
     </div>
   );
 }
 
 const CONTROL =
-  "h-9 w-full rounded-md border border-line-strong bg-surface px-2.5 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none disabled:opacity-60";
+  "field h-9 w-full rounded-md border border-line-strong bg-surface px-3 text-sm text-ink placeholder:text-muted disabled:opacity-60";
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function Input(
   { className, ...rest },
@@ -243,14 +234,14 @@ export function Checkbox({
       <input
         id={id}
         type="checkbox"
-        className="mt-0.5 size-4 accent-[var(--accent)]"
+        className="mt-0.5 size-4 shrink-0 rounded accent-[var(--accent)]"
         checked={checked}
         disabled={disabled}
         onChange={(e) => onChange(e.target.checked)}
       />
       <label htmlFor={id} className="text-sm leading-tight text-ink">
         {label}
-        {hint && <span className="mt-0.5 block text-[11px] text-muted">{hint}</span>}
+        {hint && <span className="type-caption mt-0.5 block text-muted">{hint}</span>}
       </label>
     </div>
   );
@@ -280,7 +271,7 @@ export function Callout({
   className?: string;
 }) {
   return (
-    <div role={tone === "error" ? "alert" : "status"} className={cx("rounded-sm border px-3 py-2.5 text-sm", TONE[tone], className)}>
+    <div role={tone === "error" ? "alert" : "status"} className={cx("rounded-lg border px-4 py-3 text-sm", TONE[tone], className)}>
       <div className="min-w-0 text-ink">
         {title && <p className="font-medium">{title}</p>}
         {children && <div className={cx("text-ink-2", title && "mt-0.5")}>{children}</div>}
@@ -309,7 +300,7 @@ export function Badge({
   return (
     <span
       title={title}
-      className={cx("inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] font-medium", cls)}
+      className={cx("inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium", cls)}
     >
       {children}
     </span>
@@ -318,8 +309,8 @@ export function Badge({
 
 export function EmptyState({ title, children, action }: { title: ReactNode; children?: ReactNode; action?: ReactNode }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-line-strong bg-surface px-6 py-12 text-center">
-      <p className="text-sm font-medium text-ink">{title}</p>
+    <div className="flex flex-col items-center justify-center rounded-lg border border-line bg-surface px-6 py-14 text-center elev-1">
+      <p className="type-headline text-ink">{title}</p>
       {children && <div className="mt-1 max-w-md text-sm text-ink-2">{children}</div>}
       {action && <div className="mt-4">{action}</div>}
     </div>
@@ -342,13 +333,13 @@ export function Stat({
   help?: string;
 }) {
   return (
-    <div className="min-w-0 rounded-md border border-line bg-surface px-3 py-2.5" title={help}>
-      <p className="truncate text-[11px] font-medium text-ink-2">
+    <div className="min-w-0 rounded-lg border border-line bg-surface px-3.5 py-3" title={help}>
+      <p className="truncate text-xs font-medium text-ink-2">
         <GlossaryLabel label={label} />
       </p>
-      <p className="mt-0.5 text-xl font-semibold text-ink">{value}</p>
+      <p className="mt-1 text-[1.375rem] font-semibold leading-tight tracking-[-0.02em] text-ink tabular">{value}</p>
       {sub && (
-        <p className={cx("mt-0.5 text-[11px]", tone === "good" ? "text-good" : tone === "critical" ? "text-critical" : "text-muted")}>
+        <p className={cx("type-caption mt-1", tone === "good" ? "text-good" : tone === "critical" ? "text-critical" : "text-muted")}>
           {sub}
         </p>
       )}
@@ -367,38 +358,109 @@ export function GlossaryLabel({ label }: { label: ReactNode }) {
   );
 }
 
-// --------------------------------------------------------------------------- Tabs
+// --------------------------------------------------------------------------- Segmented controls
 
-export function Tabs<T extends string>({
+interface SegmentItem<T extends string> {
+  value: T;
+  label: ReactNode;
+}
+
+/**
+ * A row of mutually exclusive choices with one sliding highlight. The highlight moves on
+ * a spring from wherever it is on screen, so a quick second choice redirects it smoothly.
+ * Arrow keys move the choice; only the chosen item is in the tab order.
+ */
+function SegmentedButtons<T extends string>({
   value,
   onChange,
   items,
   label,
+  kind,
+  size = "sm",
 }: {
   value: T;
   onChange: (v: T) => void;
-  items: { value: T; label: ReactNode }[];
+  items: SegmentItem<T>[];
   label: string;
+  kind: "tabs" | "radio";
+  size?: "xs" | "sm";
 }) {
+  const highlight = useId();
+  const refs = useRef<(HTMLButtonElement | null)[]>([]);
+  const chosen = items.findIndex((it) => it.value === value);
+  const choose = (i: number) => {
+    const j = (i + items.length) % items.length;
+    const it = items[j];
+    if (!it) return;
+    onChange(it.value);
+    refs.current[j]?.focus();
+  };
   return (
-    <div role="tablist" aria-label={label} className="inline-flex rounded-sm border border-line bg-surface-2 p-0.5">
-      {items.map((it) => (
-        <button
-          key={it.value}
-          role="tab"
-          type="button"
-          aria-selected={value === it.value}
-          onClick={() => onChange(it.value)}
-          className={cx(
-            "rounded-sm border px-2.5 py-1 text-xs font-medium",
-            value === it.value ? "border-line-strong bg-surface text-ink" : "border-transparent text-ink-2 hover:text-ink",
-          )}
-        >
-          {it.label}
-        </button>
-      ))}
+    <div
+      role={kind === "tabs" ? "tablist" : "radiogroup"}
+      aria-label={label}
+      className="inline-flex shrink-0 rounded-[9px] bg-surface-2 p-0.5"
+    >
+      {items.map((it, i) => {
+        const selected = i === chosen;
+        return (
+          <button
+            key={it.value}
+            ref={(el) => {
+              refs.current[i] = el;
+            }}
+            type="button"
+            role={kind === "tabs" ? "tab" : "radio"}
+            aria-selected={kind === "tabs" ? selected : undefined}
+            aria-checked={kind === "radio" ? selected : undefined}
+            tabIndex={selected || (chosen < 0 && i === 0) ? 0 : -1}
+            onClick={() => onChange(it.value)}
+            onKeyDown={(e) => {
+              const step = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1 : 0;
+              if (step) {
+                e.preventDefault();
+                choose(i + step);
+              } else if (e.key === "Home" || e.key === "End") {
+                e.preventDefault();
+                choose(e.key === "Home" ? 0 : items.length - 1);
+              }
+            }}
+            className={cx(
+              "relative rounded-[7px] font-medium whitespace-nowrap",
+              size === "xs" ? "px-2 py-0.5 text-[12px] sm:px-2.5" : "px-3 py-1 text-xs",
+              selected ? "text-ink" : "text-ink-2 hover:text-ink",
+            )}
+          >
+            {selected && (
+              <m.span
+                layoutId={highlight}
+                transition={SPRING_SNAPPY}
+                aria-hidden
+                className="absolute inset-0 rounded-[7px] border border-line bg-surface elev-2"
+              />
+            )}
+            <span className="relative">{it.label}</span>
+          </button>
+        );
+      })}
     </div>
   );
+}
+
+/** Switches between views of the same content (role "tab"). */
+export function Tabs<T extends string>(props: { value: T; onChange: (v: T) => void; items: SegmentItem<T>[]; label: string }) {
+  return <SegmentedButtons {...props} kind="tabs" />;
+}
+
+/** Chooses one setting among a few (role "radio"). */
+export function Segmented<T extends string>(props: {
+  value: T;
+  onChange: (v: T) => void;
+  items: SegmentItem<T>[];
+  label: string;
+  size?: "xs" | "sm";
+}) {
+  return <SegmentedButtons {...props} kind="radio" />;
 }
 
 // --------------------------------------------------------------------------- Table
@@ -417,7 +479,7 @@ export function Th({ children, align = "left", className }: { children?: ReactNo
     <th
       scope="col"
       className={cx(
-        "sticky top-0 border-b border-line bg-surface px-2 py-2 text-[11px] font-medium uppercase tracking-wide text-ink-2 whitespace-nowrap",
+        "sticky top-0 z-[1] border-b border-line bg-surface px-3 py-2 text-xs font-medium text-ink-2 whitespace-nowrap",
         align === "right" ? "text-right" : "text-left",
         className,
       )}
@@ -448,8 +510,8 @@ export function Td({
       title={title}
       colSpan={colSpan}
       className={cx(
-        "px-2 align-top",
-        continued ? "pt-1.5" : "border-b border-line py-1.5",
+        "px-3 align-top",
+        continued ? "pt-2" : "border-b border-line py-2",
         align === "right" && "text-right tabular whitespace-nowrap",
         className,
       )}
@@ -472,14 +534,105 @@ export function DisclosureHint() {
 }
 
 export function Disclosure({ summary, children, defaultOpen }: { summary: ReactNode; children: ReactNode; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(Boolean(defaultOpen));
+  const region = useId();
+  const reduced = useReducedMotion();
   return (
-    <details className="group rounded-sm border border-line bg-surface" open={defaultOpen}>
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-medium text-ink">
+    <section className="rounded-lg border border-line bg-surface elev-1">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={region}
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between gap-3 rounded-lg px-4 py-3 text-left text-sm font-medium text-ink"
+      >
         {summary}
-        <DisclosureHint />
-      </summary>
-      <div className="border-t border-line px-3 py-3">{children}</div>
-    </details>
+        <span aria-hidden className="shrink-0 text-xs font-normal text-muted">
+          {open ? "Hide" : "Show"}
+        </span>
+      </button>
+      {/* The body unfolds from the header and folds back into it on the same path. */}
+      <AnimatePresence initial={false}>
+        {open && (
+          <m.div
+            key="body"
+            id={region}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={reduced ? REDUCED_UNFOLD : SPRING}
+            className="overflow-hidden"
+          >
+            <div className="border-t border-line px-4 py-3">{children}</div>
+          </m.div>
+        )}
+      </AnimatePresence>
+    </section>
+  );
+}
+
+// --------------------------------------------------------------------------- Popover
+
+/**
+ * Puts a popover away on a press outside `ref` or on Escape. `ref` should hold the trigger
+ * as well, so pressing the trigger again is left to the trigger.
+ */
+export function useDismiss(ref: RefObject<HTMLElement | null>, open: boolean, onClose: () => void) {
+  const close = useEffectEvent(onClose);
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (e: PointerEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) close();
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+    };
+    document.addEventListener("pointerdown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open, ref]);
+}
+
+/**
+ * A panel anchored under the control that opened it: it grows out of that control and
+ * returns into it. Place it in a relatively positioned wrapper with the trigger.
+ */
+export function PopoverPanel({
+  open,
+  align = "end",
+  className,
+  children,
+}: {
+  open: boolean;
+  /** Which edge of the trigger the panel lines up with; on phones the start edge is safer. */
+  align?: "start" | "end" | "responsive";
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <m.div
+          initial={{ opacity: 0, scale: 0.96, y: -6 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.96, y: -6 }}
+          className={cx(
+            "material-thick absolute top-full z-20 mt-2 w-72 rounded-xl border border-line p-3 elev-3",
+            align === "start"
+              ? "left-0 origin-top-left"
+              : align === "end"
+                ? "right-0 origin-top-right"
+                : "left-0 origin-top-left sm:left-auto sm:right-0 sm:origin-top-right",
+            className,
+          )}
+        >
+          {children}
+        </m.div>
+      )}
+    </AnimatePresence>
   );
 }
 

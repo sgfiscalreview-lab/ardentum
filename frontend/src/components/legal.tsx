@@ -6,10 +6,10 @@ import { LEGAL, LEGAL_CONFIGURED, SOURCE_URL, operatorDetails } from "@/lib/lega
 export function LegalPage({ title, children }: { title: string; children: ReactNode }) {
   return (
     <main className="mx-auto max-w-3xl px-4 py-12">
-      <h1 className="font-display text-3xl font-semibold text-ink">{title}</h1>
+      <h1 className="type-title-1 text-ink">{title}</h1>
       <p className="mt-2 text-xs text-muted">Last updated {LEGAL.lastUpdated}</p>
       {!LEGAL_CONFIGURED && (
-        <p role="status" className="mt-4 rounded-sm border border-warn/40 bg-warn-wash px-3 py-2 text-sm text-ink">
+        <p role="status" className="mt-4 rounded-lg border border-warn/40 bg-warn-wash px-4 py-3 text-sm text-ink">
           This deployment has not set its operator name, contact address and governing law
           (NEXT_PUBLIC_LEGAL_OPERATOR, NEXT_PUBLIC_LEGAL_CONTACT_EMAIL, NEXT_PUBLIC_LEGAL_GOVERNING_LAW).
         </p>
@@ -47,8 +47,8 @@ export function SiteFooter() {
     { href: "/usage", label: "Usage" },
   ];
   return (
-    <footer className="mt-16 border-t border-line print:hidden">
-      <div className="mx-auto flex max-w-[1600px] flex-col gap-3 px-4 py-6 text-xs text-muted sm:flex-row sm:items-start sm:justify-between">
+    <footer className="mt-20 border-t border-line print:hidden">
+      <div className="mx-auto flex max-w-[1600px] flex-col gap-4 px-4 py-8 text-xs text-muted sm:flex-row sm:items-start sm:justify-between lg:px-6">
         <div className="max-w-2xl space-y-2 leading-relaxed">
           <p>
             Ardentum is an analytical tool for education and research. It does not give investment advice. Model outputs are estimates based on historical data and stated assumptions; past performance does not predict future results.

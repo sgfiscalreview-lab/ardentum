@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { buttonClass } from "@/lib/classes";
 import { ANSWERS, EXERCISES } from "@/lib/classroom";
 import { date, money, num, pct } from "@/lib/format";
 import { LEGAL } from "@/lib/legal";
@@ -54,16 +55,16 @@ const KEY = [
 export default function ClassroomPage() {
   return (
     <main className="mx-auto max-w-4xl px-4 py-10">
-      <p className="text-xs font-semibold uppercase tracking-widest text-accent-ink">Classroom</p>
-      <h1 className="mt-2 font-display text-3xl font-semibold text-ink">Teach with Ardentum</h1>
+      <p className="text-[13px] font-semibold text-accent-ink">Classroom</p>
+      <h1 className="type-title-1 mt-2 text-ink">Teach with Ardentum</h1>
       <p className="mt-2 max-w-2xl text-ink-2">
         A ready-made 45-minute lesson on diversification, estimation error and risk. Students run real portfolio calculations themselves, on invented demo assets, and discover why a simple equal split is hard to beat.
       </p>
       <div className="mt-6 flex flex-wrap gap-3">
-        <Link href="/classroom/worksheet" className="inline-flex h-10 items-center rounded-sm bg-accent px-5 text-sm font-medium text-on-accent hover:bg-accent-hover">
+        <Link href="/classroom/worksheet" className={buttonClass("primary", "lg")}>
           Open the student worksheet
         </Link>
-        <Link href="/tour" className="inline-flex h-10 items-center rounded-sm border border-line-strong bg-surface px-5 text-sm font-medium text-ink hover:bg-surface-2">
+        <Link href="/tour" className={buttonClass("secondary", "lg")}>
           Try the guided tour first
         </Link>
       </div>
@@ -75,7 +76,7 @@ export default function ClassroomPage() {
           ["Needs", "A browser on a laptop, tablet or phone, one per student or pair; no sign-in, install or cost"],
           ["Data", "Fourteen invented assets (names end in .SYN), labelled as such on every page"],
         ].map(([k, v]) => (
-          <div key={k} className="rounded-sm border border-line bg-surface px-4 py-3">
+          <div key={k} className="rounded-lg border border-line bg-surface px-4 py-3 elev-1">
             <dt className="text-xs text-ink-2">{k}</dt>
             <dd className="mt-1 text-sm text-ink">{v}</dd>
           </div>
@@ -113,7 +114,7 @@ export default function ClassroomPage() {
             <thead>
               <tr>
                 {["Time", "Activity", "Notes"].map((h) => (
-                  <th key={h} scope="col" className="border-b border-line px-2 py-2 text-left text-[11px] font-medium uppercase tracking-wide text-ink-2">
+                  <th key={h} scope="col" className="border-b border-line px-2 py-2 text-left text-xs font-medium text-ink-2">
                     {h}
                   </th>
                 ))}

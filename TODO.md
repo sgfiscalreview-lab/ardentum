@@ -21,7 +21,7 @@ Legend: **[F]** needs a founder decision/credential · **[E]** engineering
 - [ ] **[E]** Deploy to staging once accounts exist; run E2E against staging; manual acceptance pass.
 - [x] **[E]** Verify Docker builds in CI (first run).
 - [ ] **[E]** Live calls to Ken French, Frankfurter, WikiRate and FRED from the deployed API: `scripts/smoke.py`, run daily by the Live smoke test workflow; act on its first results.
-- [ ] **[E]** Once D-040 is deployed: add crisis replay (COVID-19 available on kf12) and factor exposure (market loading of the 12 industries) to `scripts/smoke.py`.
+- [x] **[E]** Crisis replay, factor exposure, trade list and the new pages in `scripts/smoke.py` (after D-040 was deployed).
 
 ## Engineering — backlog
 - [x] Persist provider payloads (Ken French, Tiingo, FRED, FX) in PostgreSQL (D-019).

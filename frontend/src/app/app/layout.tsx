@@ -6,11 +6,11 @@ import { MobileStepNav, SharedLinkNotice, StepNav, UniverseSummary } from "@/com
 export default function WorkspaceLayout({ children }: { children: ReactNode }) {
   return (
     <div className="mx-auto flex max-w-[1600px]" data-print="results">
-      <aside className="sticky top-12 hidden h-[calc(100vh-3rem)] w-60 shrink-0 flex-col gap-4 overflow-y-auto border-r border-line px-3 py-4 lg:flex">
+      <aside className="sticky top-12 hidden h-[calc(100vh-3rem)] w-64 shrink-0 flex-col gap-5 overflow-y-auto px-3 py-6 lg:flex print:hidden">
         <StepNav />
         <UniverseSummary />
       </aside>
-      <main className="min-w-0 flex-1 px-4 py-5 lg:px-6">
+      <main className="min-w-0 flex-1 px-4 pb-10 pt-4 lg:px-8 lg:pt-7">
         <MobileStepNav />
         <Suspense fallback={null}>
           <TourBar />

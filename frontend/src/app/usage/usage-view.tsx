@@ -43,17 +43,17 @@ export function UsageView() {
   return (
     <div className="mt-8 space-y-6">
       <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-sm border border-line bg-surface px-4 py-3">
+        <div className="rounded-lg border border-line bg-surface px-4 py-3 elev-1">
           <dt className="text-xs text-ink-2">Calculations completed</dt>
-          <dd className="mt-1 text-2xl font-semibold text-ink tabular">{num(u.total_calculations, 0)}</dd>
+          <dd className="mt-1 text-2xl font-semibold tracking-[-0.02em] text-ink tabular">{num(u.total_calculations, 0)}</dd>
         </div>
-        <div className="rounded-sm border border-line bg-surface px-4 py-3">
+        <div className="rounded-lg border border-line bg-surface px-4 py-3 elev-1">
           <dt className="text-xs text-ink-2">Counting since</dt>
-          <dd className="mt-1 text-2xl font-semibold text-ink">{date(u.since)}</dd>
+          <dd className="mt-1 text-2xl font-semibold tracking-[-0.02em] text-ink">{date(u.since)}</dd>
         </div>
-        <div className="rounded-sm border border-line bg-surface px-4 py-3">
+        <div className="rounded-lg border border-line bg-surface px-4 py-3 elev-1">
           <dt className="text-xs text-ink-2">Figures as of</dt>
-          <dd className="mt-1 text-2xl font-semibold text-ink">{date(u.as_of)}</dd>
+          <dd className="mt-1 text-2xl font-semibold tracking-[-0.02em] text-ink">{date(u.as_of)}</dd>
         </div>
       </dl>
       <Card title="By kind" subtitle="The last 30 days include today (UTC).">

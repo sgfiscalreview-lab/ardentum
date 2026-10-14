@@ -28,7 +28,7 @@ export default function AccountPage() {
   if (status !== "signed_in") {
     return (
       <main className="mx-auto max-w-xl px-4 py-12">
-        <h1 className="font-display text-3xl font-semibold text-ink">Account</h1>
+        <h1 className="type-title-1 text-ink">Account</h1>
         {done ? (
           <Callout tone="success" title="Account deleted" className="mt-6">
             {done}
@@ -76,7 +76,7 @@ export default function AccountPage() {
   return (
     <main className="mx-auto max-w-xl space-y-6 px-4 py-12">
       <div>
-        <h1 className="font-display text-3xl font-semibold text-ink">Account</h1>
+        <h1 className="type-title-1 text-ink">Account</h1>
         <p className="mt-2 text-sm text-ink-2">Signed in as {user?.email ?? "an unknown email"}.</p>
       </div>
       {error && <Callout tone="error">{error}</Callout>}

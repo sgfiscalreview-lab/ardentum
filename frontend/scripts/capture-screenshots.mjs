@@ -6,9 +6,11 @@ import { chromium } from "@playwright/test";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3000";
 const OUT = new URL("../public/screenshots/", import.meta.url).pathname;
-const SIZE = { width: 1440, height: 900 };
-// The results column of the workspace pages (right of the settings panel), in CSS pixels.
-const CLIP = { x: 600, y: 255, width: 816, height: 620 };
+// Wide enough that the results column (right of the settings panel) is 792 CSS pixels, so
+// with a 12 px margin for its shadow each picture is 816 x 620 (1224 x 930 at 1.5x).
+const SIZE = { width: 1448, height: 1100 };
+const MARGIN = 12;
+const SHOT = { width: 816, height: 620 };
 
 const SHOTS = [
   { name: "optimise", path: "/app/optimise", run: /^Optimise$/, wait: "Why each asset" },
@@ -33,8 +35,12 @@ for (const theme of ["light", "dark"]) {
     await page.getByRole("button", { name: s.run }).first().click();
     await page.getByText(s.wait).first().waitFor({ timeout: 120_000 });
     await page.evaluate(() => window.scrollTo(0, 0));
-    await page.waitForTimeout(600);
-    await page.screenshot({ path: `${OUT}${s.name}-${theme}.png`, clip: CLIP });
+    await page.waitForTimeout(800); // let springs settle
+    // The results column is the element that shows "Computing" while a run is in progress.
+    const box = await page.locator("main [aria-busy]").first().boundingBox();
+    if (!box) throw new Error(`No results column on ${s.path}.`);
+    const clip = { x: box.x - MARGIN, y: box.y - MARGIN, ...SHOT };
+    await page.screenshot({ path: `${OUT}${s.name}-${theme}.png`, clip });
     console.log(`saved ${s.name}-${theme}.png`);
   }
   await ctx.close();

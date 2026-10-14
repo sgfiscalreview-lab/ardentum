@@ -62,11 +62,11 @@ export function Legend({ items }: { items: LegendItem[] }) {
 }
 
 function LegendKey({ color, kind }: { color: string; kind: NonNullable<LegendItem["kind"]> }) {
-  if (kind === "rect") return <span className="inline-block size-2.5 rounded-sm" style={{ background: color }} />;
+  if (kind === "rect") return <span className="inline-block size-2.5 rounded-[3px]" style={{ background: color }} />;
   if (kind === "dot") return <span className="inline-block size-2 rounded-full" style={{ background: color }} />;
   if (kind === "band")
-    return <span className="inline-block h-2.5 w-4 rounded-sm" style={{ background: color, opacity: 0.35 }} />;
-  return <span className="inline-block h-0.5 w-4 rounded" style={{ background: color }} />;
+    return <span className="inline-block h-2.5 w-4 rounded-[3px]" style={{ background: color, opacity: 0.35 }} />;
+  return <span className="inline-block h-0.5 w-4 rounded-full" style={{ background: color }} />;
 }
 
 /** Chart container with title, legend and a chart/table toggle (the accessible twin). */
@@ -90,13 +90,13 @@ export function ChartFrame({
   const [view, setView] = useState<"chart" | "table">("chart");
   const headingId = useId();
   return (
-    <section aria-labelledby={headingId} className={cx("rounded-lg border border-line bg-surface", className)}>
-      <header className="flex flex-wrap items-start justify-between gap-3 px-4 pt-3">
+    <section aria-labelledby={headingId} className={cx("rounded-lg border border-line bg-surface elev-1", className)}>
+      <header className="flex flex-wrap items-start justify-between gap-3 px-4 pt-3.5">
         <div className="min-w-0">
-          <h3 id={headingId} className="text-sm font-semibold text-ink">
+          <h3 id={headingId} className="type-headline text-ink">
             {title}
           </h3>
-          {subtitle && <p className="mt-0.5 text-xs text-ink-2">{subtitle}</p>}
+          {subtitle && <p className="mt-0.5 text-[13px] leading-snug text-ink-2">{subtitle}</p>}
         </div>
         <div className="flex items-center gap-2">
           {actions}
@@ -135,13 +135,13 @@ interface TooltipRow {
 
 function TooltipBox({ title, rows }: { title?: string; rows: TooltipRow[] }) {
   return (
-    <div className="min-w-40 rounded-sm border border-line-strong bg-surface px-3 py-2 text-xs">
+    <div className="material-thick min-w-40 rounded-lg border border-line px-3 py-2 text-xs elev-3">
       {title && <p className="mb-1 font-medium text-ink-2">{title}</p>}
       <ul className="space-y-0.5">
         {rows.map((r) => (
           <li key={r.label} className="flex items-center justify-between gap-4">
             <span className="flex items-center gap-1.5 text-ink-2">
-              {r.color && <span className="inline-block h-0.5 w-3 rounded" style={{ background: r.color }} />}
+              {r.color && <span className="inline-block h-0.5 w-3 rounded-full" style={{ background: r.color }} />}
               {r.label}
             </span>
             <span className="font-semibold text-ink tabular">{r.value}</span>
@@ -604,7 +604,7 @@ export function Heatmap({ labels, matrix, dark }: { labels: string[]; matrix: nu
                   onMouseEnter={() => setHover({ i, j })}
                   onFocus={() => setHover({ i, j })}
                   onMouseLeave={() => setHover(null)}
-                  className="h-7 rounded-sm outline-offset-0 hover:ring-2 hover:ring-[var(--ink-2)]"
+                  className="h-7 rounded-[4px] outline-offset-0 hover:ring-2 hover:ring-[var(--ink-2)]"
                   style={{ background: correlationColor(v, dark) }}
                 />
               );
