@@ -172,7 +172,7 @@ recomputed server-side on save, stored per user and dataset, and replace (never 
 the dataset's scores. Responses are cached for a day in `provider_cache`. A free WikiRate
 API key can be set in `ARDENTUM_WIKIRATE_API_KEY` if WikiRate requires one.
 
-## D-027 Visual design and legal pages
+## D-027 Visual design and legal pages (look superseded by D-041)
 The founder asked that the UI avoid a list of patterns typical of generated sites (see
 CLAUDE.md "UI rules"). The design is deliberately plain: restrained warm neutrals, a navy
 accent, flat 2px surfaces, system fonts with a serif for titles, static skeletons, no
@@ -437,3 +437,34 @@ miss most.
   meant for live data instead of the list of industries; the list now shows whenever a
   dataset has one. The Kenneth French address is configurable, and the browser tests use
   a local stand-in serving the generated fixtures, so they no longer depend on Dartmouth.
+
+## D-041 Fluid interface, after Apple's design guidance
+The founder asked for a redesign following `.claude/skills/apple-design` (Apple's WWDC
+talks, chiefly *Designing Fluid Interfaces*, translated for the web). This replaces the
+visual parts of D-027 (flat 2px surfaces, no shadows, blur or motion); the palette, the
+system fonts, the plain copy and the other UI rules stay.
+* **Materials and depth.** The header is a translucent material that content scrolls
+  under; its lower edge shows only once something is beneath it. Popovers, tooltips and
+  the steps sheet use a thicker material and a deeper shadow than cards, so size and
+  layer read as depth. Corners are 6 to 22 px by size. Translucency turns solid when the
+  user asks for reduced transparency or more contrast, or the browser cannot blur.
+* **Springs, not durations.** Everything that moves uses a spring defined by Apple's two
+  parameters (damping ratio, response), mapped to stiffness and damping in
+  `lib/motion.ts` and tested against the closed form. Critically damped by default; a
+  slight overshoot only after a drag or flick, because then the gesture carried momentum.
+  Springs start from the value on screen, so every animation can be redirected.
+* **Direct manipulation.** On phones the workspace steps live in a bottom sheet that
+  follows the finger from where it was grabbed, resists past the top (rubber-banding),
+  continues at the release speed and projects a flick forward to decide whether it closes
+  (Apple's projection with deceleration 0.998). Buttons respond on press, not on release.
+* **Anchored, symmetric paths.** Popovers grow from the control that opened them and
+  return into it; the sheet leaves the way it came; a disclosure folds back into its
+  header. Segmented controls slide one highlight between choices.
+* **Accessibility.** With reduced motion the sheet fades instead of sliding and nothing
+  scales on press; Motion's `reducedMotion="user"` covers the rest. Keyboard paths: arrow
+  keys move segmented choices, Escape closes popovers and the sheet, focus stays in the
+  sheet while open and returns to its opener.
+* **Typography.** System sans for titles as well (the serif is gone), with size-specific
+  tracking: negative for display and titles, slightly positive for captions.
+* **Library.** Motion (`motion`, MIT) for springs, presence and shared-layout animation;
+  loaded lazily through `LazyMotion` so pages that do not animate pay little for it.

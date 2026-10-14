@@ -3,7 +3,7 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { api, ApiError, unwrap } from "@/lib/api/client";
 import type { DataWindowOut, DatasetOut } from "@/lib/api/types";
@@ -11,7 +11,8 @@ import { date as fmtDate, ESTIMATOR_LABELS, pct } from "@/lib/format";
 import { encodeShare, PAGE_REQUESTS } from "@/lib/share";
 import { sharePayload, useWorkspace, type PageKey } from "@/lib/workspace";
 
-import { Badge, Button, Callout, cx, Disclosure, Spinner, Skeleton } from "./ui";
+import { Sheet } from "./sheet";
+import { Badge, Button, Callout, cx, Disclosure, PopoverPanel, Spinner, Skeleton, useDismiss } from "./ui";
 
 export const STEPS: { href: string; label: string; hint: string }[] = [
   { href: "/app", label: "Universe", hint: "Data, assets, window" },
@@ -63,7 +64,7 @@ export function useComputation<Req, Res>(page: PageKey, fn: (req: Req, signal?: 
 
 // --------------------------------------------------------------------------- layout pieces
 
-export function StepNav() {
+export function StepNav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   return (
     <nav aria-label="Workspace steps">
@@ -75,17 +76,18 @@ export function StepNav() {
               <Link
                 href={s.href}
                 aria-current={active ? "page" : undefined}
+                onClick={onNavigate}
                 className={cx(
-                  "flex items-start gap-2.5 rounded-sm border px-2 py-1.5",
-                  active ? "border-line bg-surface-2" : "border-transparent hover:bg-surface-2/60",
+                  "pressable-soft flex items-start gap-2.5 rounded-md px-2.5 py-1.5",
+                  active ? "bg-accent text-on-accent" : "text-ink hover:bg-surface-2",
                 )}
               >
-                <span className={cx("mt-px w-4 shrink-0 text-right text-xs tabular", active ? "font-semibold text-accent-ink" : "text-muted")}>
+                <span className={cx("mt-px w-4 shrink-0 text-right text-xs tabular", active ? "font-semibold text-on-accent/90" : "text-muted")}>
                   {i + 1}
                 </span>
                 <span className="min-w-0">
-                  <span className={cx("block text-sm", active ? "font-medium text-ink" : "text-ink")}>{s.label}</span>
-                  <span className="block truncate text-[11px] text-muted">{s.hint}</span>
+                  <span className={cx("block text-sm", active && "font-medium")}>{s.label}</span>
+                  <span className={cx("block truncate text-[11px]", active ? "text-on-accent/90" : "text-muted")}>{s.hint}</span>
                 </span>
               </Link>
             </li>
@@ -96,27 +98,33 @@ export function StepNav() {
   );
 }
 
+/**
+ * Below the large breakpoint the steps live in a bottom sheet: a compact bar names the
+ * current step, and "All steps" raises the full list from the bottom edge.
+ */
 export function MobileStepNav() {
   const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+  const index = STEPS.findIndex((s) => s.href === pathname);
+  const current = STEPS[index];
   return (
-    <nav aria-label="Workspace steps" className="-mx-4 mb-4 overflow-x-auto border-b border-line px-4 lg:hidden">
-      <ul className="flex gap-1 pb-2">
-        {STEPS.map((s) => (
-          <li key={s.href}>
-            <Link
-              href={s.href}
-              aria-current={pathname === s.href ? "page" : undefined}
-              className={cx(
-                "block whitespace-nowrap rounded-md px-2.5 py-1 text-xs",
-                pathname === s.href ? "bg-surface-2 font-medium text-ink" : "text-ink-2",
-              )}
-            >
-              {s.label}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </nav>
+    <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-line bg-surface px-3.5 py-2 elev-1 lg:hidden print:hidden">
+      <p className="min-w-0 truncate text-[13px] text-ink-2">
+        {current ? (
+          <>
+            Step {index + 1} of {STEPS.length}: <span className="font-medium text-ink">{current.label}</span>
+          </>
+        ) : (
+          "Workspace"
+        )}
+      </p>
+      <Button size="sm" variant="secondary" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
+        All steps
+      </Button>
+      <Sheet open={open} onClose={() => setOpen(false)} title="Workspace steps">
+        <StepNav onNavigate={() => setOpen(false)} />
+      </Sheet>
+    </div>
   );
 }
 
@@ -125,7 +133,7 @@ export function UniverseSummary() {
   const u = state.universe;
   const ds = useDataset(u.dataset_id);
   return (
-    <div className="rounded-md border border-line bg-surface p-3 text-xs">
+    <div className="rounded-lg border border-line bg-surface p-3.5 text-xs elev-1">
       <p className="font-medium text-ink">Current universe</p>
       <dl className="mt-2 space-y-1 text-ink-2">
         <div className="flex justify-between gap-2">
@@ -203,10 +211,10 @@ export function SyntheticBanner({ dataset }: { dataset: DatasetOut | undefined }
 
 export function PageHeader({ title, description, actions }: { title: string; description: ReactNode; actions?: ReactNode }) {
   return (
-    <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+    <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
       <div className="min-w-0 max-w-3xl">
-        <h1 className="text-xl font-semibold tracking-tight text-ink">{title}</h1>
-        <p className="mt-1 text-sm text-ink-2">{description}</p>
+        <h1 className="type-title-1 text-ink">{title}</h1>
+        <p className="mt-1.5 text-[15px] leading-relaxed text-ink-2">{description}</p>
       </div>
       <div className="flex flex-wrap items-center gap-2 print:hidden">
         <ShareButton />
@@ -240,33 +248,38 @@ export function ShareButton() {
     }
   };
 
+  const box = useRef<HTMLDivElement>(null);
+  useDismiss(box, result !== null, () => setResult(null));
+
   return (
-    <div className="relative">
+    <div ref={box} className="relative">
       <Button size="sm" variant="ghost" onClick={copy} aria-describedby="share-status">
         Copy link
       </Button>
-      <div id="share-status" role="status" className="absolute left-0 top-full z-20 mt-1 w-72 sm:left-auto sm:right-0">
-        {result && (
-          <div className="rounded-sm border border-line bg-surface p-2 text-xs text-ink-2">
-            {result.status === "copied" ? (
-              <p>
-                <span className="font-medium text-ink">Link copied.</span> It opens this page with your settings
-                {PAGE_REQUESTS[pathname] ? " and recomputes this result" : ""}.
-              </p>
-            ) : (
-              <label className="block">
-                <span className="font-medium text-ink">Copy this link:</span>
-                <input readOnly value={result.url} onFocus={(e) => e.currentTarget.select()} className="mt-1 w-full rounded-sm border border-line bg-surface-2 px-1.5 py-1 text-ink" />
-              </label>
-            )}
-            {privateParts.length > 0 && (
-              <p className="mt-1">It uses {privateParts.join(" and ")}, which only you can open.</p>
-            )}
-            <button type="button" onClick={() => setResult(null)} className="mt-1 underline underline-offset-2">
-              Close
-            </button>
-          </div>
-        )}
+      {/* The status region stays mounted so the note is announced when it appears. */}
+      <div id="share-status" role="status">
+        <PopoverPanel open={result !== null} align="responsive" className="text-xs text-ink-2">
+          {result?.status === "copied" ? (
+            <p>
+              <span className="font-medium text-ink">Link copied.</span> It opens this page with your settings
+              {PAGE_REQUESTS[pathname] ? " and recomputes this result" : ""}.
+            </p>
+          ) : result?.status === "manual" ? (
+            <label className="block">
+              <span className="font-medium text-ink">Copy this link:</span>
+              <input
+                readOnly
+                value={result.url}
+                onFocus={(e) => e.currentTarget.select()}
+                className="field mt-1.5 w-full rounded-md border border-line bg-surface px-2 py-1.5 text-ink"
+              />
+            </label>
+          ) : null}
+          {privateParts.length > 0 && <p className="mt-1.5">It uses {privateParts.join(" and ")}, which only you can open.</p>}
+          <button type="button" onClick={() => setResult(null)} className="mt-1.5 font-medium text-accent-ink underline-offset-2 hover:underline">
+            Close
+          </button>
+        </PopoverPanel>
       </div>
     </div>
   );
@@ -372,19 +385,19 @@ function Elapsed() {
 export function ResultsSkeleton() {
   return (
     <div role="status" aria-label="Computing results" className="space-y-4">
-      <div className="rounded-sm border border-line bg-surface p-4">
+      <div className="rounded-lg border border-line bg-surface p-4 elev-1">
         <Skeleton className="h-3 w-40" />
         <Skeleton className="mt-3 h-5 w-2/3" />
         <div className="mt-5 grid grid-cols-2 gap-2 md:grid-cols-3 2xl:grid-cols-6">
           {Array.from({ length: 6 }, (_, i) => (
-            <div key={i} className="rounded-sm border border-line p-3">
+            <div key={i} className="rounded-lg border border-line p-3">
               <Skeleton className="h-2.5 w-16" />
               <Skeleton className="mt-2 h-5 w-20" />
             </div>
           ))}
         </div>
       </div>
-      <div className="rounded-sm border border-line bg-surface p-4">
+      <div className="rounded-lg border border-line bg-surface p-4 elev-1">
         <Skeleton className="h-3 w-48" />
         <Skeleton className="mt-4 h-56 w-full" />
       </div>
@@ -400,7 +413,7 @@ export function Running({ running, children }: { running: boolean; children: Rea
   return (
     <div className={cx("relative", running && "pointer-events-none opacity-60")} aria-busy={running}>
       {running && (
-        <div className="absolute right-3 top-3 z-10 flex items-center gap-2 rounded-md border border-line bg-surface px-2 py-1 text-xs text-ink-2">
+        <div className="material absolute right-3 top-3 z-10 flex items-center gap-2 rounded-full border border-line px-3 py-1 text-xs text-ink-2 elev-2">
           <Spinner className="size-3" /> Computing
           <Elapsed />
         </div>

@@ -209,7 +209,7 @@ export default function EsgDataPage() {
                         setTransform((t) => ({ ...t, lower: null, upper: null }));
                       }}
                       aria-pressed={metric?.id === m.id}
-                      className={`w-full rounded-md border p-2 text-left text-xs disabled:opacity-60 ${metric?.id === m.id ? "border-accent bg-accent-wash" : "border-line hover:bg-surface-2"}`}
+                      className={`pressable-soft w-full rounded-md border p-2.5 text-left text-xs disabled:opacity-60 ${metric?.id === m.id ? "border-accent bg-accent-wash" : "border-line bg-surface hover:bg-surface-2"}`}
                     >
                       <span className="block font-medium text-ink">{m.title}</span>
                       <span className="block text-muted">

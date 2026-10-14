@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { useSavedPortfolios } from "@/components/portfolio-picker";
-import { Badge, Button, Callout, Card, EmptyState, Skeleton, SkeletonRows, Table, Td, Th } from "@/components/ui";
+import { Badge, Button, buttonClass, Callout, Card, EmptyState, Skeleton, SkeletonRows, Table, Td, Th } from "@/components/ui";
 import { download, ErrorCallout } from "@/components/workspace";
 import { api, unwrap } from "@/lib/api/client";
 import type { PortfolioOut } from "@/lib/api/types";
@@ -35,7 +35,7 @@ export default function PortfoliosPage() {
         <EmptyState
           title="Sign in to see your saved portfolios"
           action={
-            <Link href="/login?next=/portfolios" className="inline-flex h-9 items-center rounded-md bg-accent px-4 text-sm font-medium text-on-accent hover:bg-accent-hover">
+            <Link href="/login?next=/portfolios" className={buttonClass("primary")}>
               Sign in
             </Link>
           }
@@ -75,7 +75,7 @@ export default function PortfoliosPage() {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
-      <h1 className="text-xl font-semibold tracking-tight text-ink">Saved portfolios</h1>
+      <h1 className="type-title-1 text-ink">Saved portfolios</h1>
       <p className="mt-1 text-sm text-ink-2">Metrics were computed when the portfolio was saved, on the stated data window.</p>
       <div className="mt-4">
         <ErrorCallout error={error ?? saved.error} />

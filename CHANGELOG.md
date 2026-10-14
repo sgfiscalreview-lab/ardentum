@@ -29,6 +29,12 @@ All notable changes to Ardentum are recorded here. Versions follow
 - The live smoke test also checks the usage counts and the tour, usage and classroom pages.
 
 ### Changed
+- Redesigned interface after Apple's fluid-interface guidance: a translucent header that
+  content scrolls under, soft depth and rounder corners, spring motion that can be
+  interrupted, press feedback, sliding segmented controls, popovers that grow from their
+  button, and on phones a bottom sheet for the workspace steps that follows the finger
+  and closes with a flick. Reduced motion, reduced transparency and higher contrast
+  settings are respected. Titles use the system sans; landing screenshots retaken.
 - The optimiser's reason for each holding sits in a full-width row under it, readable on
   phones; long calculations show elapsed seconds.
 - Dependabot opens at most two pull requests per ecosystem a month and no longer bumps

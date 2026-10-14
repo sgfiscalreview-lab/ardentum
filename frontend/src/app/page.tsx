@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { buttonClass } from "@/lib/classes";
+
 const SHOTS = [
   {
     id: "optimise",
@@ -29,7 +31,7 @@ const SHOTS = [
 
 function Screenshot({ id, alt }: { id: string; alt: string }) {
   return (
-    <figure className="min-w-0 border border-line-strong bg-surface">
+    <figure className="min-w-0 overflow-hidden rounded-xl border border-line bg-surface elev-3">
       {/* eslint-disable-next-line @next/next/no-img-element -- static export serves plain files */}
       <img src={`/screenshots/${id}-light.png`} alt={alt} width={1224} height={930} loading="lazy" className="only-light block h-auto w-full" />
       {/* eslint-disable-next-line @next/next/no-img-element -- static export serves plain files */}
@@ -40,24 +42,24 @@ function Screenshot({ id, alt }: { id: string; alt: string }) {
 
 export default function Home() {
   return (
-    <main className="mx-auto max-w-6xl px-4 pb-8 pt-14">
+    <main className="mx-auto max-w-6xl px-4 pb-8 pt-16 sm:pt-24">
       <section className="max-w-3xl">
-        <h1 className="font-display text-4xl font-semibold leading-tight text-ink sm:text-5xl">Portfolio analysis that shows its working.</h1>
-        <p className="mt-5 text-lg leading-relaxed text-ink-2">
+        <h1 className="type-display text-ink">Portfolio analysis that shows its working.</h1>
+        <p className="mt-6 text-[1.1875rem] leading-relaxed tracking-[-0.006em] text-ink-2 sm:text-xl">
           Ardentum builds, optimises, simulates and backtests investment portfolios. Every result comes with its data window, estimators, binding constraints and assumptions, so you can check a number before you rely on it.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
-          <Link href="/app" className="inline-flex h-10 items-center rounded-sm bg-accent px-5 text-sm font-medium text-on-accent hover:bg-accent-hover">
+          <Link href="/app" className={buttonClass("primary", "lg")}>
             Open the workspace
           </Link>
-          <Link href="/tour" className="inline-flex h-10 items-center rounded-sm border border-line-strong bg-surface px-5 text-sm font-medium text-ink hover:bg-surface-2">
+          <Link href="/tour" className={buttonClass("secondary", "lg")}>
             Take the guided tour
           </Link>
-          <Link href="/research" className="inline-flex h-10 items-center rounded-sm border border-line-strong bg-surface px-5 text-sm font-medium text-ink hover:bg-surface-2">
+          <Link href="/research" className={buttonClass("ghost", "lg")}>
             Read the methodology
           </Link>
         </div>
-        <p className="mt-4 max-w-2xl text-sm text-muted">
+        <p className="mt-6 max-w-2xl text-sm leading-relaxed text-muted">
           The workspace opens on a synthetic demo universe, labelled as such on every page, and can switch to real US industry data at any time.{" "}
           <Link href="/app#examples" className="text-accent-ink underline underline-offset-2">
             Start from an example
@@ -66,17 +68,17 @@ export default function Home() {
         </p>
       </section>
 
-      <section aria-labelledby="product" className="mt-20">
-        <h2 id="product" className="font-display text-2xl font-semibold text-ink">
+      <section aria-labelledby="product" className="mt-24">
+        <h2 id="product" className="type-title-1 text-ink">
           What it looks like
         </h2>
-        <p className="mt-2 max-w-2xl text-sm text-ink-2">Screenshots of the application running on the synthetic demo dataset.</p>
-        <div className="mt-8 space-y-14">
+        <p className="mt-2 max-w-2xl text-[15px] text-ink-2">Screenshots of the application running on the synthetic demo dataset.</p>
+        <div className="mt-10 space-y-20">
           {SHOTS.map((s) => (
             <article key={s.id} className="grid grid-cols-1 gap-5 lg:grid-cols-[18rem_minmax(0,1fr)] lg:gap-10">
               <div>
-                <h3 className="text-base font-semibold text-ink">{s.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-ink-2">{s.body}</p>
+                <h3 className="type-title-2 text-ink">{s.title}</h3>
+                <p className="mt-3 text-[15px] leading-relaxed text-ink-2">{s.body}</p>
               </div>
               <Screenshot id={s.id} alt={s.alt} />
             </article>
@@ -84,11 +86,11 @@ export default function Home() {
         </div>
       </section>
 
-      <section aria-labelledby="basis" className="mt-20 border-t border-line pt-10">
-        <h2 id="basis" className="font-display text-2xl font-semibold text-ink">
+      <section aria-labelledby="basis" className="mt-24 border-t border-line pt-12">
+        <h2 id="basis" className="type-title-1 text-ink">
           What the numbers rest on
         </h2>
-        <dl className="mt-6 max-w-3xl space-y-6 text-sm leading-relaxed">
+        <dl className="mt-6 max-w-3xl space-y-6 text-[15px] leading-relaxed">
           <div>
             <dt className="font-semibold text-ink">Data</dt>
             <dd className="mt-1 text-ink-2">
@@ -114,11 +116,11 @@ export default function Home() {
         </dl>
       </section>
 
-      <section aria-labelledby="limits" className="mt-16 border-t border-line pt-10">
-        <h2 id="limits" className="font-display text-2xl font-semibold text-ink">
+      <section aria-labelledby="limits" className="mt-16 border-t border-line pt-12">
+        <h2 id="limits" className="type-title-1 text-ink">
           Limits
         </h2>
-        <div className="mt-4 max-w-3xl space-y-3 text-sm leading-relaxed text-ink-2">
+        <div className="mt-4 max-w-3xl space-y-3 text-[15px] leading-relaxed text-ink-2">
           <p>Expected returns estimated from history carry large errors, and an optimiser amplifies them. Minimum-volatility and minimum-CVaR objectives, shrinkage estimators and the weight-stability test exist for that reason.</p>
           <p>The built-in real data covers US industry portfolios. Individual securities need your own data or a licensed price feed.</p>
           <p>Simulations and backtests describe the stated model and the past. They cannot tell you what markets will do.</p>

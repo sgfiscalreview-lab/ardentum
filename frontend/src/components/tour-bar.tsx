@@ -15,7 +15,7 @@ export function TourBar() {
   const next = TOUR[n];
   const link = "underline underline-offset-2";
   return (
-    <aside aria-label="Guided tour" className="mb-4 rounded-sm border border-accent/30 bg-accent-wash px-3 py-2.5 text-sm">
+    <aside aria-label="Guided tour" className="mb-5 rounded-lg border border-accent/25 bg-accent-wash px-4 py-3 text-sm">
       <p className="font-medium text-ink">
         Guided tour, step {n} of {TOUR.length}: {step.title}
       </p>

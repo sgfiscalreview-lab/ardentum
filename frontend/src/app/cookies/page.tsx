@@ -39,7 +39,7 @@ export default function CookiesPage() {
         </p>
       </Section>
       <Section title="2. What is stored in your browser">
-        <div className="rounded-sm border border-line">
+        <div className="overflow-hidden rounded-lg border border-line">
           <Table>
             <thead>
               <tr>

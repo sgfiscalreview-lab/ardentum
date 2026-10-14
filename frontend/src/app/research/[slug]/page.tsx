@@ -47,7 +47,7 @@ export default async function ResearchDoc({ params }: { params: Promise<{ slug: 
         </ol>
       </nav>
       <article className="prose-doc min-w-0 max-w-3xl">
-        <p className="text-xs font-semibold uppercase tracking-widest text-accent-ink">
+        <p className="text-[13px] font-semibold text-accent-ink">
           <Link href="/research">Methodology</Link>
         </p>
         <h1 className="mt-2">{doc.title}</h1>

@@ -7,7 +7,7 @@ import { PrintButton, SiteAddress } from "../print-tools";
 export const metadata: Metadata = { title: "Classroom worksheet" };
 
 function AnswerBox() {
-  return <div aria-hidden className="mt-1.5 h-16 rounded-sm border border-line print:h-14 print:border-line-strong" />;
+  return <div aria-hidden className="mt-1.5 h-16 rounded-md border border-line print:h-14 print:border-line-strong" />;
 }
 
 function Questions({ items }: { items: string[] }) {
@@ -28,8 +28,8 @@ export default function WorksheetPage() {
     <main className="mx-auto max-w-3xl px-4 py-10 print:py-0">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-accent-ink">Classroom worksheet</p>
-          <h1 className="mt-2 font-display text-3xl font-semibold text-ink">Risk, diversification and the optimiser&apos;s promise</h1>
+          <p className="text-[13px] font-semibold text-accent-ink">Classroom worksheet</p>
+          <h1 className="type-title-1 mt-2 text-ink">Risk, diversification and the optimiser&apos;s promise</h1>
         </div>
         <PrintButton />
       </div>

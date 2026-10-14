@@ -2,11 +2,11 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { Fragment, useState } from "react";
+import { Fragment, useRef, useState } from "react";
 
 import { BarList, ChartFrame, DataTable } from "@/components/charts";
 import { ConstraintsPanel, ObjectivePanel, StatusBadge } from "@/components/forms";
-import { Button, Callout, Card, Checkbox, EmptyState, Field, Input, Stat, Table, Td, Th } from "@/components/ui";
+import { Button, buttonClass, Callout, Card, Checkbox, cx, EmptyState, Field, Input, PopoverPanel, Stat, Table, Td, Th, useDismiss } from "@/components/ui";
 import {
   DataNotes,
   ErrorCallout,
@@ -131,7 +131,7 @@ function Results({
       <Card>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-xs font-medium uppercase tracking-wide text-ink-2">{OBJECTIVE_LABELS[r.objective]}</p>
+            <p className="text-[13px] font-medium text-ink-2">{OBJECTIVE_LABELS[r.objective]}</p>
             <p className="mt-1 text-lg font-semibold text-ink">{ex.headline}</p>
             <p className="mt-1 text-sm text-ink-2">{ex.objective_summary}</p>
           </div>
@@ -257,7 +257,7 @@ function Results({
           </ul>
           {binding.length > 0 && (
             <>
-              <h3 className="mt-4 text-xs font-semibold uppercase tracking-wide text-ink-2">Binding constraints</h3>
+              <h3 className="mt-4 text-[13px] font-semibold text-ink-2">Binding constraints</h3>
               <Table className="mt-1">
                 <thead>
                   <tr>
@@ -358,9 +358,11 @@ function SaveButton({ data, request }: { data: OptimiseResponse; request: Optimi
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ tone: "success" | "error"; text: string } | null>(null);
+  const box = useRef<HTMLDivElement>(null);
+  useDismiss(box, open, () => setOpen(false));
   if (status !== "signed_in") {
     return (
-      <Link href="/login?next=/app/optimise" className="inline-flex h-8 items-center print:hidden rounded-md border border-line-strong px-3 text-[13px] font-medium text-ink hover:bg-surface-2">
+      <Link href="/login?next=/app/optimise" className={cx(buttonClass("secondary", "sm"), "print:hidden")}>
         Sign in to save
       </Link>
     );
@@ -399,26 +401,24 @@ function SaveButton({ data, request }: { data: OptimiseResponse; request: Optimi
     }
   };
   return (
-    <div className="relative">
+    <div ref={box} className="relative">
       <Button size="sm" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
         Save
       </Button>
       {msg && <span className={msg.tone === "success" ? "ml-2 text-xs text-good" : "ml-2 text-xs text-critical"}>{msg.text}</span>}
-      {open && (
-        <div className="absolute right-0 z-20 mt-2 w-72 rounded-sm border border-line-strong bg-surface p-3">
-          <Field label="Portfolio name" htmlFor="pf-name">
-            <Input id="pf-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={120} autoFocus />
-          </Field>
-          <div className="mt-3 flex justify-end gap-2">
-            <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button size="sm" variant="primary" onClick={() => void save()} busy={busy} disabled={!name.trim()}>
-              Save portfolio
-            </Button>
-          </div>
+      <PopoverPanel open={open}>
+        <Field label="Portfolio name" htmlFor="pf-name">
+          <Input id="pf-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={120} autoFocus />
+        </Field>
+        <div className="mt-3 flex justify-end gap-2">
+          <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button size="sm" variant="primary" onClick={() => void save()} busy={busy} disabled={!name.trim()}>
+            Save portfolio
+          </Button>
         </div>
-      )}
+      </PopoverPanel>
     </div>
   );
 }

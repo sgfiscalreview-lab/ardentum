@@ -118,7 +118,7 @@ function Results({ data }: { data: CompareResponse }) {
               {ps.map((p, i) => (
                 <Th key={p.name} align="right">
                   <span className="inline-flex items-center gap-1.5">
-                    <span className="inline-block h-0.5 w-3 rounded" style={{ background: seriesColor(i) }} />
+                    <span className="inline-block h-0.5 w-3 rounded-full" style={{ background: seriesColor(i) }} />
                     {p.name}
                   </span>
                 </Th>

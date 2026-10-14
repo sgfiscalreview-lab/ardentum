@@ -98,7 +98,7 @@ function Chips({
       <div className="mb-1.5 flex flex-wrap gap-1">
         {selected.length === 0 && <span className="text-xs text-muted">None</span>}
         {selected.map((s) => (
-          <span key={s} className="inline-flex items-center gap-1 rounded border border-line bg-surface-2 px-1.5 py-0.5 text-xs text-ink">
+          <span key={s} className="inline-flex items-center gap-1 rounded-full border border-line bg-surface-2 px-2 py-0.5 text-xs text-ink">
             {render ? render(s) : s}
             <button type="button" className="text-muted hover:text-ink" aria-label={`Remove ${s}`} onClick={() => onChange(selected.filter((x) => x !== s))}>
               ×
@@ -131,7 +131,7 @@ function Chips({
 function Section({ title, children, defaultOpen = true }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
   return (
     <details open={defaultOpen} className="group border-t border-line pt-3">
-      <summary className="mb-2 flex cursor-pointer list-none items-center justify-between text-xs font-semibold uppercase tracking-wide text-ink-2">
+      <summary className="mb-2 flex cursor-pointer list-none items-center justify-between text-[13px] font-semibold text-ink">
         {title}
         <DisclosureHint />
       </summary>
@@ -288,5 +288,5 @@ export function StatusBadge({ status }: { status: string }) {
     excluded: { label: "Excluded", cls: "bg-surface-2 text-ink-2" },
   };
   const m = map[status] ?? { label: status, cls: "bg-surface-2 text-ink-2" };
-  return <span className={cx("inline-block rounded px-1.5 py-0.5 text-[11px] font-medium whitespace-nowrap", m.cls)}>{m.label}</span>;
+  return <span className={cx("inline-block rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap", m.cls)}>{m.label}</span>;
 }

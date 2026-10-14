@@ -19,18 +19,32 @@ Read this first, then `ARCHITECTURE.md`, `DECISIONS.md`, `PROGRESS.md`, `TODO.md
    orchestrate only.
 6. **Reproducibility.** Simulations take explicit seeds and echo them.
 
-## UI rules (founder request: no generic "AI-generated" look)
+## UI rules (founder request)
 
 * Colours only from the tokens in `frontend/src/app/globals.css`: warm paper and charcoal
   (never pure white or black backgrounds), one navy accent, muted earth-tone chart series.
   No purple, neon, pastel or rainbow palettes; no gradients, orbs or dot-grid backdrops.
-* Flat surfaces: 2px corners, 1px borders, no shadows, no blur or glass, no motion on hover
-  (no transitions, no animated arrows or chevrons); charts render without animation.
+* Depth and motion follow `.claude/skills/apple-design` (DECISIONS D-041). Translucent
+  materials (`.material`, `.material-thick`) only for floating chrome: header, popovers,
+  tooltips, sheets; never one translucent layer on another. Elevation from `.elev-1`
+  (cards), `.elev-2` (controls), `.elev-3` (floating layers); radii from the `--radius-*`
+  tokens (controls 6px, cards 8 to 12px, sheets 22px).
+* Everything that moves uses a spring from `frontend/src/lib/motion.ts`: `SPRING` by
+  default (critically damped), `SPRING_SNAPPY` for small selections, `SPRING_MOMENTUM`
+  only after a drag or flick. No keyframes or fixed-duration transitions for movement,
+  except the 100 ms press scale of `.pressable` / `.pressable-soft`, which gives feedback
+  on pointer-down. Popovers grow from their trigger (`PopoverPanel`) and leave the same
+  way. No decorative motion: nothing moves on hover, no animated arrows or chevrons, no
+  decorative loops (the busy spinner is the only one); charts render without animation.
+* Reduced motion turns movement into fades; reduced transparency and more contrast make
+  materials solid (`globals.css`). Keyboard paths for every gesture (arrow keys in
+  segmented controls, Escape closes popovers and sheets, focus returns to the opener).
 * No icon sets (e.g. Lucide), emojis, sparkle icons, checkmark bullets or arrow glyphs;
   use words. No em dashes in user-facing text (backend messages and methodology docs
   included); missing values display as "n/a".
-* Operating-system fonts only (`--font-sans`; serif `--font-display` for page titles);
-  never Inter, Geist or Space Grotesk.
+* Operating-system fonts only (`--font-sans`, also for titles); the `.type-*` classes set
+  size-specific tracking (negative for large text, slightly positive for captions).
+  Never Inter, Geist or Space Grotesk.
 * No feature-card rows, bento grids, terminal windows, testimonials or pricing tables.
   Show the real product (`npm run screenshots` in `frontend/` with the app running
   captures the landing-page screenshots) and plain statements; avoid "it's not X, it's Y"
