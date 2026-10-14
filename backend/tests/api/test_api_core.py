@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 
+from ardentum.api.main import create_app
 from tests.api.conftest import DEMO_TICKERS, universe
 
 
@@ -15,6 +16,19 @@ def test_health_and_meta(client: TestClient) -> None:
     r = client.get("/api/v1/health")
     assert r.headers["X-Content-Type-Options"] == "nosniff"
     assert "X-Request-ID" in r.headers
+
+
+def test_meta_reports_the_build_commit(settings, monkeypatch: pytest.MonkeyPatch) -> None:
+    # Render sets RENDER_GIT_COMMIT on every deploy; a stale deploy then shows in /meta.
+    monkeypatch.delenv("RENDER_GIT_COMMIT", raising=False)
+    with TestClient(create_app(settings)) as c:
+        assert c.get("/api/v1/meta").json()["commit"] is None
+    monkeypatch.setenv("RENDER_GIT_COMMIT", "0123456789abcdef0123456789abcdef01234567")
+    with TestClient(create_app(settings)) as c:
+        assert c.get("/api/v1/meta").json()["commit"] == "0123456789abcdef0123456789abcdef01234567"
+    explicit = settings.model_copy(update={"build_commit": "feedc0de"})
+    with TestClient(create_app(explicit)) as c:
+        assert c.get("/api/v1/meta").json()["commit"] == "feedc0de"  # an explicit setting wins
 
 
 def test_openapi_schema(client: TestClient) -> None:

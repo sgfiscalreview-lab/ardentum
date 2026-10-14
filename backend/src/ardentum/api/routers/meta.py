@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 from fastapi import APIRouter
 from sqlalchemy import text
 
@@ -33,6 +35,7 @@ def meta(settings: SettingsDep) -> s.MetaOut:
         supabase_url=settings.supabase_url,
         live_data_available=bool(settings.tiingo_api_key),
         methodology_version=METHODOLOGY_VERSION,
+        commit=settings.build_commit or os.environ.get("RENDER_GIT_COMMIT") or None,
     )
 
 

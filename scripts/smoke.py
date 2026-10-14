@@ -19,6 +19,7 @@ import base64
 import json
 import os
 import re
+import subprocess
 import sys
 import time
 import urllib.error
@@ -166,6 +167,50 @@ def describe(r: Response) -> str:
     return f"HTTP {r.status} from {server}: {text!r}"
 
 
+def git(*args: str) -> tuple[int, str]:
+    """Runs git in this checkout; (exit code, output), or (-1, "") without git."""
+    try:
+        done = subprocess.run(
+            ["git", *args], capture_output=True, text=True, timeout=20, check=False
+        )
+    except (OSError, subprocess.SubprocessError):
+        return -1, ""
+    return done.returncode, done.stdout.strip()
+
+
+def deploy_freshness(rep: Report, running: str | None) -> None:
+    """Whether the API runs the latest backend change in this checkout (main in CI)."""
+    name = "API deploy is current"
+    if not running:
+        rep.warn(
+            name,
+            "the API does not say which commit it runs (it predates this check, or its host "
+            "does not report it). If checks for newer features fail with HTTP 404, the deploy "
+            "is behind main: on Render, Manual Deploy > Deploy latest commit.",
+        )
+        return
+    code, latest = git("log", "-1", "--format=%H", "--", "backend")
+    if code != 0 or not latest:
+        rep.warn(name, f"the API runs {running[:7]}; no git history here to compare with")
+        return
+    _, when = git("log", "-1", "--format=%cs %s", latest)
+    code, _ = git("merge-base", "--is-ancestor", latest, running)
+    if code == 0:
+        rep.ok(
+            name,
+            f"the API runs {running[:7]}, which includes the latest backend change {latest[:7]}",
+        )
+    elif code == 1:
+        rep.fail(
+            name,
+            f"the API runs {running[:7]}, but the backend changed in {latest[:7]} ({when}). "
+            "Its host has not deployed it: on Render, open the service, Manual Deploy > Deploy "
+            "latest commit, and check that Auto-Deploy is On.",
+        )
+    else:
+        rep.warn(name, f"the API runs {running[:7]}, a commit this checkout does not know")
+
+
 def check_api(rep: Report, api: str, site: str) -> None:
     v1 = api.rstrip("/") + "/api/v1"
 
@@ -194,6 +239,7 @@ def check_api(rep: Report, api: str, site: str) -> None:
             rep.ok("Production settings", detail + ", Supabase sign-in")
         else:
             rep.fail("Production settings", detail + f", auth {m.get('auth_mode')}")
+        deploy_freshness(rep, m.get("commit"))
 
     def cors() -> None:
         r = request(

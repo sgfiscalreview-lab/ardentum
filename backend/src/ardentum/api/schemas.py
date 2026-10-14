@@ -1027,6 +1027,8 @@ class MetaOut(ResponseModel):
     supabase_url: str | None
     live_data_available: bool
     methodology_version: str
+    # Git commit of the running build when the host reports it, else null.
+    commit: str | None = None
 
 
 class ErrorBody(ResponseModel):
