@@ -57,6 +57,11 @@ def test_analytics(client: TestClient) -> None:
     np.testing.assert_allclose(np.diag(corr), 1.0)
     assert body["assets"][0]["performance"]["beta"]["value"] is not None
     assert body["normalised_prices"]["NWS.SYN"][0] == pytest.approx(100.0)
+    perf = body["assets"][0]["performance"]
+    iv = perf["sharpe_interval"]
+    assert iv["low"] < perf["sharpe_ratio"]["value"] < iv["high"]
+    assert iv["confidence"] == 0.95
+    assert perf["sharpe_interval_reason"] is None
 
 
 def test_optimise_max_sharpe_with_explanation(client: TestClient) -> None:
@@ -268,6 +273,20 @@ def test_backtest_asset_benchmark(client: TestClient) -> None:
     )
     assert r.status_code == 200, r.text
     assert r.json()["benchmark"]["name"] == "MKT.SYN"
+    test = r.json()["sharpe_test"]
+    strategy = r.json()["performance"]["sharpe_ratio"]["value"]
+    benchmark = r.json()["benchmark_performance"]["sharpe_ratio"]["value"]
+    assert test["difference"] == pytest.approx(strategy - benchmark)
+    assert 0.0 <= test["p_value"] <= 1.0
+    assert test["statement"].startswith("The strategy's Sharpe ratio is")
+    # Equal weights against the equal-weight benchmark: the same returns.
+    body = {"universe": universe(), "strategy": {"type": "equal_weight"}, "lookback_years": 1}
+    same = client.post("/api/v1/backtest", json=body).json()["sharpe_test"]
+    assert same["p_value"] == 1.0
+    assert "same returns" in same["statement"]
+    # Without a benchmark there is nothing to test against.
+    body["benchmark"] = None
+    assert client.post("/api/v1/backtest", json=body).json()["sharpe_test"] is None
 
 
 def test_compare(client: TestClient) -> None:

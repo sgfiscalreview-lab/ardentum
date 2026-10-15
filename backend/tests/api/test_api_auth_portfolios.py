@@ -2,6 +2,7 @@ import datetime as dt
 import io
 import uuid
 
+import httpx
 import jwt
 import pandas as pd
 import pytest
@@ -231,3 +232,33 @@ def test_undefined_figures_are_na_with_a_reason_not_zero(
     result = r.json()["result"]
     assert result["holdings"][0]["risk_contribution_pct"] is None
     assert "zero volatility" in result["risk_contributions_note"]
+
+
+def test_upload_says_which_return_frequencies_the_prices_support(
+    client: TestClient, auth: dict[str, str]
+) -> None:
+    def upload(dates: pd.DatetimeIndex) -> httpx.Response:
+        rows = "\n".join(
+            f"{d.date()},{100 + i * 0.1 + (i % 3) * 0.2:.4f}" for i, d in enumerate(dates)
+        )
+        return client.post(
+            "/api/v1/datasets",
+            data={"name": "Frequencies"},
+            files={"prices": ("p.csv", "date,AAA\n" + rows, "text/csv")},
+            headers=auth,
+        )
+
+    r = upload(pd.bdate_range("2023-01-02", periods=120))
+    assert r.status_code == 201, r.text
+    assert r.json()["frequencies"] == ["daily", "weekly", "monthly"]
+    assert r.json()["notes"] == []
+
+    # Calendar days: daily statistics would assume 252 of them a year.
+    r = upload(pd.date_range("2023-01-02", periods=400, freq="D"))
+    assert r.json()["frequencies"] == ["weekly", "monthly"]
+    assert "weekend" in r.json()["notes"][0]
+
+    # Quarterly prices cannot give any supported frequency: refused at upload.
+    r = upload(pd.date_range("2000-03-31", periods=60, freq="QE"))
+    assert r.status_code == 422
+    assert "At least monthly prices are needed" in r.json()["error"]["message"]

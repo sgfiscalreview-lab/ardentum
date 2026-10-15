@@ -2,13 +2,21 @@ import { expect, test } from "@playwright/test";
 
 // Upload real-company data with ISINs, build ESG scores from (mocked) WikiRate open data,
 // confirm an unmatched company by hand, save the overlay and see it in analytics.
+// Trading days (weekdays from 2 January 2023): daily statistics assume 252 a year, and the
+// API refuses daily returns on prices that include weekends.
 const START = Date.UTC(2023, 0, 2);
+const tradingDays = Array.from({ length: 210 }, (_, i) => new Date(START + i * 86_400_000))
+  .filter((d) => d.getUTCDay() !== 0 && d.getUTCDay() !== 6)
+  .slice(0, 150)
+  .map((d) => d.toISOString().slice(0, 10));
 const prices =
   "date,AAA,BBB,CCC\n" +
-  Array.from({ length: 150 }, (_, i) => {
-    const d = new Date(START + i * 86_400_000).toISOString().slice(0, 10);
-    return `${d},${(100 + i * 0.1 + (i % 7) * 0.3).toFixed(4)},${(50 + (i % 11) * 0.2 + i * 0.05).toFixed(4)},${(20 + (i % 5) * 0.1 + i * 0.02).toFixed(4)}`;
-  }).join("\n");
+  tradingDays
+    .map(
+      (d, i) =>
+        `${d},${(100 + i * 0.1 + (i % 7) * 0.3).toFixed(4)},${(50 + (i % 11) * 0.2 + i * 0.05).toFixed(4)},${(20 + (i % 5) * 0.1 + i * 0.02).toFixed(4)}`,
+    )
+    .join("\n");
 const meta = "ticker,name,isin\nAAA,Apple,US0378331005\nBBB,Adidas,DE000A1EWWW0\nCCC,Puma,\n";
 
 test("build, save and use open ESG scores from WikiRate", async ({ page }) => {

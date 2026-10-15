@@ -47,6 +47,7 @@ from ardentum.quant.metrics import (
     correlation_matrix_with_gaps,
     drawdown_series,
     performance_summary,
+    sharpe_difference_test,
     tracking_error,
 )
 from ardentum.quant.montecarlo import (
@@ -194,6 +195,55 @@ def performance_out(p: PerformanceSummary) -> s.PerformanceOut:
         beta=None if p.beta is None else metric_out(p.beta),
         tracking_error=_opt(p.tracking_error),
         information_ratio=None if p.information_ratio is None else metric_out(p.information_ratio),
+        sharpe_interval=(
+            None
+            if (iv := p.sharpe_interval) is None
+            else s.SharpeIntervalOut(
+                low=_finite(iv.low),
+                high=_finite(iv.high),
+                standard_error=_finite(iv.standard_error),
+                confidence=iv.confidence,
+                lags=iv.lags,
+            )
+        ),
+        sharpe_interval_reason=p.sharpe_interval_reason,
+    )
+
+
+def sharpe_test_out(
+    strategy: np.ndarray, benchmark: np.ndarray, periods_per_year: int, risk_free_rate: float
+) -> s.SharpeTestOut:
+    """The test of equal Sharpe ratios, with a plain reading of the p-value."""
+    try:
+        d = sharpe_difference_test(strategy, benchmark, periods_per_year, risk_free_rate)
+    except (UndefinedMetricError, InvalidInputError) as exc:
+        return s.SharpeTestOut(
+            difference=None,
+            standard_error=None,
+            p_value=None,
+            lags=None,
+            statement=f"The test of equal Sharpe ratios is n/a: {exc}",
+        )
+    side = "higher" if d.difference >= 0 else "lower"
+    size = f"The strategy's Sharpe ratio is {abs(d.difference):.2f} {side} than the benchmark's"
+    if d.standard_error == 0.0:
+        reading = "The strategy and the benchmark earned the same returns: equal Sharpe ratios."
+    elif d.p_value < 0.05:
+        reading = (
+            f"{size} (p = {d.p_value:.3f}). A difference this large would rarely arise by "
+            "chance if the two were equally good."
+        )
+    else:
+        reading = (
+            f"{size}, but with p = {d.p_value:.2f} that could well be chance: this history "
+            "cannot tell the two apart."
+        )
+    return s.SharpeTestOut(
+        difference=_finite(d.difference),
+        standard_error=_finite(d.standard_error),
+        p_value=_finite(d.p_value),
+        lags=d.lags,
+        statement=reading,
     )
 
 
@@ -1041,6 +1091,11 @@ def run_backtest_service(service: MarketDataService, req: s.BacktestRequest) -> 
             else performance_out(
                 performance_summary(b_res.returns, ppy, req.estimation.risk_free_rate)
             )
+        ),
+        sharpe_test=(
+            None
+            if b_res is None
+            else sharpe_test_out(result.returns, b_res.returns, ppy, req.estimation.risk_free_rate)
         ),
         estimation_start=result.estimation_start,
         evaluation_start=result.evaluation_start,

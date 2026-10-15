@@ -85,6 +85,26 @@ def check_frequency(index: pd.DatetimeIndex, requested: Frequency) -> None:
             )
 
 
+# The return frequencies a user can choose, finest first.
+RETURN_FREQUENCIES = (Frequency.DAILY, Frequency.WEEKLY, Frequency.MONTHLY)
+
+
+def supported_frequencies(index: pd.DatetimeIndex) -> tuple[list[Frequency], list[str]]:
+    """The return frequencies these prices support, finest first, and why each frequency
+    finer than the finest supported one is refused (the :func:`check_frequency` message)."""
+    supported: list[Frequency] = []
+    refused: list[str] = []
+    for f in RETURN_FREQUENCIES:
+        try:
+            check_frequency(index, f)
+        except InvalidInputError as exc:
+            if not supported:
+                refused.append(str(exc))
+            continue
+        supported.append(f)
+    return supported, refused
+
+
 def infer_frequency(index: pd.DatetimeIndex) -> Frequency:
     """Infer the sampling frequency from the median spacing between observations.
 

@@ -458,6 +458,15 @@ class DatasetOut(ResponseModel):
     )
 
 
+class DatasetUploadOut(DatasetOut):
+    frequencies: list[Literal["daily", "weekly", "monthly"]] = Field(
+        description="Return frequencies these prices support, finest first."
+    )
+    notes: list[str] = Field(
+        default_factory=list, description="Why a finer return frequency is not available."
+    )
+
+
 class DatasetSummaryOut(ResponseModel):
     id: str
     name: str
@@ -498,6 +507,14 @@ class EstimationOut(ResponseModel):
     end: dt.date | None
 
 
+class SharpeIntervalOut(ResponseModel):
+    low: float
+    high: float
+    standard_error: float
+    confidence: float = Field(description="Coverage of the interval, e.g. 0.95.")
+    lags: int = Field(description="Autocorrelation lags in the Newey-West standard error.")
+
+
 class PerformanceOut(ResponseModel):
     observations: int
     total_return: float
@@ -518,6 +535,24 @@ class PerformanceOut(ResponseModel):
     beta: MetricOut | None = None
     tracking_error: float | None = None
     information_ratio: MetricOut | None = None
+    sharpe_interval: SharpeIntervalOut | None = Field(
+        None,
+        description="Confidence interval for the Sharpe ratio, robust to fat tails and "
+        "autocorrelation (delta method, Newey-West).",
+    )
+    sharpe_interval_reason: str | None = Field(
+        None, description="Why the interval is n/a, when it is."
+    )
+
+
+class SharpeTestOut(ResponseModel):
+    """Test that the strategy and the benchmark have equal Sharpe ratios."""
+
+    difference: float | None = Field(description="Strategy minus benchmark, annualised.")
+    standard_error: float | None
+    p_value: float | None = Field(description="Two-sided.")
+    lags: int | None
+    statement: str = Field(description="What the result means, or why it is n/a.")
 
 
 class AssetStatsOut(ResponseModel):
@@ -809,6 +844,9 @@ class BacktestResponse(ResponseModel):
     benchmark: SeriesOut | None
     performance: PerformanceOut
     benchmark_performance: PerformanceOut | None
+    sharpe_test: SharpeTestOut | None = Field(
+        None, description="Strategy against benchmark (Ledoit and Wolf 2008); None without one."
+    )
     estimation_start: dt.date
     evaluation_start: dt.date
     evaluation_end: dt.date
