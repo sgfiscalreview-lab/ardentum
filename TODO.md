@@ -34,3 +34,7 @@ Legend: **[F]** needs a founder decision/credential · **[E]** engineering
 - [x] Open ESG overlays from several metrics combined into one composite score (weights chosen by the user; D-030).
 - [x] Multi-currency universes, unhedged conversion at ECB rates (D-021).
 - [x] Currency-hedged returns: rolling one-period forward priced by covered interest parity from BIS central-bank policy rates (D-031).
+- [x] Backend review (D-043): frequency checks, point-in-time market caps, n/a with reasons, truthful explanations, outage fixes; Sharpe ratio intervals and the strategy-vs-benchmark Sharpe test.
+- [ ] **[F]** After merging, use Manual Deploy on Render so the live API runs the latest backend (the live check now fails while it is stale).
+- [ ] **[E]** ESG score history (an "as of" date per score from uploads and WikiRate answer years), so backtests with ESG constraints use only the scores known at each rebalance.
+- [ ] **[E]** Optional bootstrap version of the Sharpe test (Ledoit and Wolf's studentized block bootstrap) for short histories, run as a background job.

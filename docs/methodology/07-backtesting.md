@@ -21,6 +21,12 @@ If the optimisation becomes infeasible at some date, the strategy keeps its drif
 
 An automated test runs an optimised strategy, then replaces every return after a cut-off date with an implausibly large value and runs it again. All weights chosen on or before the cut-off, and all returns up to it, must be **bit-identical**; later decisions must change (showing the test has power). A second test asserts that the window handed to the strategy always ends exactly on the decision date.
 
+Inputs that exist only as today's values cannot be used at past decisions. **Black-Litterman market-capitalisation prior weights** use, at each rebalance, the capitalisations of the latest month that had ended (the Ken French files give the number of firms and the average firm size for every month). A dataset with a single, current capitalisation per asset is refused for backtests with that prior, with a suggestion to use equal or custom prior weights. **ESG scores** have no history in the data, so a backtest with ESG constraints or a tilt says that it applies today's scores at every past rebalance.
+
+## Is the strategy better than the benchmark?
+
+A higher Sharpe ratio over one history may be luck. The backtest tests whether the strategy's and the benchmark's Sharpe ratios are equal (Ledoit & Wolf, 2008, section 3.1). The difference of the two ratios is a function of the four moments $(\mu_a, \mu_b, g_a, g_b)$; its standard error comes from the delta method with a Newey-West long-run covariance of those moments, so the test allows for fat tails, autocorrelation and the correlation between the two return series, which the Jobson-Korkie test (with Memmel's correction) assumes away. The result is a two-sided p-value, stated in words: below 5%, a difference that large would rarely arise by chance; above it, this history cannot tell the two apart. Ledoit and Wolf prefer a quadratic-spectral kernel with prewhitening or a bootstrap; the Bartlett kernel is a simpler, standard choice. Automated tests check agreement with the Jobson-Korkie-Memmel test for independent normal returns and a rejection rate near 5% for equal true ratios with fat tails and autocorrelation.
+
 ## Performance attribution
 
 **Contribution to return.** In period $t$, asset $i$ contributes $c_{t,i} = w_{t-1,i} r_{t,i}$ using start-of-period weights; contributions sum to the period's gross return. Transaction costs appear as their own line.

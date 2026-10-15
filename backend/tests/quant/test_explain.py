@@ -55,6 +55,23 @@ def test_a_zero_weight_kept_out_by_a_full_sector_is_attributed_to_that_limit() -
             assert a.expected_return < a.required_return
 
 
+def test_a_binding_esg_floor_is_named_only_for_assets_that_would_lower_the_score() -> None:
+    df = make_returns(n_obs=1500, n_assets=6, seed=21)
+    est = estimate(df, 252)
+    scores = dict(zip(df.columns, [90, 85, 80, 30, 20, 10], strict=True))
+    req = OptimisationRequest(
+        Objective.MAX_SHARPE, 0.02, constraints=PortfolioConstraints(min_esg_score=80)
+    )
+    ex = explain(optimise(est, req, AssetMetadata(esg_scores=scores)), est, req)
+    by = {a.ticker: a for a in ex.assets}
+    # A4 earns more than its covariance requires; its low score is what keeps it out.
+    assert by["A4"].status == "zero_by_optimiser"
+    assert "binding Portfolio ESG score ≥ 80.0 constraint" in by["A4"].reason
+    for a in ex.assets:
+        if "ESG score ≥" in a.reason and a.status == "zero_by_optimiser":
+            assert scores[a.ticker] < 80
+
+
 def test_with_an_esg_tilt_the_conditions_use_the_adjusted_returns() -> None:
     df = make_returns(n_obs=1500, n_assets=6, seed=21)
     est = estimate(df, 252)

@@ -508,3 +508,53 @@ them and records the two parts deliberately left out.
   and are shown with no frame, so the card's own edge is the only edge. Nested panels
   follow concentric radii (inner = outer minus padding): tiles in cards 8 px, the
   sidebar, sheet and popovers 20 px around 8 px rows.
+
+## D-043 Backend review: numbers that could be wrong, outages, and saying why
+A review of the backend from three sides (quant methods, engineering, product) found
+places where a number could be wrong without any sign, where one request could take the
+API down, and where a figure was blank or zero without a reason. Each finding was checked
+in the code before it was fixed; each fix has a test that fails without it.
+* **Refuse rather than mis-annualise.** Returns are annualised with 252, 52 or 12 periods
+  a year, so a frequency finer than the prices (daily returns from monthly prices: about
+  4.6 times too much volatility) or daily statistics on calendar days (weekends included)
+  are refused with the frequency to choose. An upload says which frequencies its prices
+  support and switches the workspace to one of them, so the refusal is not met on every
+  page. Resampling to weeks or months leaves out a last period that has not ended.
+* **No look-ahead through priors.** Black-Litterman market-capitalisation prior weights in
+  a backtest use the capitalisations of the latest month that had ended at each
+  rebalance; a single current value is refused for backtests (it would tell past
+  decisions which assets later grew). ESG scores have no history, so a backtest using them
+  says it applies today's scores.
+* **Undefined is n/a with a reason, never zero or identity.** One constant series used to
+  turn the whole correlation matrix into the identity; now only its row is n/a. Risk
+  contributions at zero volatility, and Compare's Sharpe ratio, ESG score and largest risk
+  contributors, are n/a with the reason. Compare listed unheld assets among the largest
+  risk contributors; it lists holdings only.
+* **Explanations say only what is true.** They used the plain expected returns when an
+  ESG tilt had changed the objective, and could say an asset's return was "below what it
+  would need" when a full sector was what kept it out. They now use the returns the
+  objective used, check each statement, and otherwise name the binding constraint.
+* **Outages.** CSV headers and long-format ticker counts are checked before parsing (a wide
+  file could exhaust the 512 MB instance). Jobs hold no database connection while
+  computing, and at most two run at once. Provider downloads are parsed before they are
+  cached: an error page served with status 200 used to be cached for a day. Free-text
+  WikiRate searches stay in memory, and old WikiRate and Tiingo rows are purged; Ken
+  French, exchange-rate and policy-rate rows are kept as the fallback when a source is
+  down. A first sign-in sending several requests no longer fails on the duplicate insert.
+  Deleting an account removes its rate-limit counters (the keys never matched). Request
+  dates are bounded to 1900 to 2100 instead of failing inside pandas.
+* **New: how sure is a Sharpe ratio?** Every performance summary carries a 95% interval
+  for the Sharpe ratio, and a backtest tests the strategy against its benchmark (Ledoit
+  and Wolf, 2008) with the p-value in words. Both use the delta method with a Newey-West
+  (Bartlett) long-run covariance, so fat tails, skew and autocorrelation are allowed for;
+  the interval reduces to Lo (2002) for independent normal returns and to Mertens (2002)
+  without lags, which the tests check exactly, and simulations check coverage and test
+  size. A bootstrap would be more exact in small samples but too slow for every request.
+  The research studies keep their own copy of these statistics so their published
+  numbers stay reproducible.
+* **Smaller honesty fixes.** Monte Carlo states that values are nominal and that its
+  inputs come from the window it describes; amounts are shown in the data's currency
+  instead of always in dollars. A linear ESG scale warns when it clips values to its end
+  points. The effective number of positions counts short positions.
+* **Deploy freshness.** The API reports the commit it was built from, and the live check
+  fails when the deployed API is older than the latest backend change on `main`.

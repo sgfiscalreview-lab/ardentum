@@ -6,6 +6,12 @@ All notable changes to Ardentum are recorded here. Versions follow
 ## [Unreleased]
 
 ### Added
+- How sure is a Sharpe ratio: every one now comes with a 95% interval, and a backtest
+  tests whether the strategy really beat its benchmark, with the p-value in plain words.
+  Both allow for fat tails and autocorrelation (Ledoit and Wolf, 2008).
+- An upload says which return frequencies its prices support and switches to one of them;
+  prices coarser than monthly are refused at upload.
+- The API reports the commit it was built from; the live check flags a stale deploy.
 - Crisis replay: a portfolio bought before each of seven crashes since 1929 and held,
   with its return against the market, largest fall, worst day, each holding's
   contribution and how long it took to get back to its previous high. Real data; any
@@ -55,6 +61,21 @@ All notable changes to Ardentum are recorded here. Versions follow
 - Browser tests serve the Kenneth French files from a local stand-in.
 
 ### Fixed
+- Daily returns from weekly or monthly prices, or on calendar days, are refused instead of
+  being annualised with the wrong number of periods; an unfinished last week or month is
+  left out of weekly and monthly returns.
+- Backtests with Black-Litterman market-capitalisation priors used today's
+  capitalisations at every past rebalance; they now use those known at the time.
+- One constant series no longer blanks the whole correlation matrix; undefined risk
+  contributions and Compare figures show n/a with the reason instead of zero.
+- Holdings explanations use the ESG-adjusted returns when a tilt is on, and name the
+  binding constraint when it, not return and risk, keeps an asset out.
+- A very wide CSV, many background jobs at once or a malformed provider download can no
+  longer take the API down or break it for a day.
+- Two requests at a first sign-in, account deletion leaving rate-limit counters, and dates
+  outside 1900 to 2100 no longer cause errors or leftovers.
+- Monte Carlo amounts are shown in the data's currency, and its assumptions say values
+  are nominal and inputs come from the same window.
 - Landing-page screenshots showed doubled frames, mismatched corners and a card cut off
   at the bottom; they now show whole cards with their own edges only. Nested panels
   use concentric corners.

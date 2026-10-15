@@ -113,3 +113,23 @@ test("combine several open metrics into one composite ESG score", async ({ page 
   await expect(page.getByText(/applied it to the workspace \(2 of 3 assets scored\)/)).toBeVisible();
   await expect(page.getByText(/^Composite: Direct greenhouse gas/).first()).toBeVisible();
 });
+
+test("an upload of calendar-day prices switches to weekly returns and says why", async ({ page }) => {
+  const calendar =
+    "date,AAA,BBB\n" +
+    Array.from({ length: 200 }, (_, i) => {
+      const d = new Date(START + i * 86_400_000).toISOString().slice(0, 10);
+      return `${d},${(100 + i * 0.1 + (i % 7) * 0.3).toFixed(4)},${(50 + (i % 11) * 0.2 + i * 0.05).toFixed(4)}`;
+    }).join("\n");
+  await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.goto("/login?next=/app");
+  await page.getByLabel("Email").fill(`freq-${Date.now()}@example.com`);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/app$/);
+  await page.locator("#ds-name").fill("Every day");
+  await page.locator("#ds-prices").setInputFiles({ name: "p.csv", mimeType: "text/csv", buffer: Buffer.from(calendar) });
+  await page.getByRole("button", { name: "Upload", exact: true }).click();
+  await expect(page.getByText(/fall on a weekend, so these look like calendar days.*Return frequency set to weekly\./)).toBeVisible();
+  await expect(page.locator("#freq")).toHaveValue("weekly");
+});

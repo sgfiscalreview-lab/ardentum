@@ -1,6 +1,6 @@
 # Progress
 
-Status as of 2026-10-14.
+Status as of 2026-10-15.
 
 | Phase | Area | Status | Evidence |
 |---|---|---|---|
@@ -53,9 +53,10 @@ Status as of 2026-10-14.
 | Product round (D-039): API wake-up notice, shareable links, risk parity, glossary, printable results, readable holdings reasons | ✅ | `tests/quant/test_risk_parity.py`, `tests/api/test_risk_parity_api.py`, `src/lib/share.test.ts`, `src/lib/api/server-status.test.ts`, `e2e/share.spec.ts`, `e2e/server-waking.spec.ts`, `e2e/risk-parity.spec.ts`, `e2e/glossary-print.spec.ts` |
 | Crisis replay, factor exposure, trade lists and starting examples (D-040); real industry datasets list their industries | ✅ | `tests/quant/test_stress.py` (closed forms, share-count brute force, no use of data before the purchase), `tests/quant/test_factors.py` (statsmodels OLS with Newey-West errors, exact decomposition), `tests/quant/test_trades.py` (closed forms, cash identity), `tests/api/test_portfolio_tools_api.py`, `src/lib/presets.test.ts`, `e2e/examples-crises-factors-trades.spec.ts` |
 | Redesign after Apple's fluid-interface guidance (D-041, completed in D-042): translucent header with scroll edge, depth, springs, press feedback, segmented controls, popovers that materialize, draggable steps sheet that pushes the page back and can be caught while closing; theme easing, rem text sizes, touch margins, undo after examples; reduced motion, transparency and contrast respected; motion reviewed frame by frame | ✅ | `src/lib/motion.test.ts` (spring constants, projection and rubber-band closed forms), `src/lib/theme.test.ts`, `e2e/fluid-interface.spec.ts` (sheet drag, flick, catch while closing, 10 px threshold, page push-back, keyboard; popover dismissal; segmented keys; undo after an example), axe WCAG 2.2 AA in both themes and at phone width |
+| Backend review (D-043): frequencies refused rather than mis-annualised and reported at upload; point-in-time market caps in backtests; n/a with reasons instead of zeros; truthful holdings explanations; upload, job and provider outages closed; Sharpe ratio intervals and a strategy-vs-benchmark Sharpe test | ✅ | `tests/quant/test_sharpe_inference.py` (Lo and Mertens closed forms, Jobson-Korkie-Memmel agreement, simulated coverage and size), `tests/quant/test_frequency_check.py`, `tests/quant/test_explain.py`, `tests/quant/test_metrics.py`, `tests/data/test_csv_upload.py`, `tests/api/test_jobs.py`, `tests/api/test_black_litterman_api.py`, `tests/api/test_kenfrench_api.py`, `tests/api/test_open_esg_api.py`, `tests/api/test_account.py`, `tests/api/test_api_auth_portfolios.py`, `tests/api/test_api_core.py` |
 
 ## Test status
-- Backend: 426 tests passing (SQLite; 2 more run only on PostgreSQL); API suite (123 tests, including the database lock-down checks) also passing on PostgreSQL 16; ruff clean; mypy --strict clean. Migrations 0001–0007 upgrade, `alembic check` and downgrade cleanly on PostgreSQL.
+- Backend: 463 tests passing (SQLite; 2 more run only on PostgreSQL); API suite (135 tests, including the database lock-down checks) also passing on PostgreSQL 16; ruff clean; mypy --strict clean. Migrations 0001–0007 upgrade, `alembic check` and downgrade cleanly on PostgreSQL.
 - Research: 13 tests for the study statistics and hedging set-up (`research/tests`), run by the Research workflow before each run.
 - Frontend: ESLint (incl. React Compiler rules) clean; `tsc --strict` clean; 35 Vitest unit tests passing; builds fail if a secret key reaches browser files.
 - Security: gitleaks finds no secrets in the history; pip-audit and npm audit report no known vulnerabilities (2026-10-01).

@@ -36,6 +36,19 @@ $$
 
 It is reported as *undefined* (with the reason) when volatility is zero.
 
+**Sharpe ratio interval.** A Sharpe ratio estimated from a few years of returns is uncertain, often by more than its size, so every one comes with a 95% confidence interval $SR \pm 1.96\,SE$. Write $x_t$ for the excess returns, $\mu = ar x$, $g = \overline{x^2}$ and $v = g - \mu^2$, so the per-period ratio is $\mu/\sqrt{v}$. By the delta method
+
+$$
+SE^2 = rac{P}{T}\,
+abla^	op \Psi\, 
+abla,\qquad 
+abla = \left(rac{g}{v^{3/2}},\; -rac{\mu}{2v^{3/2}}
+ight),
+$$
+
+where $\Psi$ is the Newey-West (Bartlett kernel) long-run covariance of $(x_t - \mu,\; x_t^2 - g)$ with $\lfloor 4(T/100)^{2/9}
+floor$ lags. For independent normal returns this reduces to Lo's (2002) $\sqrt{(1 + SR^2/2)/T}$ per period; without lags it is Mertens' (2002) formula, which adds skewness and kurtosis; with lags it also allows for autocorrelation, which Lo shows can change the standard error considerably. Both reductions, and the interval's coverage in simulations, are automated tests. Fewer than 24 returns give no interval (n/a, with the reason).
+
 **Sortino ratio** (Sortino & Price, 1994) with minimum acceptable return $m$ (per period), target downside deviation over **all** observations:
 
 $$
@@ -73,7 +86,11 @@ $$
 \sigma_p = \sum_i w_i \frac{\partial \sigma_p}{\partial w_i} = \sum_i \underbrace{\frac{w_i (\Sigma w)_i}{\sigma_p}}_{\text{risk contribution } RC_i}
 $$
 
-Risk contributions sum exactly to $\sigma_p$ (Litterman, 1996). Ardentum also reports the **diversification ratio** $\sum_i w_i\sigma_i / \sigma_p$ (Choueifaty & Coignard, 2008) and the **effective number of assets** $1/\sum_i w_i^2$.
+Risk contributions sum exactly to $\sigma_p$ (Litterman, 1996). When $\sigma_p = 0$ they are undefined and shown as n/a with the reason, never as zeros. Ardentum also reports the **diversification ratio** $\sum_i w_i\sigma_i / \sigma_p$ (Choueifaty & Coignard, 2008) and the **effective number of assets** $1/\sum_i w_i^2$; with short positions it uses the gross weights, $1/\sum_i \left(|w_i| / \sum_j |w_j|\right)^2$, so shorts count as positions.
+
+## Correlation
+
+Pearson correlations of returns. An asset whose returns never change over the window (cash at a fixed price, for example) has no variance, so its correlations are undefined: its row and column are n/a with a note naming it, and every other pair keeps its correlation.
 
 ## Consistency check
 

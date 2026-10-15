@@ -386,7 +386,8 @@ function EstimationCard({
 function UploadCard() {
   const { status } = useAuth();
   const qc = useQueryClient();
-  const { setUniverse } = useWorkspace();
+  const { state, setUniverse } = useWorkspace();
+  const u = state.universe;
   const [name, setName] = useState("");
   const [prices, setPrices] = useState<File | null>(null);
   const [meta, setMeta] = useState<File | null>(null);
@@ -424,8 +425,12 @@ function UploadCard() {
         }),
       );
       await qc.invalidateQueries({ queryKey: ["datasets"] });
-      setOk(`Uploaded “${res.name}” with ${res.assets.length} assets.`);
-      setUniverse({ dataset_id: res.id, tickers: res.assets.slice(0, 60).map((a) => a.ticker), start: null, end: null, esg_overlay_id: null });
+      // Keep the chosen return frequency when these prices support it; otherwise switch to
+      // the finest one they do, and say why.
+      const frequency = res.frequencies.includes(u.frequency) ? u.frequency : (res.frequencies[0] ?? u.frequency);
+      const switched = frequency !== u.frequency ? ` ${res.notes[0] ?? ""} Return frequency set to ${frequency}.` : "";
+      setOk(`Uploaded “${res.name}” with ${res.assets.length} assets.${switched}`);
+      setUniverse({ dataset_id: res.id, tickers: res.assets.slice(0, 60).map((a) => a.ticker), start: null, end: null, esg_overlay_id: null, frequency });
     } catch (e) {
       setError(e instanceof ApiError || e instanceof Error ? e : new Error(String(e)));
     } finally {

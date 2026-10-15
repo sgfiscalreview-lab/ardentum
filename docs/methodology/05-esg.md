@@ -23,7 +23,7 @@ An *ESG overlay* is built in three steps:
 1. **Matching.** Assets are matched to WikiRate companies **automatically only by ISIN**, an exact identifier. Assets without an ISIN match are matched only when you pick the company yourself; names are never fuzzy-matched silently, because a wrong match would attach another company's data.
 2. **Answers.** For each company the latest answer up to the chosen year is used. Values that are not numbers (e.g. "Unknown") are left unscored.
 3. **Scores.** Raw values $x$ become 0–100 scores by either
-   - a **fixed linear scale** $s = 100\,\mathrm{clip}\!\left(\frac{x-L}{U-L}, 0, 1\right)$, comparable across groups, or
+   - a **fixed linear scale** $s = 100\,\mathrm{clip}\!\left(\frac{x-L}{U-L}, 0, 1\right)$, comparable across groups (values outside $[L, U]$ all score 0 or 100; the preview marks them and warns, since the differences between them are lost), or
    - a **percentile rank** within the matched companies $s = 100\,\frac{\mathrm{rank}(x)-1}{n-1}$ (ties share their average rank), which is relative only and needs at least two values;
 
    with the direction you choose (for emissions or fines, lower is better: $s \to 100 - s$).

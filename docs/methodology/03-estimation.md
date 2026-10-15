@@ -35,7 +35,7 @@ $$\Sigma_{BL} = \Sigma + \tau\Sigma - \tau\Sigma P^\top(\tau P\Sigma P^\top + \O
 
 the predictive covariance including uncertainty about the mean. $\Sigma$ comes from the selected covariance estimator. Historical average returns are not used at all. Results list the prior weights, equilibrium and posterior returns and each view in words. The implementation agrees with PyPortfolioOpt to $10^{-10}$ and satisfies reverse optimisation ($(\delta\Sigma)^{-1}(\pi-r_f) = w_{eq}$).
 
-Market capitalisations come from the data source: the Ken French industry files (number of firms × average firm size, latest month) or a `market_cap` column in uploaded metadata. Datasets without them (such as the synthetic demo) use equal or custom prior weights. In backtests the same prior weights and views are applied in every window.
+Market capitalisations come from the data source: the Ken French industry files (number of firms × average firm size, latest month) or a `market_cap` column in uploaded metadata. Datasets without them (such as the synthetic demo) use equal or custom prior weights. In backtests the same views are applied in every window; market-capitalisation prior weights are those known at each rebalance date (see Backtesting).
 
 ## Covariance
 

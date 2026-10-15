@@ -47,6 +47,8 @@ To keep requests interactive, paths × simulated periods may not exceed 100 mill
 ## Limitations
 
 - Parameters are treated as known; estimation error in $\mu$ and $\Sigma$ is not simulated, so the spread of outcomes is understated.
+- The inputs come from the same historical window the results describe: a strong or weak window carries into every path.
+- Values are nominal, in the currency of the prices: nothing is adjusted for inflation.
 - History-based methods cannot produce scenarios worse than the worst periods in the sample.
 - Cash flows are fixed in advance (no dynamic spending rules); no fees, taxes or transaction costs.
 - A simulation shows the consequences of its assumptions. It makes no forecast.

@@ -561,7 +561,8 @@ export function correlationColor(v: number, dark: boolean): string {
   return v >= 0 ? mix(mid, pos, t) : mix(mid, neg, t);
 }
 
-export function Heatmap({ labels, matrix, dark }: { labels: string[]; matrix: number[][]; dark: boolean }) {
+/** A correlation matrix; null cells (undefined correlations) are left empty and read "n/a". */
+export function Heatmap({ labels, matrix, dark }: { labels: string[]; matrix: (number | null)[][]; dark: boolean }) {
   const [hover, setHover] = useState<{ i: number; j: number } | null>(null);
   const n = labels.length;
   const hv = hover ? matrix[hover.i]?.[hover.j] : undefined;
@@ -570,7 +571,7 @@ export function Heatmap({ labels, matrix, dark }: { labels: string[]; matrix: nu
       <p className="mb-2 h-4 text-xs text-ink-2" aria-live="polite">
         {hover && hv !== undefined ? (
           <>
-            {labels[hover.i]} × {labels[hover.j]}: <span className="font-semibold text-ink tabular">{hv.toFixed(2)}</span>
+            {labels[hover.i]} × {labels[hover.j]}: <span className="font-semibold text-ink tabular">{hv === null ? "n/a" : hv.toFixed(2)}</span>
           </>
         ) : (
           "Hover a cell for the exact correlation."
@@ -594,18 +595,18 @@ export function Heatmap({ labels, matrix, dark }: { labels: string[]; matrix: nu
           <div key={row} className="contents" role="row">
             <div className="truncate pr-2 text-right text-caption2 leading-7 text-ink-2">{row.replace(".SYN", "")}</div>
             {labels.map((col, j) => {
-              const v = matrix[i]?.[j] ?? 0;
+              const v = matrix[i]?.[j] ?? null;
               return (
                 <button
                   type="button"
                   role="gridcell"
                   key={col}
-                  aria-label={`${row} and ${col}: ${v.toFixed(2)}`}
+                  aria-label={`${row} and ${col}: ${v === null ? "n/a" : v.toFixed(2)}`}
                   onMouseEnter={() => setHover({ i, j })}
                   onFocus={() => setHover({ i, j })}
                   onMouseLeave={() => setHover(null)}
-                  className="h-7 rounded-[4px] outline-offset-0 hover:ring-2 hover:ring-[var(--ink-2)]"
-                  style={{ background: correlationColor(v, dark) }}
+                  className={`h-7 rounded-[4px] outline-offset-0 hover:ring-2 hover:ring-[var(--ink-2)] ${v === null ? "border border-dashed border-[var(--border-strong)]" : ""}`}
+                  style={{ background: v === null ? "var(--surface)" : correlationColor(v, dark) }}
                 />
               );
             })}

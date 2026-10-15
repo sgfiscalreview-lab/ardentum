@@ -143,7 +143,7 @@ def explain(
                 cov_wp[i],
                 var_p,
                 tilted,
-                _blocking(t, shaping),
+                _blocking(i, t, shaping, result, mu, cov, cov_wp, var_p),
             )
         elif t in upper:
             status = "at_upper_bound"
@@ -327,16 +327,43 @@ def _involves(ticker: str, d: ConstraintDiagnostic) -> bool:
     return ticker in d.assets if d.kind in {"sector_max", "sector_min"} else True
 
 
-def _blocking(ticker: str, shaping: list[ConstraintDiagnostic]) -> list[str]:
-    """Binding constraints that adding a little of this asset (funded pro rata) would break:
-    a full sector it belongs to, a sector floor it is outside, or any portfolio-wide limit."""
+def _blocking(
+    i: int,
+    ticker: str,
+    shaping: list[ConstraintDiagnostic],
+    result: OptimisationResult,
+    mu: np.ndarray,
+    cov: np.ndarray,
+    cov_wp: np.ndarray,
+    var_p: float,
+) -> list[str]:
+    """Binding constraints that adding a little of asset ``i``, funded pro rata from the
+    holdings (direction ``e_i - w``), would break; only those are named as keeping it out."""
+    w = result.weights
     out = []
+    for d in result.diagnostics:  # its own upper bound at zero
+        if d.kind == "asset_upper" and ticker in d.assets and d.bound <= HELD_TOL:
+            out.append(d.label)
     for d in shaping:
-        if d.kind == "sector_max" and ticker not in d.assets:
-            continue
-        if d.kind == "sector_min" and ticker in d.assets:
-            continue
-        out.append(d.label)
+        if d.kind == "sector_max":
+            breaks = ticker in d.assets  # the sector's weight would rise
+        elif d.kind == "sector_min":
+            breaks = ticker not in d.assets  # the sector's weight would fall
+        elif d.kind == "min_esg":
+            scores = result.esg_scores
+            breaks = scores is not None and bool(scores[i] < d.value - 1e-9)
+        elif d.kind == "tracking_error":
+            b = result.benchmark_weights
+            active = w - (np.zeros_like(w) if b is None else b)
+            breaks = float((cov @ active)[i] - active @ cov @ w) > 0.0
+        elif d.kind == "target_return":
+            breaks = float(mu[i]) < float(w @ mu)
+        elif d.kind == "target_volatility":
+            breaks = float(cov_wp[i]) > var_p
+        else:  # gross exposure: funding pro rata never raises it
+            breaks = False
+        if breaks:
+            out.append(d.label)
     return out
 
 
