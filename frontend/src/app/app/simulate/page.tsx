@@ -48,6 +48,11 @@ export default function SimulatePage() {
     runJob("montecarlo", req, signal),
   );
   const portfolio = resolvePortfolio(options, pick);
+  // Amounts are in the currency of the prices: the base currency when one is chosen,
+  // otherwise the one the selected assets are priced in.
+  const formCurrency =
+    state.universe.base_currency ?? ds.data?.assets.find((a) => state.universe.tickers.includes(a.ticker))?.currency ?? null;
+  const inCurrency = formCurrency ? ` (${formCurrency})` : "";
 
   const submit = () => {
     if (!portfolio) return;
@@ -97,10 +102,10 @@ export default function SimulatePage() {
                 <Field label="Paths" htmlFor="paths">
                   <NumberInput id="paths" value={paths} onChange={(v) => setPaths(Math.round(v ?? 5000))} min={100} max={20000} />
                 </Field>
-                <Field label="Initial value ($)" htmlFor="initial">
+                <Field label={`Initial value${inCurrency}`} htmlFor="initial">
                   <NumberInput id="initial" value={initial} onChange={(v) => setInitial(v ?? 10000)} min={1} max={1e12} />
                 </Field>
-                <Field label="Target value ($)" htmlFor="target">
+                <Field label={`Target value${inCurrency}`} htmlFor="target">
                   <NumberInput id="target" value={target} onChange={setTarget} min={1} max={1e13} allowEmpty placeholder="None" />
                 </Field>
               </div>
@@ -113,7 +118,7 @@ export default function SimulatePage() {
               </Field>
               {flowKind !== "none" && (
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Amount per year ($)" htmlFor="flow-amount">
+                  <Field label={`Amount per year${inCurrency}`} htmlFor="flow-amount">
                     <NumberInput id="flow-amount" value={flowAmount} onChange={(v) => setFlowAmount(Math.abs(v ?? 0))} min={0} max={1e11} />
                   </Field>
                   <Field label="Paid" htmlFor="flow-freq">
@@ -154,6 +159,7 @@ export default function SimulatePage() {
 
 function Results({ data }: { data: MonteCarloResponse }) {
   const p = data.terminal_percentiles;
+  const cash = (v: number | null | undefined, compact = false) => money(v, compact, data.data.currency);
   const csv = () =>
     toCsv([
       ["years", ...Object.keys(data.percentiles), "mean"],
@@ -163,16 +169,16 @@ function Results({ data }: { data: MonteCarloResponse }) {
     <div className="space-y-4">
       <Card
         title={`${data.n_paths.toLocaleString()} simulated paths over ${data.horizon_years} years`}
-        subtitle={`Method: ${data.method.replace("_", " ")} · seed ${data.seed} · starting value ${money(data.initial_value)}`}
+        subtitle={`Method: ${data.method.replace("_", " ")} · seed ${data.seed} · starting value ${cash(data.initial_value)}`}
         actions={<ExportMenu name={`ardentum-monte-carlo-${data.seed}`} json={data} csv={csv} />}
       >
         <div className="grid grid-cols-2 gap-2 md:grid-cols-3 2xl:grid-cols-6">
-          <Stat label="Median final value" value={money(p.p50, true)} sub={`5th–95th: ${money(p.p05, true)} – ${money(p.p95, true)}`} />
+          <Stat label="Median final value" value={cash(p.p50, true)} sub={`5th–95th: ${cash(p.p05, true)} – ${cash(p.p95, true)}`} />
           <Stat label="Median annual growth" value={pct(data.cagr_percentiles.p50)} sub={`5th pct ${pct(data.cagr_percentiles.p05)}${data.net_cash_flow === 0 ? "" : " · time-weighted"}`} />
           <Stat
             label="Probability of loss"
             value={pct(data.probability_of_loss, 1)}
-            sub={data.net_cash_flow === 0 ? "final value below start" : `final value below start + net flows (${money(data.initial_value + data.net_cash_flow, true)})`}
+            sub={data.net_cash_flow === 0 ? "final value below start" : `final value below start + net flows (${cash(data.initial_value + data.net_cash_flow, true)})`}
           />
           {data.probability_of_depletion != null && (
             <Stat
@@ -182,7 +188,7 @@ function Results({ data }: { data: MonteCarloResponse }) {
               help="Share of paths whose wealth could not cover a withdrawal before the horizon."
             />
           )}
-          <Stat label="Probability of target" value={data.probability_of_target == null ? "n/a" : pct(data.probability_of_target, 1)} sub={data.target_value ? `≥ ${money(data.target_value)}` : "no target set"} />
+          <Stat label="Probability of target" value={data.probability_of_target == null ? "n/a" : pct(data.probability_of_target, 1)} sub={data.target_value ? `≥ ${cash(data.target_value)}` : "no target set"} />
           <Stat label="Terminal VaR 95%" value={pct(data.terminal_return_var_95, 1)} sub={`CVaR ${pct(data.terminal_return_cvar_95, 1)}`} help="Loss of initial value exceeded in only 5% of paths; CVaR is the mean loss in that tail." />
           <Stat label="Median max drawdown" value={pct(data.max_drawdown_percentiles.p50, 1)} sub={`5% of paths worse than ${pct(data.max_drawdown_percentiles.p05, 1)}`} />
         </div>
@@ -200,12 +206,12 @@ function Results({ data }: { data: MonteCarloResponse }) {
             columns={[{ key: "t", label: "Year", align: "right" }, ...["p05", "p25", "p50", "p75", "p95"].map((k) => ({ key: k, label: k.replace("p0", "p").toUpperCase(), align: "right" as const }))]}
             rows={data.times_years.filter((_, i) => i % 12 === 0 || i === data.times_years.length - 1).map((t) => {
               const i = data.times_years.indexOf(t);
-              return { t: t.toFixed(1), ...Object.fromEntries(["p05", "p25", "p50", "p75", "p95"].map((k) => [k, money(data.percentiles[k]?.[i])])) };
+              return { t: t.toFixed(1), ...Object.fromEntries(["p05", "p25", "p50", "p75", "p95"].map((k) => [k, cash(data.percentiles[k]?.[i])])) };
             })}
           />
         }
       >
-        <FanChart times={data.times_years} percentiles={data.percentiles} format={(v) => money(v, true)} target={data.target_value} />
+        <FanChart times={data.times_years} percentiles={data.percentiles} format={(v) => cash(v, true)} target={data.target_value} />
       </ChartFrame>
       <ChartFrame
         title="Distribution of final values"
@@ -213,11 +219,11 @@ function Results({ data }: { data: MonteCarloResponse }) {
         table={
           <DataTable
             columns={[{ key: "r", label: "Range" }, { key: "c", label: "Paths", align: "right" }]}
-            rows={data.terminal_histogram.counts.map((c, i) => ({ r: `${money(data.terminal_histogram.edges[i])} – ${money(data.terminal_histogram.edges[i + 1])}`, c }))}
+            rows={data.terminal_histogram.counts.map((c, i) => ({ r: `${cash(data.terminal_histogram.edges[i])} – ${cash(data.terminal_histogram.edges[i + 1])}`, c }))}
           />
         }
       >
-        <Histogram edges={data.terminal_histogram.edges} counts={data.terminal_histogram.counts} format={(v) => money(v, true)} marker={data.target_value} />
+        <Histogram edges={data.terminal_histogram.edges} counts={data.terminal_histogram.counts} format={(v) => cash(v, true)} marker={data.target_value} />
       </ChartFrame>
       <Callout tone="info" title="Assumptions">
         <ul className="list-disc space-y-0.5 pl-4">

@@ -78,10 +78,12 @@ def test_hedged_returns_follow_covered_interest_parity(
     assert "currency-hedged" in notes
     assert "Bank for International Settlements" in notes
 
-    # Independent recomputation, one calendar day per period.
-    carry = (1 + US_RATE / 365) / (1 + EU_RATE / 365) - 1
+    # Independent recomputation: interest accrues over the calendar days of each period
+    # (three from Friday to Monday).
     wealth = 1.0
     for i in range(1, len(DAYS)):
+        days = (DAYS[i] - DAYS[i - 1]).days
+        carry = (1 + US_RATE * days / 365) / (1 + EU_RATE * days / 365) - 1
         r_l = AAA[i] / AAA[i - 1] - 1
         r_x = _fx_on(i) / _fx_on(i - 1) - 1
         wealth *= 1 + r_l * (1 + r_x) + carry

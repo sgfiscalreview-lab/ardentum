@@ -40,6 +40,7 @@ from ardentum.quant.estimation import (
 )
 from ardentum.quant.optimisation import (
     AssetMetadata,
+    ConstraintDiagnostic,
     Objective,
     OptimisationRequest,
     OptimisationResult,
@@ -47,7 +48,7 @@ from ardentum.quant.optimisation import (
 )
 from ardentum.quant.portfolio import (
     diversification_ratio,
-    effective_number_of_assets,
+    effective_number_of_positions,
     risk_decomposition,
 )
 
@@ -105,7 +106,11 @@ def explain(
     cov_wp = cov @ w
     betas = cov_wp / var_p if var_p > 1e-16 else np.zeros_like(w)
     rf = estimates.risk_free_arithmetic(request.risk_free_rate)
-    excess_p = result.expected_return - rf
+    # With an ESG tilt the objective used the adjusted returns, so the first-order
+    # conditions hold for those; the required return is translated back to plain terms.
+    mu_obj = mu if result.objective_returns is None else result.objective_returns
+    tilted = result.objective_returns is not None
+    excess_p = float(w @ mu_obj) - rf
 
     try:
         rd = risk_decomposition(w, cov)
@@ -118,16 +123,28 @@ def explain(
     excluded = {a for d in result.diagnostics if d.kind == "excluded" for a in d.assets}
     upper = {a for d in result.diagnostics if d.kind == "asset_upper" for a in d.assets}
     lower = {a for d in result.diagnostics if d.kind == "asset_lower" for a in d.assets}
-    lam = float(np.mean(cov_wp[w > HELD_TOL])) if (w > HELD_TOL).any() else 0.0
+    shaping = [d for d in result.diagnostics if d.binding and d.kind in _SHAPING]
 
     assets: list[AssetExplanation] = []
     for i, t in enumerate(result.tickers):
-        required = rf + betas[i] * excess_p if request.objective is Objective.MAX_SHARPE else None
+        required = (
+            rf + betas[i] * excess_p - (mu_obj[i] - mu[i])
+            if request.objective is Objective.MAX_SHARPE
+            else None
+        )
         if t in excluded:
             status, reason = "excluded", "Excluded by a constraint (asset or sector exclusion)."
         elif abs(w[i]) <= HELD_TOL:
             status = "zero_by_optimiser"
-            reason = _zero_reason(request.objective, mu[i], required, cov_wp[i], lam)
+            reason = _zero_reason(
+                request.objective,
+                mu[i],
+                required,
+                cov_wp[i],
+                var_p,
+                tilted,
+                _blocking(i, t, shaping, result, mu, cov, cov_wp, var_p),
+            )
         elif t in upper:
             status = "at_upper_bound"
             reason = (
@@ -139,7 +156,13 @@ def explain(
             reason = f"Held at its minimum weight of {w[i]:.1%} required by a constraint."
         else:
             status = "held"
-            reason = _held_reason(request.objective, w[i], pct[i])
+            limits = [d.label for d in shaping if _involves(t, d)]
+            reason = (
+                _held_reason(request.objective, w[i], pct[i], tilted)
+                if not limits
+                else f"Held at {w[i]:.1%}, a weight set partly by the binding "
+                f"{_join(limits)} {_plural(limits)}. It contributes {pct[i]:.0%} of risk."
+            )
         assets.append(
             AssetExplanation(
                 ticker=t,
@@ -154,16 +177,24 @@ def explain(
             )
         )
 
-    n_eff = effective_number_of_assets(np.clip(w, 0, None)) if (w > 0).any() else 0.0
+    n_eff = effective_number_of_positions(w)
     order = np.argsort(-pct)
-    top = tuple((result.tickers[i], float(pct[i])) for i in order[:3] if w[i] > HELD_TOL)
+    top = tuple((result.tickers[i], float(pct[i])) for i in order[:3] if abs(w[i]) > HELD_TOL)
 
     statements: list[str] = []
-    held = [a for a in assets if a.weight > HELD_TOL]
-    statements.append(
-        f"The portfolio holds {len(held)} of {len(assets)} assets; its effective number of "
-        f"independent positions (inverse Herfindahl) is {n_eff:.1f}."
-    )
+    longs = sum(1 for a in assets if a.weight > HELD_TOL)
+    shorts = sum(1 for a in assets if a.weight < -HELD_TOL)
+    if shorts:
+        statements.append(
+            f"The portfolio is long {longs} and short {shorts} of {len(assets)} assets; its "
+            f"effective number of positions (inverse Herfindahl of the gross weights, shorts "
+            f"included) is {n_eff:.1f}."
+        )
+    else:
+        statements.append(
+            f"The portfolio holds {longs} of {len(assets)} assets; its effective number of "
+            f"independent positions (inverse Herfindahl) is {n_eff:.1f}."
+        )
     statements.append(
         f"Expected return {result.expected_return:.2%} and volatility {result.volatility:.2%} "
         "per year are model estimates from the historical window, not forecasts of realised returns."
@@ -257,7 +288,7 @@ def _headline(objective: Objective, r: OptimisationResult) -> str:
     return f"Best risk-return trade-off for the chosen risk aversion: {r.expected_return:.2%} return, {r.volatility:.2%} volatility."
 
 
-def _held_reason(objective: Objective, weight: float, pct: float) -> str:
+def _held_reason(objective: Objective, weight: float, pct: float, tilted: bool = False) -> str:
     if objective is Objective.MIN_VOLATILITY:
         return (
             f"Held at {weight:.1%}: at this weight its marginal contribution to variance equals "
@@ -270,10 +301,78 @@ def _held_reason(objective: Objective, weight: float, pct: float) -> str:
         )
     if objective is Objective.MAX_SHARPE:
         return (
-            f"Held at {weight:.1%}: its expected excess return compensates for the risk it adds "
+            f"Held at {weight:.1%}: its {'ESG-adjusted ' if tilted else ''}expected excess "
+            "return compensates for the risk it adds "
             f"(return proportional to its beta to the portfolio). It contributes {pct:.0%} of risk."
         )
     return f"Held at {weight:.1%}; it contributes {pct:.0%} of portfolio risk."
+
+
+# Portfolio-level constraints that can hold an asset at zero or shape a held weight.
+_SHAPING = frozenset(
+    {
+        "sector_max",
+        "sector_min",
+        "min_esg",
+        "tracking_error",
+        "gross_exposure",
+        "target_return",
+        "target_volatility",
+    }
+)
+
+
+def _involves(ticker: str, d: ConstraintDiagnostic) -> bool:
+    """Whether a binding constraint bears on this asset's weight."""
+    return ticker in d.assets if d.kind in {"sector_max", "sector_min"} else True
+
+
+def _blocking(
+    i: int,
+    ticker: str,
+    shaping: list[ConstraintDiagnostic],
+    result: OptimisationResult,
+    mu: np.ndarray,
+    cov: np.ndarray,
+    cov_wp: np.ndarray,
+    var_p: float,
+) -> list[str]:
+    """Binding constraints that adding a little of asset ``i``, funded pro rata from the
+    holdings (direction ``e_i - w``), would break; only those are named as keeping it out."""
+    w = result.weights
+    out = []
+    for d in result.diagnostics:  # its own upper bound at zero
+        if d.kind == "asset_upper" and ticker in d.assets and d.bound <= HELD_TOL:
+            out.append(d.label)
+    for d in shaping:
+        if d.kind == "sector_max":
+            breaks = ticker in d.assets  # the sector's weight would rise
+        elif d.kind == "sector_min":
+            breaks = ticker not in d.assets  # the sector's weight would fall
+        elif d.kind == "min_esg":
+            scores = result.esg_scores
+            breaks = scores is not None and bool(scores[i] < d.value - 1e-9)
+        elif d.kind == "tracking_error":
+            b = result.benchmark_weights
+            active = w - (np.zeros_like(w) if b is None else b)
+            breaks = float((cov @ active)[i] - active @ cov @ w) > 0.0
+        elif d.kind == "target_return":
+            breaks = float(mu[i]) < float(w @ mu)
+        elif d.kind == "target_volatility":
+            breaks = float(cov_wp[i]) > var_p
+        else:  # gross exposure: funding pro rata never raises it
+            breaks = False
+        if breaks:
+            out.append(d.label)
+    return out
+
+
+def _join(labels: list[str]) -> str:
+    return labels[0] if len(labels) == 1 else ", ".join(labels[:-1]) + " and " + labels[-1]
+
+
+def _plural(labels: list[str]) -> str:
+    return "constraint" if len(labels) == 1 else "constraints"
 
 
 def _zero_reason(
@@ -281,19 +380,42 @@ def _zero_reason(
     mu_i: float,
     required: float | None,
     marginal_var: float,
-    lam: float,
+    var_p: float,
+    tilted: bool,
+    blocking: list[str],
 ) -> str:
+    # Each first-order statement is said only when it holds: adding a little of the asset,
+    # funded pro rata from the holdings, would worsen the objective. When it does not hold,
+    # the asset would improve the objective and a binding constraint is what keeps it out.
+    blocked = (
+        f"Not held: on return and risk alone it would improve the portfolio, but the binding "
+        f"{_join(blocking)} {_plural(blocking)} leave{'s' if len(blocking) == 1 else ''} "
+        "no room for it."
+        if blocking
+        else "Not held: at this solution adding it would leave the objective unchanged within "
+        "numerical tolerance."
+    )
     if objective is Objective.MAX_SHARPE and required is not None:
-        return (
-            f"Not held: its expected return ({mu_i:.2%}) is below the {required:.2%} its "
-            "covariance with the portfolio would require, so adding it would lower the Sharpe ratio."
-        )
+        if mu_i < required - 1e-9:
+            after = " after the ESG preference adjustment" if tilted else ""
+            measure = "ESG-adjusted Sharpe ratio" if tilted else "Sharpe ratio"
+            return (
+                f"Not held: its expected return ({mu_i:.2%}) is below the {required:.2%} its "
+                f"covariance with the portfolio would require{after}, so adding it would lower "
+                f"the {measure}."
+            )
+        return blocked
     if objective is Objective.MIN_VOLATILITY:
+        if marginal_var >= var_p - 1e-12:
+            return (
+                "Not held: its covariance with the portfolio is at least as high as the "
+                "portfolio's own variance, so adding any amount would increase risk."
+            )
+        return blocked
+    if blocking:
         return (
-            "Not held: its covariance with the portfolio is at least as high as the portfolio's "
-            "own variance, so adding any amount would increase risk."
-            if marginal_var >= lam - 1e-12
-            else "Not held by the optimiser."
+            "Not held: including it would not improve the objective given its return, its risk "
+            f"and the binding {_join(blocking)} {_plural(blocking)}."
         )
     return "Not held: including it would not improve the objective given its return and risk."
 

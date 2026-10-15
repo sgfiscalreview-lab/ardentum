@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     supabase_service_key: str | None = None
 
     tiingo_api_key: str | None = None
+    # The commit this build was made from, shown by /meta so a stale deploy is easy to spot.
+    # Render sets RENDER_GIT_COMMIT itself; other hosts can set ARDENTUM_BUILD_COMMIT.
+    build_commit: str | None = None
     fred_api_key: str | None = None
     wikirate_api_key: str | None = None  # free account at wikirate.org
     wikirate_base_url: str = "https://wikirate.org"

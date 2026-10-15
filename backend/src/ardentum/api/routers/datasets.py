@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
+import pandas as pd
 from fastapi import APIRouter, File, Form, UploadFile, status
 from sqlalchemy import func, select
 
@@ -13,6 +14,7 @@ from ardentum.data.providers import kenfrench
 from ardentum.data.providers.csv_upload import parse_metadata_csv, parse_price_csv
 from ardentum.db.models import Dataset
 from ardentum.quant.errors import InvalidInputError
+from ardentum.quant.frequency import supported_frequencies
 from ardentum.services.analysis import provenance_out
 from ardentum.services.market_data import (
     MIN_OBSERVATIONS,
@@ -85,8 +87,8 @@ def get_dataset(dataset_id: str, service: MarketService) -> s.DatasetOut:
     return dataset_out(info, owned)
 
 
-async def _read_limited(f: UploadFile, limit: int) -> bytes:
-    data = await f.read(limit + 1)
+def _read_limited(f: UploadFile, limit: int) -> bytes:
+    data = f.file.read(limit + 1)
     if len(data) > limit:
         raise InvalidInputError(
             f"{f.filename or 'File'} exceeds the {limit // (1024 * 1024)} MB limit."
@@ -94,8 +96,10 @@ async def _read_limited(f: UploadFile, limit: int) -> bytes:
     return data
 
 
-@router.post("", response_model=s.DatasetOut, status_code=status.HTTP_201_CREATED)
-async def upload_dataset(
+# A plain function, so FastAPI runs it in a worker thread: parsing a large CSV must not
+# hold up every other request on the event loop.
+@router.post("", response_model=s.DatasetUploadOut, status_code=status.HTTP_201_CREATED)
+def upload_dataset(
     principal: RequiredPrincipal,
     db: DbDep,
     settings: SettingsDep,
@@ -103,7 +107,7 @@ async def upload_dataset(
     prices: Annotated[UploadFile, File(description="CSV of adjusted close prices")],
     description: Annotated[str | None, Form(max_length=2000)] = None,
     metadata: Annotated[UploadFile | None, File(description="Optional asset metadata CSV")] = None,
-) -> s.DatasetOut:
+) -> s.DatasetUploadOut:
     count = db.scalar(
         select(func.count()).select_from(Dataset).where(Dataset.owner_id == principal.user_id)
     )
@@ -111,15 +115,20 @@ async def upload_dataset(
         raise InvalidInputError(
             f"You can store at most {MAX_DATASETS_PER_USER} datasets; delete one first."
         )
-    panel = parse_price_csv(await _read_limited(prices, settings.max_upload_bytes))
+    panel = parse_price_csv(_read_limited(prices, settings.max_upload_bytes))
     short = [str(c) for c in panel.columns if panel[c].notna().sum() < MIN_OBSERVATIONS + 1]
     if short:
         raise InvalidInputError(
             f"Each ticker needs at least {MIN_OBSERVATIONS + 1} prices; too few for: {', '.join(short[:10])}."
         )
+    # Said now, not on every page later: prices coarser than monthly are refused, and
+    # weekly or calendar-day prices cannot give daily statistics.
+    frequencies, refused = supported_frequencies(pd.DatetimeIndex(panel.index))
+    if not frequencies:
+        raise InvalidInputError(refused[-1])
     meta_by_ticker: dict[str, AssetInfo] = {}
     if metadata is not None and metadata.filename:
-        for a in parse_metadata_csv(await _read_limited(metadata, settings.max_upload_bytes)):
+        for a in parse_metadata_csv(_read_limited(metadata, settings.max_upload_bytes)):
             if a.ticker not in panel.columns:
                 raise InvalidInputError(
                     f"Metadata ticker {a.ticker} does not appear in the price file."
@@ -140,7 +149,11 @@ async def upload_dataset(
     )
     db.add(row)
     db.commit()
-    return dataset_out(upload_info(row), True)
+    return s.DatasetUploadOut(
+        **dataset_out(upload_info(row), True).model_dump(),
+        frequencies=[f.value for f in frequencies],
+        notes=refused[:1],  # the reason daily is unavailable covers the rest
+    )
 
 
 @router.delete("/{dataset_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -29,7 +29,8 @@ from ardentum.quant.backtest import (
     run_backtest,
 )
 from ardentum.quant.black_litterman import BlackLittermanSpec, View
-from ardentum.quant.errors import InvalidInputError
+from ardentum.quant.errors import InvalidInputError, UndefinedMetricError
+from ardentum.quant.esg import portfolio_esg_score
 from ardentum.quant.estimation import MarketEstimates, MeanEstimator, estimate, risk_free_arithmetic
 from ardentum.quant.explain import explain, resampled_weight_intervals
 from ardentum.quant.frontier import (
@@ -43,8 +44,10 @@ from ardentum.quant.frontier import (
 from ardentum.quant.metrics import (
     MetricValue,
     PerformanceSummary,
+    correlation_matrix_with_gaps,
     drawdown_series,
     performance_summary,
+    sharpe_difference_test,
     tracking_error,
 )
 from ardentum.quant.montecarlo import (
@@ -64,7 +67,7 @@ from ardentum.quant.optimisation import (
 from ardentum.quant.portfolio import (
     constant_mix_returns,
     diversification_ratio,
-    effective_number_of_assets,
+    effective_number_of_positions,
     portfolio_expected_return,
     portfolio_volatility,
     risk_decomposition,
@@ -83,6 +86,26 @@ def _finite(x: float) -> float:
 
 def _opt(x: float | None) -> float | None:
     return None if x is None else _finite(x)
+
+
+def _nan_none(x: float) -> float | None:
+    """NaN (undefined, with the reason given elsewhere in the response) becomes None."""
+    return None if math.isnan(x) else _finite(x)
+
+
+def _gappy(matrix: np.ndarray) -> list[list[float | None]]:
+    """A matrix for the response: NaN (undefined) becomes None, anything else must be finite."""
+    return [[None if math.isnan(x) else _finite(float(x)) for x in row] for row in matrix]
+
+
+def _constant_note(names: list[str]) -> str | None:
+    if not names:
+        return None
+    whose = "its returns do" if len(names) == 1 else "their returns do"
+    return (
+        f"Correlations with {', '.join(names)} are n/a: {whose} not change over this "
+        "window, so there is no variance to correlate."
+    )
 
 
 def provenance_out(p: DataProvenance) -> s.ProvenanceOut:
@@ -172,6 +195,55 @@ def performance_out(p: PerformanceSummary) -> s.PerformanceOut:
         beta=None if p.beta is None else metric_out(p.beta),
         tracking_error=_opt(p.tracking_error),
         information_ratio=None if p.information_ratio is None else metric_out(p.information_ratio),
+        sharpe_interval=(
+            None
+            if (iv := p.sharpe_interval) is None
+            else s.SharpeIntervalOut(
+                low=_finite(iv.low),
+                high=_finite(iv.high),
+                standard_error=_finite(iv.standard_error),
+                confidence=iv.confidence,
+                lags=iv.lags,
+            )
+        ),
+        sharpe_interval_reason=p.sharpe_interval_reason,
+    )
+
+
+def sharpe_test_out(
+    strategy: np.ndarray, benchmark: np.ndarray, periods_per_year: int, risk_free_rate: float
+) -> s.SharpeTestOut:
+    """The test of equal Sharpe ratios, with a plain reading of the p-value."""
+    try:
+        d = sharpe_difference_test(strategy, benchmark, periods_per_year, risk_free_rate)
+    except (UndefinedMetricError, InvalidInputError) as exc:
+        return s.SharpeTestOut(
+            difference=None,
+            standard_error=None,
+            p_value=None,
+            lags=None,
+            statement=f"The test of equal Sharpe ratios is n/a: {exc}",
+        )
+    side = "higher" if d.difference >= 0 else "lower"
+    size = f"The strategy's Sharpe ratio is {abs(d.difference):.2f} {side} than the benchmark's"
+    if d.standard_error == 0.0:
+        reading = "The strategy and the benchmark earned the same returns: equal Sharpe ratios."
+    elif d.p_value < 0.05:
+        reading = (
+            f"{size} (p = {d.p_value:.3f}). A difference this large would rarely arise by "
+            "chance if the two were equally good."
+        )
+    else:
+        reading = (
+            f"{size}, but with p = {d.p_value:.2f} that could well be chance: this history "
+            "cannot tell the two apart."
+        )
+    return s.SharpeTestOut(
+        difference=_finite(d.difference),
+        standard_error=_finite(d.standard_error),
+        p_value=_finite(d.p_value),
+        lags=d.lags,
+        statement=reading,
     )
 
 
@@ -352,13 +424,17 @@ def portfolio_result_out(
     res: OptimisationResult, est: MarketEstimates, req: OptimisationRequest, data: LoadedData
 ) -> tuple[s.PortfolioResultOut, s.ExplanationOut]:
     ex = explain(res, est, req)
+    nan = np.full_like(res.weights, np.nan)
+    rc, rcp, mc = nan, nan, nan
+    div: float | None = None
+    risk_note: str | None = None
     try:
         rd = risk_decomposition(res.weights, est.covariance)
         rc, rcp, mc = rd.risk_contribution, rd.percent_contribution, rd.marginal_contribution
-        div: float | None = diversification_ratio(res.weights, est.covariance)
-    except Exception:
-        rc = rcp = mc = np.zeros_like(res.weights)
-        div = None
+        div = diversification_ratio(res.weights, est.covariance)
+    except UndefinedMetricError as exc:
+        # Shown as n/a with the reason, never as zeros that look like real contributions.
+        risk_note = str(exc)
     holdings = []
     for i, a in enumerate(ex.assets):
         info = data.asset(a.ticker)
@@ -371,9 +447,9 @@ def portfolio_result_out(
                 expected_return=_finite(a.expected_return),
                 volatility=_finite(a.volatility),
                 esg_score=info.esg.score if info.esg else None,
-                risk_contribution=_finite(float(rc[i])),
-                risk_contribution_pct=_finite(float(rcp[i])),
-                marginal_contribution=_finite(float(mc[i])),
+                risk_contribution=_nan_none(float(rc[i])),
+                risk_contribution_pct=_nan_none(float(rcp[i])),
+                marginal_contribution=_nan_none(float(mc[i])),
                 beta_to_portfolio=_finite(a.beta_to_portfolio),
                 required_return=_opt(a.required_return),
                 status=a.status,
@@ -389,6 +465,7 @@ def portfolio_result_out(
         esg_adjusted_return=_opt(res.esg_adjusted_return),
         risk_free_rate=res.risk_free_rate,
         diversification_ratio=_opt(div),
+        risk_contributions_note=risk_note,
         effective_number_of_assets=_finite(ex.effective_number_of_assets),
         holdings=holdings,
         sector_exposures=sector_exposures(res.tickers, res.weights, data),
@@ -446,9 +523,7 @@ def asset_analytics(service: MarketDataService, req: s.AnalyticsRequest) -> s.An
                 performance=performance_out(perf),
             )
         )
-    rets = data.returns[tickers]
-    std = rets.std()
-    corr = rets.corr().to_numpy() if (std > 0).all() else np.eye(len(tickers))
+    corr, constant = correlation_matrix_with_gaps(data.returns[tickers].to_numpy())
     # Weekly sampling keeps the chart payload small without changing the path shape.
     prices = data.prices[tickers]
     if data.frequency.value == "daily" and len(prices) > 800:
@@ -460,7 +535,8 @@ def asset_analytics(service: MarketDataService, req: s.AnalyticsRequest) -> s.An
         benchmark=bench,
         assets=assets,
         tickers=tickers,
-        correlation=[[_finite(x) for x in row] for row in corr],
+        correlation=_gappy(corr),
+        correlation_note=_constant_note([tickers[i] for i in constant]),
         covariance=[[_finite(x) for x in row] for row in est.covariance],
         price_dates=[d.date() for d in norm.index],
         normalised_prices={t: [_finite(x) for x in norm[t]] for t in tickers},
@@ -868,13 +944,32 @@ def _strategy(
     cons, _ = build_constraints(st.constraints, data, tickers)
     oreq = opt_request(st.objective, req.estimation, cons)
     label = st.objective.objective.value.replace("_", " ")
+    spec = black_litterman_spec(service, data, req.estimation, tickers)
+    history = None
+    if spec is not None and spec.prior_label == "market capitalisation":
+        # Today's capitalisations would tell every past decision which assets later grew
+        # (look-ahead). Use the capitalisations of each rebalance date where the source
+        # has their history; refuse a single, current value.
+        history = service.market_cap_history(data.dataset.id)
+        if history is None or any(data.asset(t).market_cap is not None for t in tickers):
+            raise InvalidInputError(
+                "A backtest cannot use market-capitalisation prior weights from this dataset: "
+                "it has one value per asset (today's), and using it at past rebalances would "
+                "let later information into earlier decisions. Use equal or custom prior "
+                "weights, or a Kenneth French dataset, whose monthly history the backtest "
+                "uses as of each rebalance date."
+            )
+        missing = [t for t in tickers if t not in history.columns]
+        if missing:
+            raise InvalidInputError(f"No market capitalisation history for {', '.join(missing)}.")
     return OptimisedStrategy(
         oreq,
         data.metadata(),
         req.estimation.mean_estimator,
         req.estimation.covariance_estimator,
         name=f"Optimised ({label})",
-        black_litterman_spec=black_litterman_spec(service, data, req.estimation, tickers),
+        black_litterman_spec=spec,
+        prior_history=history,
     )
 
 
@@ -968,6 +1063,21 @@ def run_backtest_service(service: MarketDataService, req: s.BacktestRequest) -> 
         "Survivorship bias: the asset list is chosen today, which can flatter historical results.",
         "No taxes, market impact beyond linear costs, or cash holdings.",
     ]
+    st = req.strategy
+    if isinstance(st, s.OptimisedStrategyIn):
+        if st.constraints.uses_esg:
+            assumptions.append(
+                "ESG scores are today's, applied at every past rebalance: they were not known "
+                "then, so the ESG part of the strategy is not a strict out-of-sample test."
+            )
+        if (
+            req.estimation.mean_estimator is MeanEstimator.BLACK_LITTERMAN
+            and (req.estimation.black_litterman or s.BlackLittermanIn()).prior == "market_cap"
+        ):
+            assumptions.append(
+                "Black-Litterman prior weights use the market capitalisations known at each "
+                "rebalance date (the latest month that had ended)."
+            )
     return s.BacktestResponse(
         strategy=result.strategy,
         dates=[d.date() for d in result.dates],
@@ -981,6 +1091,11 @@ def run_backtest_service(service: MarketDataService, req: s.BacktestRequest) -> 
             else performance_out(
                 performance_summary(b_res.returns, ppy, req.estimation.risk_free_rate)
             )
+        ),
+        sharpe_test=(
+            None
+            if b_res is None
+            else sharpe_test_out(result.returns, b_res.returns, ppy, req.estimation.risk_free_rate)
         ),
         estimation_start=result.estimation_start,
         evaluation_start=result.evaluation_start,
@@ -1038,22 +1153,30 @@ def run_compare(service: MarketDataService, req: s.CompareRequest) -> s.CompareR
         w = weight_vector(tickers, p.weights)
         exp_r = portfolio_expected_return(w, est.expected_returns)
         vol = portfolio_volatility(w, est.covariance)
-        esg_vals = [data.asset(t).esg for t in tickers]
+        notes: list[str] = []
         held = [i for i in range(len(tickers)) if abs(w[i]) > 1e-9]
-        esg = (
-            float(sum(w[i] * esg_vals[i].score for i in held))  # type: ignore[union-attr]
-            if held and all(esg_vals[i] is not None for i in held) and (w >= -1e-12).all()
-            else None
-        )
+        unscored = [tickers[i] for i in held if data.asset(tickers[i]).esg is None]
+        esg: float | None = None
+        if unscored:
+            notes.append(
+                f"ESG score n/a: no ESG score for {', '.join(unscored)} (missing scores are "
+                "never imputed)."
+            )
+        else:
+            scores = np.array([e.score if (e := data.asset(t).esg) else 0.0 for t in tickers])
+            esg = portfolio_esg_score(np.where(np.abs(w) > 1e-9, w, 0.0), scores)
+        if vol < 1e-12:
+            notes.append("Sharpe ratio n/a: the expected volatility is zero.")
+        top: list[s.ContributionOut] = []
         try:
             rd = risk_decomposition(w, est.covariance)
-            order = np.argsort(-rd.percent_contribution)[:3]
+            order = [i for i in np.argsort(-rd.percent_contribution) if i in held][:3]
             top = [
                 s.ContributionOut(name=tickers[i], contribution=float(rd.percent_contribution[i]))
                 for i in order
             ]
-        except Exception:
-            top = []
+        except UndefinedMetricError as exc:
+            notes.append(f"Largest risk contributors n/a: {exc}")
         bt = run_backtest(data.returns, FixedWeightStrategy(tuple(w), name=p.name), cfg)
         dates = bt.dates
         start_date = bt.events[0].date
@@ -1066,24 +1189,23 @@ def run_compare(service: MarketDataService, req: s.CompareRequest) -> s.CompareR
                 volatility=_finite(vol),
                 sharpe_ratio=None if vol < 1e-12 else _finite((exp_r - rf_a) / vol),
                 esg_score=esg,
-                effective_number_of_assets=_finite(effective_number_of_assets(np.clip(w, 0, None)))
-                if (w > 0).any()
-                else 0.0,
+                effective_number_of_assets=_finite(effective_number_of_positions(w)),
                 top_risk_contributors=top,
                 historical=performance_out(bt.summary),
                 wealth=[_finite(float(x)) for x in bt.wealth],
                 drawdown=[_finite(float(x)) for x in drawdown_series(bt.returns)],
+                notes=notes,
             )
         )
     assert dates is not None
     assert start_date is not None
-    mat = np.vstack(series)
-    corr = np.corrcoef(mat) if (mat.std(axis=1) > 0).all() else np.eye(len(series))
+    corr, constant = correlation_matrix_with_gaps(np.column_stack(series))
     return s.CompareResponse(
         portfolios=out,
         dates=[d.date() for d in dates],
         wealth_dates=[start_date, *(d.date() for d in dates)],
-        return_correlation=[[_finite(float(x)) for x in row] for row in np.atleast_2d(corr)],
+        return_correlation=_gappy(corr),
+        return_correlation_note=_constant_note([out[i].name for i in constant]),
         in_sample_warning=(
             "Historical results replay fixed weights over the same window used to estimate "
             "returns and risk. If any of these weights were optimised on this window, their "

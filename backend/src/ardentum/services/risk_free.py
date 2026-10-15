@@ -116,6 +116,7 @@ def estimate(
             fred.DEFAULT_SERIES,
             FRED_MAX_AGE,
             lambda: client.series_payload(fred.DEFAULT_SERIES),
+            lambda payload: fred.parse_observations(payload, fred.DEFAULT_SERIES),
         )
         window = _window(fred.parse_observations(got.payload, fred.DEFAULT_SERIES), start, end)
         rate = float(np.mean(bill_yield_to_effective(window.to_numpy())))

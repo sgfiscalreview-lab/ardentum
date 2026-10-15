@@ -102,6 +102,10 @@ test("walk-forward backtest separates estimation and evaluation periods", async 
   await expect(page.getByText(/Estimation data from .* evaluation/)).toBeVisible();
   await expect(page.getByText("Contribution to return")).toBeVisible();
   await expect(page.getByText(/Sector attribution/)).toBeVisible();
+  // How sure the Sharpe ratio is, and whether the strategy beat its benchmark (here the
+  // same equal-weight portfolio, so the same returns).
+  await expect(page.getByRole("cell", { name: "Sharpe, 95% interval" })).toBeVisible();
+  await expect(page.getByText("The strategy and the benchmark earned the same returns: equal Sharpe ratios.")).toBeVisible();
 });
 
 test("sign in, save, list, export and delete a portfolio", async ({ page }) => {

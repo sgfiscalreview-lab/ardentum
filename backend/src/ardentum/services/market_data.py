@@ -38,9 +38,10 @@ from ardentum.data.providers.tiingo import TiingoProvider, parse_history
 from ardentum.data.providers.tiingo import provenance as tiingo_provenance
 from ardentum.data.validation import QualityReport, align_prices
 from ardentum.db.models import Dataset
+from ardentum.db.session import end_read
 from ardentum.quant.currency import convert_prices, convert_prices_hedged
 from ardentum.quant.errors import InsufficientDataError, InvalidInputError
-from ardentum.quant.frequency import Frequency
+from ardentum.quant.frequency import Frequency, check_frequency
 from ardentum.quant.optimisation import AssetMetadata
 from ardentum.quant.returns import simple_returns
 from ardentum.services.provider_cache import CachedPayload, ProviderCache
@@ -233,6 +234,7 @@ class MarketDataService:
                 .where(Dataset.owner_id == self.principal.user_id)
                 .order_by(Dataset.created_at.desc())
             ).all()
+            end_read(self.session)
             out.extend((upload_info(r), True) for r in rows)
         return out
 
@@ -244,6 +246,7 @@ class MarketDataService:
         if self.principal is None or self.session is None:
             raise NotFoundError("Sign in to use uploaded datasets.")
         row = self.session.get(Dataset, uid)
+        end_read(self.session)
         if row is None or row.owner_id != self.principal.user_id:
             raise NotFoundError(f"Dataset {dataset_id!r} not found.")
         return row
@@ -274,7 +277,8 @@ class MarketDataService:
         row = self._upload_row(dataset_id)
         cached_df = _UPLOAD_CACHE.get(row.id)
         if cached_df is None:
-            cached_df = decode_prices(row.prices_csv_gz)
+            cached_df = decode_prices(row.prices_csv_gz)  # deferred column: loaded only here
+            end_read(self.session)
             _UPLOAD_CACHE.put(row.id, cached_df)
         df: pd.DataFrame = cached_df  # type: ignore[assignment]
         missing = [t for t in tickers if t not in df.columns]
@@ -300,6 +304,7 @@ class MarketDataService:
             name,
             KF_MAX_AGE,
             lambda: kenfrench.download(name, base_url=self.settings.kenfrench_base_url),
+            lambda payload: kenfrench.check_payload(name, payload),
         )
 
     def _kf_returns(
@@ -361,6 +366,14 @@ class MarketDataService:
             return kenfrench.market_caps(kenfrench.unzip_text(monthly.payload))
         return None
 
+    def market_cap_history(self, dataset_id: str) -> pd.DataFrame | None:
+        """Market capitalisations through time (rows: month ends), when the source has them."""
+        if dataset_id in kenfrench.DATASETS:
+            spec = kenfrench.DATASETS[dataset_id]
+            monthly = self.kf_file(spec.monthly_file)
+            return kenfrench.market_cap_history(kenfrench.unzip_text(monthly.payload))
+        return None
+
     def _tiingo_prices(
         self, tickers: list[str], start: dt.date | None, end: dt.date | None
     ) -> tuple[pd.DataFrame, DataProvenance, DatasetInfo]:
@@ -375,6 +388,7 @@ class MarketDataService:
                 t.upper(),
                 TIINGO_MAX_AGE,
                 lambda t=t: provider.history_payload(t),  # type: ignore[misc]
+                lambda payload, t=t: parse_history(payload, t),  # type: ignore[misc]
             )
             series[t] = parse_history(got.payload, t)
             oldest = got.fetched_at if oldest is None else min(oldest, got.fetched_at)
@@ -400,6 +414,7 @@ class MarketDataService:
             f"{local}->{base}",
             FX_MAX_AGE,
             lambda: fx.timeseries_payload(local, base),
+            lambda payload: fx.parse_timeseries(payload, base),
         )
         key = ("fx", local, base, got.fetched_at)
         rates = _PARSED_CACHE.get(key)
@@ -413,7 +428,11 @@ class MarketDataService:
         cur = currency.upper()
         bis.area_for(cur)  # clear error before any network call
         got = self.cache.get_or_fetch(
-            "bis", f"policy-rate:{cur}", RATES_MAX_AGE, lambda: bis.rates_payload(cur)
+            "bis",
+            f"policy-rate:{cur}",
+            RATES_MAX_AGE,
+            lambda: bis.rates_payload(cur),
+            lambda payload: bis.parse_rates(payload, cur),
         )
         key = ("bis", cur, got.fetched_at)
         rates = _PARSED_CACHE.get(key)
@@ -517,12 +536,17 @@ class MarketDataService:
         )
         aligned, report = align_prices(raw)
         freq = Frequency(frequency)
-        if freq is Frequency.WEEKLY:
-            aligned = aligned.resample("W-FRI").last().dropna()
-        elif freq is Frequency.MONTHLY:
-            aligned = aligned.resample("ME").last().dropna()
-        elif freq is not Frequency.DAILY:
+        if freq not in (Frequency.DAILY, Frequency.WEEKLY, Frequency.MONTHLY):
             raise InvalidInputError(f"Unsupported frequency {frequency!r}.")
+        check_frequency(pd.DatetimeIndex(aligned.index), freq)
+        if freq is not Frequency.DAILY:
+            aligned, cut = _resample(aligned, freq)
+            if cut is not None:
+                provenance = _with_note(
+                    provenance,
+                    f"The last {freq.value.removesuffix('ly')} is incomplete (prices end on "
+                    f"{cut:%d %b %Y}) and is left out.",
+                )
         if len(aligned) < MIN_OBSERVATIONS + 1:
             raise InsufficientDataError(
                 f"Only {len(aligned) - 1} {freq.value} returns in the selected window; "
@@ -539,6 +563,22 @@ class MarketDataService:
             provenance=provenance,
             currency=currency,
         )
+
+
+def _resample(prices: pd.DataFrame, freq: Frequency) -> tuple[pd.DataFrame, dt.date | None]:
+    """Period-end prices (Friday weeks, month ends). A last period that the prices do not
+    reach the end of is dropped rather than labelled with a future date and counted as a
+    full period; returns the last price date in that case."""
+    rule, offset = (
+        ("W-FRI", pd.offsets.Week(weekday=4))
+        if freq is Frequency.WEEKLY
+        else ("ME", pd.offsets.BMonthEnd())
+    )
+    out = prices.resample(rule).last().dropna()
+    last = pd.Timestamp(prices.index[-1])
+    if len(out) and last < offset.rollback(out.index[-1]):
+        return out.iloc[:-1], last.date()
+    return out, None
 
 
 def _with_note(p: DataProvenance, note: str) -> DataProvenance:

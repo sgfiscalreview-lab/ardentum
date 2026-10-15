@@ -27,7 +27,7 @@ impact beyond linear costs, no cash drag, no taxes.
 from __future__ import annotations
 
 import datetime as dt
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import StrEnum
 from typing import Protocol
 
@@ -103,16 +103,30 @@ class OptimisedStrategy:
     mean_estimator: MeanEstimator = MeanEstimator.HISTORICAL
     covariance_estimator: CovarianceEstimator = CovarianceEstimator.LEDOIT_WOLF
     name: str = "Optimised"
-    # Black-Litterman prior weights and views are fixed inputs applied to every window.
+    # Black-Litterman views are fixed inputs applied to every window. Market-capitalisation
+    # prior weights come from ``prior_history`` as of each rebalance date when it is given
+    # (rows: dates, columns: tickers), so a decision never uses later capitalisations.
     black_litterman_spec: BlackLittermanSpec | None = None
+    prior_history: pd.DataFrame | None = None
 
     def target_weights(self, window: pd.DataFrame, context: StrategyContext) -> np.ndarray:
+        spec = self.black_litterman_spec
+        if spec is not None and self.prior_history is not None:
+            known = self.prior_history.loc[: context.as_of, list(context.tickers)].dropna()
+            if known.empty:
+                raise InsufficientDataError(
+                    f"No market capitalisations are available on or before {context.as_of:%d %b %Y} "
+                    "for every asset; start the backtest later or use equal prior weights."
+                )
+            spec = replace(
+                spec, prior_weights={str(t): float(v) for t, v in known.iloc[-1].items()}
+            )
         est = estimate(
             window,
             context.periods_per_year,
             mean_estimator=self.mean_estimator,
             covariance_estimator=self.covariance_estimator,
-            black_litterman_spec=self.black_litterman_spec,
+            black_litterman_spec=spec,
         )
         return optimise(est, self.request, self.metadata).weights
 

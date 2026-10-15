@@ -20,7 +20,7 @@ import {
 } from "@/components/workspace";
 import { runJob } from "@/lib/api/client";
 import type { CompareRequest, CompareResponse } from "@/lib/api/types";
-import { num, pct } from "@/lib/format";
+import { num, pct, sharpeRange } from "@/lib/format";
 import { useWorkspace } from "@/lib/workspace";
 
 export default function ComparePage() {
@@ -100,6 +100,7 @@ function Results({ data }: { data: CompareResponse }) {
     ["Historical CAGR", (p) => pct(p.historical.cagr)],
     ["Historical volatility", (p) => pct(p.historical.annualised_volatility)],
     ["Historical Sharpe", (p) => num(p.historical.sharpe_ratio.value)],
+    ["Historical Sharpe, 95% interval", (p) => sharpeRange(p.historical.sharpe_interval)],
     ["Historical Sortino", (p) => num(p.historical.sortino_ratio.value)],
     ["Max drawdown", (p) => pct(p.historical.max_drawdown, 1)],
     ["1-period CVaR 95%", (p) => pct(p.historical.cvar_95)],
@@ -138,6 +139,17 @@ function Results({ data }: { data: CompareResponse }) {
             ))}
           </tbody>
         </Table>
+        {ps.some((p) => p.notes.length > 0) && (
+          <ul className="space-y-1 border-t border-line px-4 py-3 text-xs text-ink-2">
+            {ps.flatMap((p) =>
+              p.notes.map((n) => (
+                <li key={`${p.name}-${n}`}>
+                  <span className="font-medium text-ink">{p.name}:</span> {n}
+                </li>
+              )),
+            )}
+          </ul>
+        )}
       </Card>
       <ChartFrame
         title="Growth of 100 (rebalanced monthly)"
@@ -194,6 +206,7 @@ function Results({ data }: { data: CompareResponse }) {
             ))}
           </tbody>
         </Table>
+        {data.return_correlation_note && <p className="border-t border-line px-4 py-3 text-xs text-ink-2">{data.return_correlation_note}</p>}
       </Card>
       <DataNotes data={data.data} />
     </div>

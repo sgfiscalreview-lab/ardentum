@@ -69,3 +69,25 @@ def test_metadata_requires_esg_source() -> None:
         parse_metadata_csv(b"ticker,esg_score\nAAA,50\n")
     with pytest.raises(InvalidInputError, match="between 0 and 100"):
         parse_metadata_csv(b"ticker,esg_score,esg_source\nAAA,150,X\n")
+
+
+def test_too_many_columns_is_refused_before_parsing() -> None:
+    # 40,000 columns in a 300 KB file took 38 s and 445 MB to convert before the ticker
+    # limit applied; the header count now refuses it at once.
+    import time
+
+    cols = ",".join(f"T{i}" for i in range(40_000))
+    row = ",".join("1" for _ in range(40_000))
+    content = f"date,{cols}\n2024-01-02,{row}\n2024-01-03,{row}\n".encode()
+    start = time.perf_counter()
+    with pytest.raises(InvalidInputError, match="40,001 columns"):
+        parse_price_csv(content)
+    assert time.perf_counter() - start < 1.0
+
+
+def test_long_format_with_too_many_tickers_is_refused_before_the_pivot() -> None:
+    lines = ["date,ticker,adj_close"]
+    for d in ("2024-01-02", "2024-01-03", "2024-01-04"):
+        lines += [f"{d},T{i},1.0" for i in range(500)]
+    with pytest.raises(InvalidInputError, match="names 500 tickers"):
+        parse_price_csv("\n".join(lines).encode())

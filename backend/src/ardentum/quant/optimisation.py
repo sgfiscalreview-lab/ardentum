@@ -174,6 +174,12 @@ class OptimisationResult:
     var: float | None = None
     cvar: float | None = None
     cvar_confidence: float | None = None
+    # The ESG-adjusted expected returns the objective maximised, when a tilt was active.
+    objective_returns: np.ndarray | None = None
+    # Inputs of the constraints, aligned with ``tickers``, for explanations: ESG scores
+    # (NaN where none) and tracking-error benchmark weights.
+    esg_scores: np.ndarray | None = None
+    benchmark_weights: np.ndarray | None = None
 
     def weight_map(self) -> dict[str, float]:
         return dict(zip(self.tickers, (float(x) for x in self.weights), strict=True))
@@ -1000,6 +1006,9 @@ def _build_result(
         var=var,
         cvar=cvar,
         cvar_confidence=None if cvar is None else cvar_confidence,
+        objective_returns=adjusted_mu,
+        esg_scores=comp.esg_scores,
+        benchmark_weights=comp.benchmark,
     )
 
 

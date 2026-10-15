@@ -153,3 +153,17 @@ def effective_number_of_assets(weights: np.ndarray) -> float:
     if hhi <= 0.0:
         raise UndefinedMetricError("Effective number of assets is undefined for zero weights.")
     return 1.0 / hhi
+
+
+def effective_number_of_positions(weights: np.ndarray) -> float:
+    """Inverse Herfindahl of the gross weights ``|w_i| / sum |w|``.
+
+    The same as :func:`effective_number_of_assets` for a long-only portfolio; with short
+    positions it counts them too (clipping shorts to zero would ignore them, and the raw
+    weights' squares no longer sum against a budget of one). 0 when nothing is held.
+    """
+    w = np.abs(np.asarray(weights, dtype=float))
+    gross = float(w.sum())
+    if gross <= 0.0:
+        return 0.0
+    return effective_number_of_assets(w / gross)

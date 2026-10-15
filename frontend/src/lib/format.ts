@@ -33,14 +33,22 @@ export function signedNum(x: number | null | undefined, digits = 2): string {
   return `${zero ? "" : x > 0 ? "+" : "−"}${s}`;
 }
 
-export function money(x: number | null | undefined, compact = false): string {
+/** An amount in the data's currency (ISO 4217 code; prices are in USD unless a dataset or
+ *  base currency says otherwise). */
+export function money(x: number | null | undefined, compact = false, currency = "USD"): string {
   if (x === null || x === undefined || !Number.isFinite(x)) return DASH;
   return x.toLocaleString("en-US", {
     style: "currency",
-    currency: "USD",
+    currency,
     maximumFractionDigits: compact ? 1 : 0,
     notation: compact ? "compact" : "standard",
   });
+}
+
+/** A Sharpe ratio interval as "0.12 to 1.34", or "n/a". */
+export function sharpeRange(iv: { low: number; high: number } | null | undefined): string {
+  if (!iv) return DASH;
+  return `${num(iv.low)} to ${num(iv.high)}`;
 }
 
 export function date(d: string | null | undefined): string {

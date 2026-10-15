@@ -6,6 +6,7 @@ from collections.abc import Iterator
 from typing import Annotated
 
 from fastapi import Depends, Header, Request
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ardentum.api.auth import AuthError, Principal, verify_token
@@ -58,7 +59,12 @@ def require_principal(principal: OptionalPrincipal, db: DbDep) -> Principal:
     user = db.get(User, principal.user_id)
     if user is None:
         db.add(User(id=principal.user_id, email=principal.email))
-        db.commit()
+        try:
+            db.commit()
+        except IntegrityError:
+            # A first sign-in often sends several requests at once; another of them
+            # created the row between the read and this insert, which is fine.
+            db.rollback()
     elif principal.email and user.email != principal.email:
         user.email = principal.email
         db.commit()

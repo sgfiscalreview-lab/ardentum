@@ -334,7 +334,7 @@ export function Stat({
   help?: string;
 }) {
   return (
-    <div className="min-w-0 rounded-lg border border-line bg-surface px-3.5 py-3" title={help}>
+    <div className="min-w-0 rounded-md border border-line bg-surface px-3.5 py-3" title={help}>
       <p className="truncate text-xs font-medium text-ink-2">
         <GlossaryLabel label={label} />
       </p>
@@ -622,7 +622,7 @@ export function PopoverPanel({
           animate={{ opacity: 1, scale: 1, y: 0, ...MATERIAL_IN }}
           exit={{ opacity: 0, scale: 0.96, y: -6, ...MATERIAL_OUT }}
           className={cx(
-            "material-thick absolute top-full z-20 mt-2 w-72 rounded-xl border border-line p-3 elev-3",
+            "material-thick absolute top-full z-20 mt-2 w-72 rounded-[20px] border border-line p-3 elev-3",
             align === "start"
               ? "left-0 origin-top-left"
               : align === "end"

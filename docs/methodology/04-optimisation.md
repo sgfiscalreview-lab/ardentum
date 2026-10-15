@@ -112,6 +112,8 @@ Explanations are derived from the optimality conditions, so each one is a checka
 
 - **Minimum volatility.** Every held, unconstrained asset has the same marginal variance $(\Sigma w)_i$; an asset left out has a marginal variance at least as high, so adding it would raise risk.
 - **Maximum Sharpe.** Held, unconstrained assets satisfy $\mu_i - r_f = \beta_i(\mu_p - r_f)$ with $\beta_i = (\Sigma w)_i/(w^\top\Sigma w)$. An asset left out has an expected return below this *required return*: its return does not compensate for the risk it would add.
+- With an **ESG tilt** the objective uses the ESG-adjusted returns, so these conditions hold for the adjusted returns; the required return is translated back into plain terms so it can be compared with the asset's expected return.
+- Each statement is made only when it is true at the solution. When an asset left out would improve the objective on return and risk alone, a binding constraint is what keeps it out (a full sector, the minimum ESG score, the tracking-error or gross-exposure limit), and the explanation names it; held weights shaped by a binding constraint say so too.
 - Assets at their maximum weight would be held in larger size without the limit; binding constraints are listed with their shadow prices.
 
 ## Weight stability

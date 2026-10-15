@@ -12,6 +12,8 @@ describe("format", () => {
   it("formats numbers, money and dates", () => {
     expect(num(1234.5, 1)).toBe("1,234.5");
     expect(money(10000)).toBe("$10,000");
+    expect(money(10000, false, "EUR")).toBe("€10,000");
+    expect(money(null, false, "GBP")).toBe("n/a");
     expect(date("2024-03-05")).toBe("5 Mar 2024");
     expect(humanise("max_sharpe")).toBe("Max sharpe");
   });

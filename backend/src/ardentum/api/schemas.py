@@ -22,6 +22,8 @@ Ticker = Annotated[
     str, Field(min_length=1, max_length=24, pattern=r"^[A-Za-z0-9][A-Za-z0-9.\-_^=]*$")
 ]
 Weight = Annotated[float, Field(ge=-1.0, le=1.0)]
+# Request dates stay within what every data source and pandas' timestamps can represent.
+RequestDate = Annotated[dt.date, Field(ge=dt.date(1900, 1, 1), le=dt.date(2100, 12, 31))]
 MAX_ASSETS = 60
 MAX_SAVED_JSON = 64 * 1024  # bytes of settings or summary stored with a saved portfolio
 
@@ -44,8 +46,8 @@ class ResponseModel(BaseModel):
 class UniverseSelection(RequestModel):
     dataset_id: str = Field(min_length=1, max_length=64)
     tickers: list[Ticker] = Field(min_length=1, max_length=MAX_ASSETS)
-    start: dt.date | None = None
-    end: dt.date | None = None
+    start: RequestDate | None = None
+    end: RequestDate | None = None
     frequency: Literal["daily", "weekly", "monthly"] = "daily"
     esg_overlay_id: str | None = Field(
         None, max_length=64, description="Use ESG scores from this saved open-data overlay."
@@ -117,8 +119,8 @@ class EstimationSettings(RequestModel):
 
 class RiskFreeRequest(RequestModel):
     source: Literal["fred_dgs3mo", "kenfrench_rf"] = "kenfrench_rf"
-    start: dt.date | None = None
-    end: dt.date | None = None
+    start: RequestDate | None = None
+    end: RequestDate | None = None
 
     @model_validator(mode="after")
     def _dates(self) -> RiskFreeRequest:
@@ -456,6 +458,15 @@ class DatasetOut(ResponseModel):
     )
 
 
+class DatasetUploadOut(DatasetOut):
+    frequencies: list[Literal["daily", "weekly", "monthly"]] = Field(
+        description="Return frequencies these prices support, finest first."
+    )
+    notes: list[str] = Field(
+        default_factory=list, description="Why a finer return frequency is not available."
+    )
+
+
 class DatasetSummaryOut(ResponseModel):
     id: str
     name: str
@@ -496,6 +507,14 @@ class EstimationOut(ResponseModel):
     end: dt.date | None
 
 
+class SharpeIntervalOut(ResponseModel):
+    low: float
+    high: float
+    standard_error: float
+    confidence: float = Field(description="Coverage of the interval, e.g. 0.95.")
+    lags: int = Field(description="Autocorrelation lags in the Newey-West standard error.")
+
+
 class PerformanceOut(ResponseModel):
     observations: int
     total_return: float
@@ -516,6 +535,24 @@ class PerformanceOut(ResponseModel):
     beta: MetricOut | None = None
     tracking_error: float | None = None
     information_ratio: MetricOut | None = None
+    sharpe_interval: SharpeIntervalOut | None = Field(
+        None,
+        description="Confidence interval for the Sharpe ratio, robust to fat tails and "
+        "autocorrelation (delta method, Newey-West).",
+    )
+    sharpe_interval_reason: str | None = Field(
+        None, description="Why the interval is n/a, when it is."
+    )
+
+
+class SharpeTestOut(ResponseModel):
+    """Test that the strategy and the benchmark have equal Sharpe ratios."""
+
+    difference: float | None = Field(description="Strategy minus benchmark, annualised.")
+    standard_error: float | None
+    p_value: float | None = Field(description="Two-sided.")
+    lags: int | None
+    statement: str = Field(description="What the result means, or why it is n/a.")
 
 
 class AssetStatsOut(ResponseModel):
@@ -533,7 +570,10 @@ class AnalyticsResponse(ResponseModel):
     benchmark: str | None
     assets: list[AssetStatsOut]
     tickers: list[str]
-    correlation: list[list[float]]
+    # None where a correlation is undefined (an asset whose returns never change);
+    # correlation_note says which.
+    correlation: list[list[float | None]]
+    correlation_note: str | None = None
     covariance: list[list[float]]
     price_dates: list[dt.date]
     normalised_prices: dict[str, list[float]]
@@ -558,9 +598,11 @@ class HoldingOut(ResponseModel):
     expected_return: float
     volatility: float
     esg_score: float | None
-    risk_contribution: float
-    risk_contribution_pct: float
-    marginal_contribution: float
+    # None when risk contributions are undefined (zero portfolio volatility); the result's
+    # risk_contributions_note says why.
+    risk_contribution: float | None
+    risk_contribution_pct: float | None
+    marginal_contribution: float | None
     beta_to_portfolio: float
     required_return: float | None
     status: str
@@ -599,6 +641,9 @@ class PortfolioResultOut(ResponseModel):
     esg_adjusted_return: float | None
     risk_free_rate: float
     diversification_ratio: float | None
+    risk_contributions_note: str | None = Field(
+        None, description="Why holdings' risk contributions are n/a, when they are."
+    )
     effective_number_of_assets: float
     holdings: list[HoldingOut]
     sector_exposures: list[SectorExposureOut]
@@ -799,6 +844,9 @@ class BacktestResponse(ResponseModel):
     benchmark: SeriesOut | None
     performance: PerformanceOut
     benchmark_performance: PerformanceOut | None
+    sharpe_test: SharpeTestOut | None = Field(
+        None, description="Strategy against benchmark (Ledoit and Wolf 2008); None without one."
+    )
     estimation_start: dt.date
     evaluation_start: dt.date
     evaluation_end: dt.date
@@ -827,13 +875,17 @@ class ComparedPortfolioOut(ResponseModel):
     historical: PerformanceOut
     wealth: list[float]
     drawdown: list[float]
+    notes: list[str] = Field(
+        default_factory=list, description="Why a figure above is n/a, one note per figure."
+    )
 
 
 class CompareResponse(ResponseModel):
     portfolios: list[ComparedPortfolioOut]
     dates: list[dt.date]
     wealth_dates: list[dt.date]  # start date followed by `dates` (wealth/drawdown axis)
-    return_correlation: list[list[float]]
+    return_correlation: list[list[float | None]]
+    return_correlation_note: str | None = None
     in_sample_warning: str
     estimation: EstimationOut
     data: DataWindowOut
@@ -1027,6 +1079,8 @@ class MetaOut(ResponseModel):
     supabase_url: str | None
     live_data_available: bool
     methodology_version: str
+    # Git commit of the running build when the host reports it, else null.
+    commit: str | None = None
 
 
 class ErrorBody(ResponseModel):

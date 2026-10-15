@@ -2,13 +2,21 @@ import { expect, test } from "@playwright/test";
 
 // Upload real-company data with ISINs, build ESG scores from (mocked) WikiRate open data,
 // confirm an unmatched company by hand, save the overlay and see it in analytics.
+// Trading days (weekdays from 2 January 2023): daily statistics assume 252 a year, and the
+// API refuses daily returns on prices that include weekends.
 const START = Date.UTC(2023, 0, 2);
+const tradingDays = Array.from({ length: 210 }, (_, i) => new Date(START + i * 86_400_000))
+  .filter((d) => d.getUTCDay() !== 0 && d.getUTCDay() !== 6)
+  .slice(0, 150)
+  .map((d) => d.toISOString().slice(0, 10));
 const prices =
   "date,AAA,BBB,CCC\n" +
-  Array.from({ length: 150 }, (_, i) => {
-    const d = new Date(START + i * 86_400_000).toISOString().slice(0, 10);
-    return `${d},${(100 + i * 0.1 + (i % 7) * 0.3).toFixed(4)},${(50 + (i % 11) * 0.2 + i * 0.05).toFixed(4)},${(20 + (i % 5) * 0.1 + i * 0.02).toFixed(4)}`;
-  }).join("\n");
+  tradingDays
+    .map(
+      (d, i) =>
+        `${d},${(100 + i * 0.1 + (i % 7) * 0.3).toFixed(4)},${(50 + (i % 11) * 0.2 + i * 0.05).toFixed(4)},${(20 + (i % 5) * 0.1 + i * 0.02).toFixed(4)}`,
+    )
+    .join("\n");
 const meta = "ticker,name,isin\nAAA,Apple,US0378331005\nBBB,Adidas,DE000A1EWWW0\nCCC,Puma,\n";
 
 test("build, save and use open ESG scores from WikiRate", async ({ page }) => {
@@ -104,4 +112,24 @@ test("combine several open metrics into one composite ESG score", async ({ page 
   await page.getByRole("button", { name: "Save and use in workspace" }).click();
   await expect(page.getByText(/applied it to the workspace \(2 of 3 assets scored\)/)).toBeVisible();
   await expect(page.getByText(/^Composite: Direct greenhouse gas/).first()).toBeVisible();
+});
+
+test("an upload of calendar-day prices switches to weekly returns and says why", async ({ page }) => {
+  const calendar =
+    "date,AAA,BBB\n" +
+    Array.from({ length: 200 }, (_, i) => {
+      const d = new Date(START + i * 86_400_000).toISOString().slice(0, 10);
+      return `${d},${(100 + i * 0.1 + (i % 7) * 0.3).toFixed(4)},${(50 + (i % 11) * 0.2 + i * 0.05).toFixed(4)}`;
+    }).join("\n");
+  await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.goto("/login?next=/app");
+  await page.getByLabel("Email").fill(`freq-${Date.now()}@example.com`);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/app$/);
+  await page.locator("#ds-name").fill("Every day");
+  await page.locator("#ds-prices").setInputFiles({ name: "p.csv", mimeType: "text/csv", buffer: Buffer.from(calendar) });
+  await page.getByRole("button", { name: "Upload", exact: true }).click();
+  await expect(page.getByText(/fall on a weekend, so these look like calendar days.*Return frequency set to weekly\./)).toBeVisible();
+  await expect(page.locator("#freq")).toHaveValue("weekly");
 });

@@ -20,7 +20,7 @@ import {
 } from "@/components/workspace";
 import { api, unwrap } from "@/lib/api/client";
 import type { AnalyticsResponse, MetricOut } from "@/lib/api/types";
-import { num, pct } from "@/lib/format";
+import { num, pct, sharpeRange } from "@/lib/format";
 import { useTheme } from "@/lib/theme";
 import { useWorkspace } from "@/lib/workspace";
 
@@ -122,6 +122,7 @@ export default function AnalyticsPage() {
                     <Th align="right">Mean (arith.)</Th>
                     <Th align="right">Volatility</Th>
                     <Th align="right">Sharpe</Th>
+                    <Th align="right">Sharpe, 95% interval</Th>
                     <Th align="right">Sortino</Th>
                     <Th align="right">Max drawdown</Th>
                     {data.benchmark && <Th align="right">Beta</Th>}
@@ -140,6 +141,7 @@ export default function AnalyticsPage() {
                       <Td align="right">{pct(a.performance.arithmetic_annual_return)}</Td>
                       <Td align="right">{pct(a.performance.annualised_volatility)}</Td>
                       <Td align="right" title={a.performance.sharpe_ratio.reason ?? undefined}>{metric(a.performance.sharpe_ratio)}</Td>
+                      <Td align="right" title={a.performance.sharpe_interval_reason ?? undefined}>{sharpeRange(a.performance.sharpe_interval)}</Td>
                       <Td align="right" title={a.performance.sortino_ratio.reason ?? undefined}>{metric(a.performance.sortino_ratio)}</Td>
                       <Td align="right">{pct(a.performance.max_drawdown, 1)}</Td>
                       {data.benchmark && <Td align="right">{metric(a.performance.beta)}</Td>}
@@ -203,6 +205,7 @@ export default function AnalyticsPage() {
             >
               <div className="px-2">
                 <Heatmap labels={tickers} matrix={data.correlation} dark={isDark} />
+                {data.correlation_note && <p className="mt-2 text-xs text-ink-2">{data.correlation_note}</p>}
               </div>
             </ChartFrame>
             <DataNotes data={data.data} />

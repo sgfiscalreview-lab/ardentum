@@ -108,7 +108,7 @@ export function MobileStepNav() {
   const index = STEPS.findIndex((s) => s.href === pathname);
   const current = STEPS[index];
   return (
-    <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-line bg-surface px-3.5 py-2 elev-1 lg:hidden print:hidden">
+    <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-line bg-surface py-2 pl-3.5 pr-2 elev-1 lg:hidden print:hidden">
       <p className="min-w-0 truncate text-footnote text-ink-2">
         {current ? (
           <>
@@ -133,7 +133,7 @@ export function UniverseSummary() {
   const u = state.universe;
   const ds = useDataset(u.dataset_id);
   return (
-    <div className="rounded-lg border border-line bg-surface p-3.5 text-xs elev-1">
+    <div className="rounded-md border border-line bg-surface p-3.5 text-xs elev-1">
       <p className="font-medium text-ink">Current universe</p>
       <dl className="mt-2 space-y-1 text-ink-2">
         <div className="flex justify-between gap-2">
@@ -393,7 +393,7 @@ export function ResultsSkeleton() {
         <Skeleton className="mt-3 h-5 w-2/3" />
         <div className="mt-5 grid grid-cols-2 gap-2 md:grid-cols-3 2xl:grid-cols-6">
           {Array.from({ length: 6 }, (_, i) => (
-            <div key={i} className="rounded-lg border border-line p-3">
+            <div key={i} className="rounded-md border border-line p-3">
               <Skeleton className="h-2.5 w-16" />
               <Skeleton className="mt-2 h-5 w-20" />
             </div>

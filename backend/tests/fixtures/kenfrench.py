@@ -65,12 +65,19 @@ def factors_daily_text(n_days: int = 400, seed: int = 1) -> str:
     )
 
 
-def industries_monthly_text() -> str:
+def industries_monthly_text(
+    months: list[str] | None = None, last_size: np.ndarray | None = None
+) -> str:
+    """Monthly file with firm counts and sizes. ``last_size`` replaces the final month's
+    average firm sizes (to show that a backtest's early decisions ignore it)."""
     codes = list(IND12)
-    months = ["202410", "202411", "202412"]
-    firms = np.tile(np.arange(100, 100 + len(codes)), (3, 1)).astype(float)
-    size = np.tile(np.linspace(1000, 12000, len(codes)), (3, 1))
-    ret = np.zeros((3, len(codes)))
+    months = months or ["202410", "202411", "202412"]
+    n = len(months)
+    firms = np.tile(np.arange(100, 100 + len(codes)), (n, 1)).astype(float)
+    size = np.tile(np.linspace(1000, 12000, len(codes)), (n, 1))
+    if last_size is not None:
+        size[-1] = last_size
+    ret = np.zeros((n, len(codes)))
     return (
         "This file was created by CMPT_IND_RETS using the 202512 CRSP database.\r\n\r\n"
         + _table("Average Value Weighted Returns -- Monthly", codes, months, ret)

@@ -732,7 +732,9 @@ export interface components {
             /** Tickers */
             tickers: string[];
             /** Correlation */
-            correlation: number[][];
+            correlation: (number | null)[][];
+            /** Correlation Note */
+            correlation_note: string | null;
             /** Covariance */
             covariance: number[][];
             /** Price Dates */
@@ -830,6 +832,8 @@ export interface components {
             benchmark: components["schemas"]["SeriesOut"] | null;
             performance: components["schemas"]["PerformanceOut"];
             benchmark_performance: components["schemas"]["PerformanceOut"] | null;
+            /** @description Strategy against benchmark (Ledoit and Wolf 2008); None without one. */
+            sharpe_test: components["schemas"]["SharpeTestOut"] | null;
             /**
              * Estimation Start
              * Format: date
@@ -984,7 +988,9 @@ export interface components {
             /** Wealth Dates */
             wealth_dates: string[];
             /** Return Correlation */
-            return_correlation: number[][];
+            return_correlation: (number | null)[][];
+            /** Return Correlation Note */
+            return_correlation_note: string | null;
             /** In Sample Warning */
             in_sample_warning: string;
             estimation: components["schemas"]["EstimationOut"];
@@ -1015,6 +1021,11 @@ export interface components {
             wealth: number[];
             /** Drawdown */
             drawdown: number[];
+            /**
+             * Notes
+             * @description Why a figure above is n/a, one note per figure.
+             */
+            notes: string[];
         };
         /** CompositeComponentIn */
         CompositeComponentIn: {
@@ -1379,6 +1390,49 @@ export interface components {
              * @default false
              */
             owned: boolean;
+        };
+        /** DatasetUploadOut */
+        DatasetUploadOut: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Kind */
+            kind: string;
+            /** Description */
+            description: string;
+            /** Is Synthetic */
+            is_synthetic: boolean;
+            provenance: components["schemas"]["ProvenanceOut"];
+            /** Start */
+            start: string | null;
+            /** End */
+            end: string | null;
+            /** Assets */
+            assets: components["schemas"]["AssetOut"][];
+            /** Sectors */
+            sectors: string[];
+            /**
+             * Owned
+             * @default false
+             */
+            owned: boolean;
+            /**
+             * Has Market Caps
+             * @description Market capitalisations are available for Black-Litterman priors.
+             * @default false
+             */
+            has_market_caps: boolean;
+            /**
+             * Frequencies
+             * @description Return frequencies these prices support, finest first.
+             */
+            frequencies: ("daily" | "weekly" | "monthly")[];
+            /**
+             * Notes
+             * @description Why a finer return frequency is not available.
+             */
+            notes: string[];
         };
         /** DevLoginRequest */
         DevLoginRequest: {
@@ -1770,11 +1824,11 @@ export interface components {
             /** Esg Score */
             esg_score: number | null;
             /** Risk Contribution */
-            risk_contribution: number;
+            risk_contribution: number | null;
             /** Risk Contribution Pct */
-            risk_contribution_pct: number;
+            risk_contribution_pct: number | null;
             /** Marginal Contribution */
-            marginal_contribution: number;
+            marginal_contribution: number | null;
             /** Beta To Portfolio */
             beta_to_portfolio: number;
             /** Required Return */
@@ -1865,6 +1919,8 @@ export interface components {
             live_data_available: boolean;
             /** Methodology Version */
             methodology_version: string;
+            /** Commit */
+            commit: string | null;
         };
         /** MetricOut */
         MetricOut: {
@@ -2249,6 +2305,13 @@ export interface components {
             /** Tracking Error */
             tracking_error: number | null;
             information_ratio: components["schemas"]["MetricOut"] | null;
+            /** @description Confidence interval for the Sharpe ratio, robust to fat tails and autocorrelation (delta method, Newey-West). */
+            sharpe_interval: components["schemas"]["SharpeIntervalOut"] | null;
+            /**
+             * Sharpe Interval Reason
+             * @description Why the interval is n/a, when it is.
+             */
+            sharpe_interval_reason: string | null;
         };
         /** PortfolioIn */
         PortfolioIn: {
@@ -2322,6 +2385,11 @@ export interface components {
             risk_free_rate: number;
             /** Diversification Ratio */
             diversification_ratio: number | null;
+            /**
+             * Risk Contributions Note
+             * @description Why holdings' risk contributions are n/a, when they are.
+             */
+            risk_contributions_note: string | null;
             /** Effective Number Of Assets */
             effective_number_of_assets: number;
             /** Holdings */
@@ -2486,6 +2554,50 @@ export interface components {
             wealth: number[];
             /** Drawdown */
             drawdown: number[];
+        };
+        /** SharpeIntervalOut */
+        SharpeIntervalOut: {
+            /** Low */
+            low: number;
+            /** High */
+            high: number;
+            /** Standard Error */
+            standard_error: number;
+            /**
+             * Confidence
+             * @description Coverage of the interval, e.g. 0.95.
+             */
+            confidence: number;
+            /**
+             * Lags
+             * @description Autocorrelation lags in the Newey-West standard error.
+             */
+            lags: number;
+        };
+        /**
+         * SharpeTestOut
+         * @description Test that the strategy and the benchmark have equal Sharpe ratios.
+         */
+        SharpeTestOut: {
+            /**
+             * Difference
+             * @description Strategy minus benchmark, annualised.
+             */
+            difference: number | null;
+            /** Standard Error */
+            standard_error: number | null;
+            /**
+             * P Value
+             * @description Two-sided.
+             */
+            p_value: number | null;
+            /** Lags */
+            lags: number | null;
+            /**
+             * Statement
+             * @description What the result means, or why it is n/a.
+             */
+            statement: string;
         };
         /**
          * SimulationMethod
@@ -3034,7 +3146,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DatasetOut"];
+                    "application/json": components["schemas"]["DatasetUploadOut"];
                 };
             };
             /** @description Validation Error */

@@ -37,6 +37,11 @@ from ardentum.services.market_data import MarketDataService, NotFoundError
 
 log = logging.getLogger("ardentum.jobs")
 
+# Calculations running at once in this process. Each holds CPU and, briefly, a database
+# connection; more would starve requests on a small instance. Further jobs stay queued and
+# start on the next poll after a slot frees (polls resume queued jobs).
+MAX_RUNNING = 2
+_SLOTS = threading.BoundedSemaphore(MAX_RUNNING)
 HEARTBEAT_SECONDS = 5.0
 STALE_AFTER = dt.timedelta(seconds=30)
 MAX_ATTEMPTS = 2
@@ -180,8 +185,17 @@ class JobService:
         return False
 
     def start(self, job_id: uuid.UUID) -> bool:
-        """Run the job in a background thread if it can be claimed; True if started."""
-        if not self._claim(job_id):
+        """Run the job in a background thread if a slot is free and it can be claimed; True if
+        started. Without a free slot it stays queued, untouched, for a later poll."""
+        if not _SLOTS.acquire(blocking=False):
+            return False
+        try:
+            claimed = self._claim(job_id)
+        except BaseException:
+            _SLOTS.release()
+            raise
+        if not claimed:
+            _SLOTS.release()
             return False
         done = threading.Event()
         with _LOCAL_LOCK:
@@ -213,8 +227,12 @@ class JobService:
                 principal = Principal(job.owner_id, None) if job.owner_id else None
                 kind_done = job.kind
                 model, run = KINDS[job.kind]
+                request = model.model_validate(job.request)
+                # Release the connection before computing; the service reads what it needs
+                # in short transactions of its own (db.session.end_read).
+                session.commit()
                 service = MarketDataService(self.settings, session, principal)
-                result = run(service, model.model_validate(job.request))
+                result = run(service, request)
             blob = gzip.compress(json.dumps(result.model_dump(mode="json")).encode("utf-8"))
             values = {"status": "succeeded", "result": blob}
         except Exception as exc:
@@ -242,6 +260,7 @@ class JobService:
             done.set()
             with _LOCAL_LOCK:
                 _LOCAL.pop(job_id, None)
+            _SLOTS.release()
 
     # ---------------------------------------------------------------- output
 

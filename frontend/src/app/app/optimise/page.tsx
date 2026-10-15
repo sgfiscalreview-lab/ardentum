@@ -196,10 +196,17 @@ function Results({
           table={<DataTable columns={[{ key: "t", label: "Asset" }, { key: "w", label: "Weight", align: "right" }, { key: "r", label: "Risk share", align: "right" }]} rows={held.map((h) => ({ t: h.ticker, w: pct(h.weight, 1), r: pct(h.risk_contribution_pct, 1) }))} />}
         >
           <div className="px-2">
-            <BarList
-              ariaLabel="Risk contributions"
-              rows={[...held].sort((a, b) => b.risk_contribution_pct - a.risk_contribution_pct).map((h) => ({ key: h.ticker, label: h.ticker, sub: `weight ${pct(h.weight, 1)}`, value: h.risk_contribution_pct, display: pct(h.risk_contribution_pct, 1), color: "var(--series-2)" }))}
-            />
+            {r.risk_contributions_note ? (
+              <p className="text-sm text-ink-2">Risk contributions are n/a. {r.risk_contributions_note}</p>
+            ) : (
+              <BarList
+                ariaLabel="Risk contributions"
+                rows={held
+                  .flatMap((h) => (h.risk_contribution_pct === null ? [] : [{ h, share: h.risk_contribution_pct }]))
+                  .sort((a, b) => b.share - a.share)
+                  .map(({ h, share }) => ({ key: h.ticker, label: h.ticker, sub: `weight ${pct(h.weight, 1)}`, value: share, display: pct(share, 1), color: "var(--series-2)" }))}
+              />
+            )}
           </div>
         </ChartFrame>
       </div>

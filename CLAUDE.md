@@ -29,7 +29,9 @@ Read this first, then `ARCHITECTURE.md`, `DECISIONS.md`, `PROGRESS.md`, `TODO.md
   Translucent materials (`.material`, `.material-thick`) only for floating chrome:
   header, popovers, tooltips, sheets, notices; never one translucent layer on another.
   Elevation from `.elev-1` (cards), `.elev-2` (controls), `.elev-3` (floating layers);
-  radii from the `--radius-*` tokens (controls 6px, cards 8 to 12px, sheets 22px). The
+  radii from the `--radius-*` tokens. Nested corners share a centre: an inner radius is
+  the outer radius minus the padding between them (cards 12px hold tiles of 8px; the
+  sidebar, sheet and popovers are 20px around 8px rows at 12px). The
   header has no ruled edge, only the scroll edge (`.scroll-edge`). Structural regions
   (the workspace sidebar) are an opaque tint (`bg-sidebar`), not a material.
 * Everything that moves uses a spring from `frontend/src/lib/motion.ts`: `SPRING` by
@@ -64,7 +66,8 @@ Read this first, then `ARCHITECTURE.md`, `DECISIONS.md`, `PROGRESS.md`, `TODO.md
   sizes, never `text-[13px]`. Never Inter, Geist or Space Grotesk.
 * No feature-card rows, bento grids, terminal windows, testimonials or pricing tables.
   Show the real product (`npm run screenshots` in `frontend/` with the app running
-  captures the landing-page screenshots) and plain statements; avoid "it's not X, it's Y"
+  captures the landing-page screenshots: whole cards only, on the app's own background,
+  shown without a frame of their own) and plain statements; avoid "it's not X, it's Y"
   copy.
 * Loading states use static skeletons (`Skeleton`, `SkeletonRows`, `ResultsSkeleton`).
 * Every page links the Terms of Service and Privacy Policy (site footer).

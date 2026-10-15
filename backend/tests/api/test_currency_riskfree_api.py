@@ -7,6 +7,7 @@ import json
 from collections.abc import Iterator
 
 import httpx
+import pandas as pd
 import pytest
 import respx
 from fastapi.testclient import TestClient
@@ -19,7 +20,7 @@ from tests.fixtures.kenfrench import factors_daily_text, zipped
 
 START = dt.date(2023, 1, 2)
 N = 120
-DAYS = [START + dt.timedelta(days=i) for i in range(N)]
+DAYS = [d.date() for d in pd.bdate_range(START, periods=N)]  # trading days
 AAA = [100 + i * 0.1 + (i % 7) * 0.3 for i in range(N)]
 PRICES = "date,AAA,BBB\n" + "\n".join(
     f"{d.isoformat()},{a:.4f},{50 + (i % 11) * 0.2 + i * 0.05:.4f}"

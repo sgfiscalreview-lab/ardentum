@@ -270,6 +270,37 @@ def market_caps(monthly_text: str) -> dict[str, float]:
     return {ticker_for(k): float(v) for k, v in caps.items() if np.isfinite(v) and v > 0}
 
 
+def check_payload(name: str, payload: bytes) -> None:
+    """Parse a downloaded file the way it will be used; raises DataProviderError if it
+    cannot be (so a bad download is not cached for a day)."""
+    text = unzip_text(payload)
+    if name == FACTORS_DAILY:
+        factor_returns(text)
+    elif any(name == d.daily_file for d in DATASETS.values()):
+        industry_returns(text)
+    elif any(name == d.monthly_file for d in DATASETS.values()):
+        market_caps(text)
+
+
+def market_cap_history(monthly_text: str) -> pd.DataFrame:
+    """Industry market capitalisation ($m) for every month in the file, indexed by month end:
+    number of firms x average firm size. A backtest uses, at each rebalance, only the
+    months that had ended by then (no later information)."""
+    tables = parse_tables(monthly_text)
+    n = find_table(tables, "number of firms").frame
+    size = find_table(tables, "average firm size").frame
+    caps = (n * size).where(lambda x: np.isfinite(x) & (x > 0))
+    caps.index = pd.DatetimeIndex(
+        [
+            pd.Timestamp(year=int(str(c)[:4]), month=int(str(c)[4:6]), day=1)
+            + pd.offsets.MonthEnd(0)
+            for c in caps.index
+        ]
+    )
+    caps.columns = [ticker_for(str(c)) for c in caps.columns]
+    return caps.sort_index()
+
+
 def returns_to_prices(returns: pd.DataFrame, base: float = 100.0) -> pd.DataFrame:
     """Total-return index levels; each series starts where its data starts."""
     growth = (1.0 + returns).cumprod()

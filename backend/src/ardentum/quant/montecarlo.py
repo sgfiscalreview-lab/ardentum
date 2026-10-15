@@ -186,9 +186,11 @@ def simulate_parametric(
     assumptions = (
         "Portfolio rebalanced to target weights every period (constant mix).",
         "Per-period returns are independent and identically lognormally distributed.",
-        f"Moments from estimates: expected return {annual_expected_return:.2%} p.a. "
-        f"(arithmetic), volatility {annual_volatility:.2%} p.a.",
+        f"Moments estimated from the historical window: expected return "
+        f"{annual_expected_return:.2%} p.a. (arithmetic), volatility {annual_volatility:.2%} "
+        "p.a. A strong or weak window carries straight into every path.",
         "Estimated parameters are treated as known (no parameter uncertainty).",
+        NOMINAL,
         *_flow_assumptions(config),
     )
     return _run(config, draw, m, np.sqrt(v), assumptions)
@@ -241,9 +243,16 @@ def simulate_bootstrap(
         f"Returns resampled from {t_len} historical portfolio returns by {label}.",
         "Future return distribution assumed to resemble the historical sample; "
         "scenarios worse than the sample's worst periods cannot occur.",
+        NOMINAL,
         *_flow_assumptions(config),
     )
     return _run(config, draw, float(hist.mean()), float(hist.std(ddof=1)), assumptions)
+
+
+NOMINAL = (
+    "Values are nominal: nothing is adjusted for inflation, so a future value is not "
+    "today's purchasing power."
+)
 
 
 def _flow_assumptions(config: MonteCarloConfig) -> tuple[str, ...]:

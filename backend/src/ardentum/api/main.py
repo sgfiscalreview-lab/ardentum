@@ -30,6 +30,7 @@ from ardentum.api.ratelimit import (
     address_key,
     budget_for,
     client_ip,
+    limiter_key,
 )
 from ardentum.api.routers import analysis, auth, datasets, jobs, meta, open_esg, portfolios
 from ardentum.config import AuthMode, Environment, Settings, get_settings
@@ -130,7 +131,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         limiter = limiters.get(budget) if budget else None
         if budget and limiter is not None:
             key = await run_in_threadpool(_client_key, request)
-            wait = await run_in_threadpool(limiter.check, f"{budget[0]}:{key}")
+            wait = await run_in_threadpool(limiter.check, limiter_key(budget, key))
             if wait is not None:
                 what = "calculations" if budget == "compute" else "requests"
                 return JSONResponse(

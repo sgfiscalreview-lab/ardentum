@@ -36,8 +36,14 @@ from ardentum.data.errors import DataProviderError
 from ardentum.data.models import AssetInfo, DatasetInfo, EsgRecord
 from ardentum.data.providers import demo, kenfrench, wikirate
 from ardentum.db.models import EsgOverlay, User
+from ardentum.db.session import end_read
 from ardentum.quant.errors import InvalidInputError
-from ardentum.quant.esg import composite_scores, percentile_scores, scale_linear
+from ardentum.quant.esg import (
+    composite_scores,
+    outside_scale,
+    percentile_scores,
+    scale_linear,
+)
 from ardentum.services.market_data import MarketDataService, NotFoundError
 from ardentum.services.provider_cache import CachedPayload
 
@@ -113,23 +119,28 @@ class OpenEsgService:
             market.settings.wikirate_api_key, base_url=market.settings.wikirate_base_url
         )
 
-    def _get(self, path: str, params: list[tuple[str, str]]) -> CachedPayload:
+    def _get(
+        self, path: str, params: list[tuple[str, str]], *, persist: bool = True
+    ) -> CachedPayload:
         return self.market.cache.get_or_fetch(
             SOURCE,
             _cache_key(path, params),
             WIKIRATE_MAX_AGE,
             lambda: self.client.get(path, params),
+            wikirate.check_json,
+            persist=persist,
         )
 
     # ------------------------------------------------------------------ browse
 
     def search_metrics(self, q: str, limit: int = 20) -> list[wikirate.OpenMetric]:
-        return wikirate.parse_metrics(self._get(*wikirate.metrics_query(q, limit)).payload)
+        # Free-text searches stay in memory: every distinct query would be a database row.
+        path, params = wikirate.metrics_query(q, limit)
+        return wikirate.parse_metrics(self._get(path, params, persist=False).payload)
 
     def search_companies(self, q: str, limit: int = 10) -> list[wikirate.OpenCompany]:
-        return wikirate.parse_companies(
-            self._get(*wikirate.companies_by_name_query(q, limit)).payload
-        )
+        path, params = wikirate.companies_by_name_query(q, limit)
+        return wikirate.parse_companies(self._get(path, params, persist=False).payload)
 
     def metric(self, metric_id: int) -> wikirate.OpenMetric:
         return wikirate.parse_metric(self._get(wikirate.metric_path(metric_id), []).payload)
@@ -275,7 +286,19 @@ class OpenEsgService:
         if scored:
             raw = np.array([float(r["raw_value"]) for r in scored])  # type: ignore[arg-type]
             if t.method == "linear":
-                scores = scale_linear(raw, t.lower or 0.0, t.upper or 0.0, t.higher_is_better)
+                lo, hi = t.lower or 0.0, t.upper or 0.0
+                scores = scale_linear(raw, lo, hi, t.higher_is_better)
+                clipped = outside_scale(raw, lo, hi)
+                for r, out in zip(scored, clipped, strict=True):
+                    if out:
+                        r["note"] = f"{r['note']}; outside the scale, so scored at its end point"
+                if clipped.any():
+                    n = int(clipped.sum())
+                    warnings.append(
+                        f"{n} of {len(scored)} values fall outside the scale ({lo:g} to {hi:g}) "
+                        "and are scored at its end points (0 or 100), which hides the "
+                        "differences between them. Widen the scale to tell them apart."
+                    )
             elif len(scored) >= 2:
                 scores = percentile_scores(raw, t.higher_is_better)
             else:
@@ -496,6 +519,7 @@ def get_overlay(market: MarketDataService, overlay_id: str) -> EsgOverlay:
     if market.principal is None or market.session is None:
         raise NotFoundError("Sign in to use saved ESG overlays.")
     row = market.session.get(EsgOverlay, oid)
+    end_read(market.session)
     if row is None or row.owner_id != market.principal.user_id:
         raise NotFoundError("ESG overlay not found.")
     return row

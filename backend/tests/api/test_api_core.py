@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 
+from ardentum.api.main import create_app
 from tests.api.conftest import DEMO_TICKERS, universe
 
 
@@ -15,6 +16,19 @@ def test_health_and_meta(client: TestClient) -> None:
     r = client.get("/api/v1/health")
     assert r.headers["X-Content-Type-Options"] == "nosniff"
     assert "X-Request-ID" in r.headers
+
+
+def test_meta_reports_the_build_commit(settings, monkeypatch: pytest.MonkeyPatch) -> None:
+    # Render sets RENDER_GIT_COMMIT on every deploy; a stale deploy then shows in /meta.
+    monkeypatch.delenv("RENDER_GIT_COMMIT", raising=False)
+    with TestClient(create_app(settings)) as c:
+        assert c.get("/api/v1/meta").json()["commit"] is None
+    monkeypatch.setenv("RENDER_GIT_COMMIT", "0123456789abcdef0123456789abcdef01234567")
+    with TestClient(create_app(settings)) as c:
+        assert c.get("/api/v1/meta").json()["commit"] == "0123456789abcdef0123456789abcdef01234567"
+    explicit = settings.model_copy(update={"build_commit": "feedc0de"})
+    with TestClient(create_app(explicit)) as c:
+        assert c.get("/api/v1/meta").json()["commit"] == "feedc0de"  # an explicit setting wins
 
 
 def test_openapi_schema(client: TestClient) -> None:
@@ -43,6 +57,11 @@ def test_analytics(client: TestClient) -> None:
     np.testing.assert_allclose(np.diag(corr), 1.0)
     assert body["assets"][0]["performance"]["beta"]["value"] is not None
     assert body["normalised_prices"]["NWS.SYN"][0] == pytest.approx(100.0)
+    perf = body["assets"][0]["performance"]
+    iv = perf["sharpe_interval"]
+    assert iv["low"] < perf["sharpe_ratio"]["value"] < iv["high"]
+    assert iv["confidence"] == 0.95
+    assert perf["sharpe_interval_reason"] is None
 
 
 def test_optimise_max_sharpe_with_explanation(client: TestClient) -> None:
@@ -106,6 +125,17 @@ def test_validation_errors_are_consistent(client: TestClient) -> None:
     )
     assert r.status_code == 422
     assert "target_return" in r.json()["error"]["message"]
+
+
+def test_dates_outside_1900_to_2100_are_refused(client: TestClient) -> None:
+    # Year 1 used to reach pandas and fail with a server error (out of timestamp range).
+    for start in ("0001-01-01", "1899-12-31"):
+        r = client.post("/api/v1/analytics", json={"universe": universe(start=start)})
+        assert r.status_code == 422, r.text
+        assert "1900-01-01" in r.json()["error"]["message"]
+    r = client.post("/api/v1/risk-free", json={"end": "9999-12-31"})
+    assert r.status_code == 422
+    assert "2100-12-31" in r.json()["error"]["message"]
 
 
 def test_unknown_ticker(client: TestClient) -> None:
@@ -243,6 +273,20 @@ def test_backtest_asset_benchmark(client: TestClient) -> None:
     )
     assert r.status_code == 200, r.text
     assert r.json()["benchmark"]["name"] == "MKT.SYN"
+    test = r.json()["sharpe_test"]
+    strategy = r.json()["performance"]["sharpe_ratio"]["value"]
+    benchmark = r.json()["benchmark_performance"]["sharpe_ratio"]["value"]
+    assert test["difference"] == pytest.approx(strategy - benchmark)
+    assert 0.0 <= test["p_value"] <= 1.0
+    assert test["statement"].startswith("The strategy's Sharpe ratio is")
+    # Equal weights against the equal-weight benchmark: the same returns.
+    body = {"universe": universe(), "strategy": {"type": "equal_weight"}, "lookback_years": 1}
+    same = client.post("/api/v1/backtest", json=body).json()["sharpe_test"]
+    assert same["p_value"] == 1.0
+    assert "same returns" in same["statement"]
+    # Without a benchmark there is nothing to test against.
+    body["benchmark"] = None
+    assert client.post("/api/v1/backtest", json=body).json()["sharpe_test"] is None
 
 
 def test_compare(client: TestClient) -> None:
@@ -337,3 +381,22 @@ def test_min_cvar_optimise_and_backtest(client: TestClient) -> None:
         },
     )
     assert bt.status_code == 200, bt.text
+
+
+def test_an_incomplete_last_period_is_left_out(client: TestClient) -> None:
+    # Prices ending on Wednesday 2 June 2021: the June "month" held two days and the week
+    # three. They used to be labelled 30 June / 4 June and counted as full periods.
+    u = {**universe(), "start": "2016-01-04", "end": "2021-06-02"}
+    monthly = client.post(
+        "/api/v1/analytics", json={"universe": {**u, "frequency": "monthly"}}
+    ).json()
+    assert monthly["data"]["end"] == "2021-05-31"
+    assert any("incomplete" in n for n in monthly["data"]["provenance"]["notes"])
+    weekly = client.post(
+        "/api/v1/analytics", json={"universe": {**u, "frequency": "weekly"}}
+    ).json()
+    assert weekly["data"]["end"] == "2021-05-28"
+    complete = {**u, "end": "2021-06-30", "frequency": "monthly"}
+    full = client.post("/api/v1/analytics", json={"universe": complete}).json()
+    assert full["data"]["end"] == "2021-06-30"
+    assert not any("incomplete" in n for n in full["data"]["provenance"]["notes"])

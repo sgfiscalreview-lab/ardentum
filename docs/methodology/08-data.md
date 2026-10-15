@@ -26,6 +26,10 @@ Price panels are checked before use:
 - gaps of up to 3 consecutive missing prices inside the window (typically holiday-calendar mismatches) are carried forward and **reported** (this yields zero returns on those dates); longer gaps are **rejected**, because filling them would understate volatility;
 - daily moves above 50% and runs of 10+ identical prices are **flagged** as possible bad ticks, unadjusted splits or stale quotes.
 
+**Return frequency.** Returns are annualised with 252, 52 or 12 periods a year, so the frequency must match the prices. The sampling frequency is inferred from the median gap between dates. A finer frequency than the prices support is refused (daily returns from monthly prices would be annualised with $\sqrt{252}$ instead of $\sqrt{12}$, about 4.6 times too much volatility), and so are daily statistics when more than 10% of the dates fall on a weekend (calendar days, which 252 a year would misstate). An upload reports which frequencies its prices support and switches the workspace to one of them; prices coarser than monthly are refused at upload. When weekly or monthly returns are built from daily prices, a last week or month that has not ended is left out, with a note, because a partial period would be annualised as a full one.
+
+**Provider downloads** are parsed before they are cached; a malformed one (an error page served with status 200, a broken archive) is never stored, and the last good copy is used instead, marked as stale.
+
 ## Risk-free rate
 
 The risk-free rate is an input you set; the Universe page can fill it with a historical average over the estimation window (last five years if no window is set):

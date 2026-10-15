@@ -26,6 +26,7 @@ the prices are quoted in; ``isin`` lets open ESG data be matched to the asset;
 
 from __future__ import annotations
 
+import csv
 import datetime as dt
 import io
 import re
@@ -39,6 +40,8 @@ from ardentum.quant.errors import InvalidInputError
 MAX_BYTES = 5 * 1024 * 1024
 MAX_TICKERS = 200
 MAX_ROWS = 60_000
+# A date column plus one per ticker; metadata files have far fewer.
+MAX_COLUMNS = MAX_TICKERS + 1
 TICKER_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9.\-_^=]{0,19}$")
 CURRENCY_RE = re.compile(r"^[A-Z]{3}$")
 ISIN_RE = re.compile(r"^[A-Z]{2}[A-Z0-9]{9}[0-9]$")
@@ -69,6 +72,17 @@ def _read(content: bytes) -> pd.DataFrame:
         text = content.decode("utf-8-sig")
     except UnicodeDecodeError as exc:
         raise InvalidInputError("File must be UTF-8 encoded CSV.") from exc
+    # Count columns from the header line before parsing the body: a small file with tens
+    # of thousands of columns would otherwise take minutes and hundreds of MB to convert.
+    try:
+        header = next(csv.reader(io.StringIO(text.split("\n", 1)[0])), [])
+    except csv.Error as exc:
+        raise InvalidInputError(f"Could not parse the CSV header: {exc}") from exc
+    if len(header) > MAX_COLUMNS:
+        raise InvalidInputError(
+            f"The CSV has {len(header):,} columns; at most {MAX_TICKERS} tickers (plus the date "
+            "column) are supported per upload."
+        )
     try:
         df = pd.read_csv(io.StringIO(text), dtype=str, skipinitialspace=True)
     except (pd.errors.ParserError, pd.errors.EmptyDataError) as exc:
@@ -125,6 +139,13 @@ def parse_price_csv(content: bytes) -> pd.DataFrame:
                 "Long-format CSV needs a price column named one of: " + ", ".join(_PRICE_COLUMNS)
             )
         tick_col = lower["ticker"]
+        # Checked before converting and pivoting: the pivot's size grows with
+        # dates x tickers, so a long file naming thousands of tickers would exhaust memory.
+        distinct = df[tick_col].str.strip().str.upper().nunique()
+        if distinct > MAX_TICKERS:
+            raise InvalidInputError(
+                f"The CSV names {distinct:,} tickers; at most {MAX_TICKERS} are supported per upload."
+            )
         long = pd.DataFrame(
             {
                 "date": _parse_dates(df[date_col]),

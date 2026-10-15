@@ -60,7 +60,7 @@ export default function UniversePage() {
             <div className="grid gap-2 sm:grid-cols-2">
               {datasets.isPending &&
                 Array.from({ length: 4 }, (_, i) => (
-                  <div key={i} role="status" aria-label="Loading datasets" className="rounded-lg border border-line p-3.5">
+                  <div key={i} role="status" aria-label="Loading datasets" className="rounded-md border border-line p-3.5">
                     <Skeleton className="h-4 w-2/3" />
                     <Skeleton className="mt-2 h-3 w-full" />
                     <Skeleton className="mt-1.5 h-3 w-1/2" />
@@ -76,7 +76,7 @@ export default function UniversePage() {
                     )
                   }
                   aria-pressed={d.id === u.dataset_id}
-                  className={cx("pressable-soft rounded-lg border p-3.5 text-left", d.id === u.dataset_id ? "border-accent bg-accent-wash" : "border-line bg-surface hover:bg-surface-2")}
+                  className={cx("pressable-soft rounded-md border p-3.5 text-left", d.id === u.dataset_id ? "border-accent bg-accent-wash" : "border-line bg-surface hover:bg-surface-2")}
                 >
                   <span className="flex items-center justify-between gap-2">
                     <span className="text-sm font-medium text-ink">{d.name}</span>
@@ -165,7 +165,7 @@ function Examples() {
               startFromExample(p.build(), p.title);
               router.push(p.href);
             }}
-            className="pressable-soft rounded-lg border border-line bg-surface p-3.5 text-left hover:bg-surface-2"
+            className="pressable-soft rounded-md border border-line bg-surface p-3.5 text-left hover:bg-surface-2"
           >
             <span className="flex items-center justify-between gap-2">
               <span className="text-sm font-medium text-ink">{p.title}</span>
@@ -386,7 +386,8 @@ function EstimationCard({
 function UploadCard() {
   const { status } = useAuth();
   const qc = useQueryClient();
-  const { setUniverse } = useWorkspace();
+  const { state, setUniverse } = useWorkspace();
+  const u = state.universe;
   const [name, setName] = useState("");
   const [prices, setPrices] = useState<File | null>(null);
   const [meta, setMeta] = useState<File | null>(null);
@@ -424,8 +425,12 @@ function UploadCard() {
         }),
       );
       await qc.invalidateQueries({ queryKey: ["datasets"] });
-      setOk(`Uploaded “${res.name}” with ${res.assets.length} assets.`);
-      setUniverse({ dataset_id: res.id, tickers: res.assets.slice(0, 60).map((a) => a.ticker), start: null, end: null, esg_overlay_id: null });
+      // Keep the chosen return frequency when these prices support it; otherwise switch to
+      // the finest one they do, and say why.
+      const frequency = res.frequencies.includes(u.frequency) ? u.frequency : (res.frequencies[0] ?? u.frequency);
+      const switched = frequency !== u.frequency ? ` ${res.notes[0] ?? ""} Return frequency set to ${frequency}.` : "";
+      setOk(`Uploaded “${res.name}” with ${res.assets.length} assets.${switched}`);
+      setUniverse({ dataset_id: res.id, tickers: res.assets.slice(0, 60).map((a) => a.ticker), start: null, end: null, esg_overlay_id: null, frequency });
     } catch (e) {
       setError(e instanceof ApiError || e instanceof Error ? e : new Error(String(e)));
     } finally {

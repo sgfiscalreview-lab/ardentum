@@ -20,7 +20,7 @@ import {
 } from "@/components/workspace";
 import { runJob } from "@/lib/api/client";
 import type { BacktestRequest, BacktestResponse, PerformanceOut } from "@/lib/api/types";
-import { date as fmtDate, num, OBJECTIVE_LABELS, pct, signedPct } from "@/lib/format";
+import { date as fmtDate, num, OBJECTIVE_LABELS, pct, sharpeRange, signedPct } from "@/lib/format";
 import { useWorkspace } from "@/lib/workspace";
 
 type StrategyKind = "optimised" | "fixed" | "equal_weight";
@@ -155,6 +155,7 @@ function PerfRows({ p, b }: { p: PerformanceOut; b: PerformanceOut | null }) {
     ["CAGR", (x) => pct(x.cagr)],
     ["Volatility", (x) => pct(x.annualised_volatility)],
     ["Sharpe ratio", (x) => num(x.sharpe_ratio.value)],
+    ["Sharpe, 95% interval", (x) => sharpeRange(x.sharpe_interval)],
     ["Sortino ratio", (x) => num(x.sortino_ratio.value)],
     ["Max drawdown", (x) => pct(x.max_drawdown, 1)],
     ["Calmar ratio", (x) => num(x.calmar_ratio.value)],
@@ -229,7 +230,7 @@ function Results({ data }: { data: BacktestResponse }) {
         <div className="grid grid-cols-2 gap-2 md:grid-cols-3 2xl:grid-cols-6">
           <Stat label="CAGR" value={pct(p.cagr)} sub={excess == null ? undefined : `${signedPct(excess)} vs benchmark`} />
           <Stat label="Volatility" value={pct(p.annualised_volatility)} />
-          <Stat label="Sharpe ratio" value={num(p.sharpe_ratio.value)} />
+          <Stat label="Sharpe ratio" value={num(p.sharpe_ratio.value)} sub={p.sharpe_interval ? `95% interval ${sharpeRange(p.sharpe_interval)}` : undefined} />
           <Stat label="Max drawdown" value={pct(p.max_drawdown, 1)} />
           <Stat label="Turnover" value={pct(data.annualised_turnover, 0)} sub="per year (one-way sum)" />
           <Stat label="Cost drag" value={pct(data.total_cost, 2)} sub="of final wealth" />
@@ -250,8 +251,17 @@ function Results({ data }: { data: BacktestResponse }) {
         <TimeSeriesChart dates={dates} series={dd} yFormat={(v) => `${(v * 100).toFixed(0)}%`} area height={200} />
       </ChartFrame>
       <div className="grid gap-4 2xl:grid-cols-2">
-        <Card title="Performance (evaluation period)" bodyClassName="p-0">
+        <Card title="Performance (evaluation period)" bodyClassName="p-0" className="min-w-0">
           <PerfRows p={p} b={data.benchmark_performance} />
+          {data.sharpe_test && (
+            <div className="border-t border-line px-4 py-3">
+              <p className="text-sm text-ink">{data.sharpe_test.statement}</p>
+              <p className="mt-1 text-xs text-ink-2">
+                Test of equal Sharpe ratios that allows for fat tails, autocorrelation and the correlation between the two (Ledoit and Wolf, 2008)
+                {data.sharpe_test.lags != null ? `, with ${data.sharpe_test.lags} lags` : ""}. Intervals use the same method.
+              </p>
+            </div>
+          )}
         </Card>
         <ChartFrame
           title="Contribution to return"
