@@ -99,9 +99,21 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     needs: [backend, frontend]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ardentum
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@v7
       - name: Build backend image
         run: docker build -t ardentum-api ./backend
+      - name: Backend image starts and answers as Render runs it, also after a restart
+        run: sh scripts/check_api_image.sh ardentum-api postgresql://postgres:postgres@127.0.0.1:5432/ardentum
       - name: Build web image
         run: docker build -f frontend/Dockerfile -t ardentum-web .

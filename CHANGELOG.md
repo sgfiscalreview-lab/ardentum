@@ -61,6 +61,9 @@ All notable changes to Ardentum are recorded here. Versions follow
 - Browser tests serve the Kenneth French files from a local stand-in.
 
 ### Fixed
+- The API stopped answering after the last deploy: its image ran a Python version the
+  project does not support. It runs on the tested version again, and CI now starts the
+  image the way the host does, also after a restart, before anything is merged.
 - Daily returns from weekly or monthly prices, or on calendar days, are refused instead of
   being annualised with the wrong number of periods; an unfinished last week or month is
   left out of weekly and monthly returns.

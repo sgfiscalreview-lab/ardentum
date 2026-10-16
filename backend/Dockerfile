@@ -1,6 +1,11 @@
 # Ardentum API — production image
-FROM python:3.14-slim AS base
-ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
+# Python matches requires-python in pyproject.toml and the version CI tests (3.12). uv
+# must use this interpreter: with downloads off, a base image outside requires-python fails
+# the build here, instead of uv fetching its own Python into /root, which the app's user
+# below cannot run (the image then builds but never starts; see DECISIONS D-044).
+FROM python:3.12-slim AS base
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy \
+    UV_PYTHON_DOWNLOADS=never
 COPY --from=ghcr.io/astral-sh/uv:0.8 /uv /bin/uv
 WORKDIR /app
 
