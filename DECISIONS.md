@@ -558,3 +558,25 @@ in the code before it was fixed; each fix has a test that fails without it.
   points. The effective number of positions counts short positions.
 * **Deploy freshness.** The API reports the commit it was built from, and the live check
   fails when the deployed API is older than the latest backend change on `main`.
+
+## D-044 The API image runs on the Python it is tested on
+The live API stopped answering on 2026-10-15 at about 13:30 UTC. Its image had been moved
+to `python:3.14-slim` by a Dependabot pull request on 2 October, but the project declares
+`requires-python = ">=3.12,<3.14"` and CI tests on 3.12. Finding no usable interpreter in
+the image, uv quietly downloaded its own Python 3.13 into `/root` during the build, and
+the app runs as an unprivileged user that cannot read `/root`. Every deploy after that
+change failed (2, 2 and 4 October), so the 2 October version stayed live, which is why
+crisis replay, factor exposure and trade lists were missing from it. The deploy of 15
+October reported success and answered once, but has not started since the free instance
+first went to sleep. Started as its own user, the image built from `main` stops at once
+with `alembic: Permission denied` (reproduced in CI); Render's logs hold the exact sequence
+on its side.
+* The image is back on Python 3.12, the version CI tests. uv may not download an
+  interpreter (`UV_PYTHON_DOWNLOADS=never`), so a base image outside `requires-python`
+  now fails the build instead of producing an image that cannot start.
+* CI no longer only builds the image: it starts it the way Render runs it (its own user,
+  migrations through the entrypoint, PostgreSQL), checks that it answers, restarts it as
+  a sleeping free instance does and checks again (`scripts/check_api_image.sh`). Building
+  is not starting.
+* Dependabot already leaves Docker base images alone; change the Python version by hand,
+  together with `requires-python` and CI.
