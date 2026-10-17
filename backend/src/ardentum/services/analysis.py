@@ -47,6 +47,7 @@ from ardentum.quant.metrics import (
     correlation_matrix_with_gaps,
     drawdown_series,
     performance_summary,
+    sharpe_difference_bootstrap,
     sharpe_difference_test,
     tracking_error,
 )
@@ -210,10 +211,20 @@ def performance_out(p: PerformanceSummary) -> s.PerformanceOut:
     )
 
 
+# The bootstrap Sharpe test runs on histories up to this many returns: where the
+# asymptotic test is least reliable, and fast enough on the free plan's small instance.
+MAX_BOOTSTRAP_RETURNS = 1000
+
+
 def sharpe_test_out(
-    strategy: np.ndarray, benchmark: np.ndarray, periods_per_year: int, risk_free_rate: float
+    strategy: np.ndarray,
+    benchmark: np.ndarray,
+    periods_per_year: int,
+    risk_free_rate: float,
+    seed: int = 0,
 ) -> s.SharpeTestOut:
-    """The test of equal Sharpe ratios, with a plain reading of the p-value."""
+    """The test of equal Sharpe ratios, with a plain reading of the p-value; on short
+    histories also the bootstrap test, which is more reliable there."""
     try:
         d = sharpe_difference_test(strategy, benchmark, periods_per_year, risk_free_rate)
     except (UndefinedMetricError, InvalidInputError) as exc:
@@ -238,12 +249,37 @@ def sharpe_test_out(
             f"{size}, but with p = {d.p_value:.2f} that could well be chance: this history "
             "cannot tell the two apart."
         )
+    boot: s.SharpeBootstrapOut | None = None
+    note: str | None = None
+    n = len(strategy)
+    if n > MAX_BOOTSTRAP_RETURNS:
+        note = (
+            f"No bootstrap: with {n:,} returns the test above is reliable (the bootstrap "
+            f"runs on histories of up to {MAX_BOOTSTRAP_RETURNS:,} returns)."
+        )
+    elif d.standard_error > 0.0:
+        b = sharpe_difference_bootstrap(
+            strategy, benchmark, periods_per_year, risk_free_rate, seed=seed
+        )
+        boot = s.SharpeBootstrapOut(
+            p_value=_finite(b.p_value),
+            resamples=b.resamples,
+            block_length=b.block_length,
+            seed=b.seed,
+        )
+        reading += (
+            f" A bootstrap test, more reliable on a history this short, gives "
+            f"p = {b.p_value:.3f} ({b.resamples} resamples in blocks of {b.block_length} "
+            f"periods, seed {b.seed})."
+        )
     return s.SharpeTestOut(
         difference=_finite(d.difference),
         standard_error=_finite(d.standard_error),
         p_value=_finite(d.p_value),
         lags=d.lags,
         statement=reading,
+        bootstrap=boot,
+        bootstrap_note=note,
     )
 
 
@@ -1095,7 +1131,13 @@ def run_backtest_service(service: MarketDataService, req: s.BacktestRequest) -> 
         sharpe_test=(
             None
             if b_res is None
-            else sharpe_test_out(result.returns, b_res.returns, ppy, req.estimation.risk_free_rate)
+            else sharpe_test_out(
+                result.returns,
+                b_res.returns,
+                ppy,
+                req.estimation.risk_free_rate,
+                seed=req.bootstrap_seed,
+            )
         ),
         estimation_start=result.estimation_start,
         evaluation_start=result.evaluation_start,
