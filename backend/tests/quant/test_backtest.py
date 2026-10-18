@@ -1,3 +1,5 @@
+import datetime as dt
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -9,12 +11,18 @@ from ardentum.quant.backtest import (
     OptimisedStrategy,
     RebalanceFrequency,
     StrategyContext,
+    first_rebalance,
     rebalance_schedule,
     run_backtest,
 )
 from ardentum.quant.errors import InsufficientDataError, InvalidInputError
 from ardentum.quant.metrics import sharpe_ratio
-from ardentum.quant.optimisation import Objective, OptimisationRequest
+from ardentum.quant.optimisation import (
+    AssetMetadata,
+    Objective,
+    OptimisationRequest,
+    PortfolioConstraints,
+)
 from tests.conftest import make_returns
 
 
@@ -152,3 +160,52 @@ def test_rejects_bad_returns() -> None:
     df.iloc[5, 0] = np.nan
     with pytest.raises(InvalidInputError):
         run_backtest(df, EqualWeightStrategy(), BacktestConfig(lookback_periods=20))
+
+
+def _esg_backtest(history: dict[str, list[tuple[dt.date, float]]]) -> list[np.ndarray]:
+    df = make_returns(n_obs=900, n_assets=4, seed=12)
+    request = OptimisationRequest(
+        Objective.MIN_VOLATILITY, constraints=PortfolioConstraints(min_esg_score=60)
+    )
+    today = {t: pts[-1][1] for t, pts in history.items()}
+    strategy = OptimisedStrategy(
+        request,
+        AssetMetadata(esg_scores=today),
+        esg_history=history,  # type: ignore[arg-type]
+    )
+    res = run_backtest(df, strategy, BacktestConfig(252, RebalanceFrequency.QUARTERLY, 0, 0.0))
+    return [e.weights_after for e in res.events]
+
+
+def test_esg_scores_are_used_only_from_the_date_they_were_known() -> None:
+    # A's score changes on 1 Jan 2017. Decisions before then must not see the new score;
+    # decisions after must (otherwise the history would be ignored).
+    start = dt.date(2000, 1, 1)
+    base = {
+        "A0": [(start, 90.0)],
+        "A1": [(start, 70.0)],
+        "A2": [(start, 40.0)],
+        "A3": [(start, 20.0)],
+    }
+    changed = {**base, "A3": [(start, 20.0), (dt.date(2017, 1, 1), 95.0)]}
+    dates = make_returns(n_obs=900, n_assets=4, seed=12).index
+    cfg = BacktestConfig(252, RebalanceFrequency.QUARTERLY, 0, 0.0)
+    assert first_rebalance(dates, cfg) is not None
+    a, b = _esg_backtest(base), _esg_backtest(changed)
+    rebalances = [
+        d for d in rebalance_schedule(dates, RebalanceFrequency.QUARTERLY) if d >= dates[251]
+    ]
+    before = [i for i, d in enumerate(rebalances[: len(a)]) if d.date() < dt.date(2017, 1, 1)]
+    after = [i for i, d in enumerate(rebalances[: len(a)]) if d.date() >= dt.date(2017, 1, 1)]
+    assert before
+    assert after
+    for i in before:
+        np.testing.assert_array_equal(a[i], b[i])
+    assert any(not np.allclose(a[i], b[i]) for i in after)
+
+
+def test_esg_score_not_yet_known_at_the_first_rebalance_is_refused() -> None:
+    late = dt.date(2030, 1, 1)
+    history = {f"A{i}": [(late, 80.0)] for i in range(4)}
+    with pytest.raises(InvalidInputError, match="first known on 01 Jan 2030"):
+        _esg_backtest(history)

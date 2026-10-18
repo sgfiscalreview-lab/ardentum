@@ -7,6 +7,7 @@ response models. All numbers originate in ``ardentum.quant``.
 
 from __future__ import annotations
 
+import datetime as dt
 import math
 import secrets
 from collections.abc import Mapping, Sequence
@@ -26,6 +27,7 @@ from ardentum.quant.backtest import (
     FixedWeightStrategy,
     OptimisedStrategy,
     Strategy,
+    first_rebalance,
     run_backtest,
 )
 from ardentum.quant.black_litterman import BlackLittermanSpec, View
@@ -969,8 +971,55 @@ def run_montecarlo(service: MarketDataService, req: s.MonteCarloRequest) -> s.Mo
 # ----------------------------------------------------------------------------- backtest
 
 
+def _esg_plan(
+    data: LoadedData, tickers: Sequence[str], first: dt.date | None, overlay: bool
+) -> tuple[dict[str, tuple[tuple[dt.date, float], ...]] | None, str]:
+    """Which ESG scores a backtest uses, and the assumption saying so.
+
+    Point in time (each rebalance uses the latest score known by then) when every scored
+    asset has dated scores and one of them was known by the first rebalance; otherwise
+    today's scores at every rebalance, with the reason and what would change it.
+    """
+    known = {t: rec.known_scores() for t in tickers if (rec := data.asset(t).esg) is not None}
+    undated = [t for t, pts in known.items() if any(d is None for d, _ in pts)]
+    today = (
+        "they were not known then, so the ESG part of the strategy is not a strict "
+        "out-of-sample test."
+    )
+    if undated:
+        return None, (
+            f"ESG scores of {', '.join(undated)} have no date, so today's scores are applied at "
+            f"every rebalance: {today}"
+        )
+    dated = {t: tuple((d, v) for d, v in pts if d is not None) for t, pts in known.items()}
+    earliest = {t: pts[0][0] for t, pts in dated.items() if pts}
+    late = [t for t, d in earliest.items() if first is not None and d > first]
+    if late or first is None:
+        start = max(earliest.values()) if earliest else None
+        when = f" (all are known from {start:%d %b %Y})" if start else ""
+        return None, (
+            f"ESG scores are today's at every rebalance: {', '.join(late)} had no score yet at "
+            f"the first rebalance{when}, and {today} A backtest whose first rebalance falls on "
+            "or after that date uses only the scores known at each rebalance."
+        )
+    lag = (
+        " Open-data answers for a year count from 30 June of the next year, when annual "
+        "figures are published."
+        if overlay
+        else ""
+    )
+    return dated, (
+        "ESG scores are point in time: each rebalance uses the latest score known by then, "
+        f"so later scores never inform earlier decisions.{lag}"
+    )
+
+
 def _strategy(
-    service: MarketDataService, req: s.BacktestRequest, data: LoadedData, tickers: Sequence[str]
+    service: MarketDataService,
+    req: s.BacktestRequest,
+    data: LoadedData,
+    tickers: Sequence[str],
+    esg_history: dict[str, tuple[tuple[dt.date, float], ...]] | None = None,
 ) -> Strategy:
     st = req.strategy
     if isinstance(st, s.EqualWeightStrategyIn):
@@ -1006,6 +1055,7 @@ def _strategy(
         name=f"Optimised ({label})",
         black_litterman_spec=spec,
         prior_history=history,
+        esg_history=esg_history,
     )
 
 
@@ -1032,7 +1082,12 @@ def run_backtest_service(service: MarketDataService, req: s.BacktestRequest) -> 
         periods_per_year=ppy,
     )
     rets = data.returns[tickers]
-    result = run_backtest(rets, _strategy(service, req, data, tickers), cfg)
+    esg_history, esg_note = None, None
+    st = req.strategy
+    if isinstance(st, s.OptimisedStrategyIn) and st.constraints.uses_esg:
+        first = first_rebalance(pd.DatetimeIndex(rets.index), cfg)
+        esg_history, esg_note = _esg_plan(data, tickers, first, bool(req.universe.esg_overlay_id))
+    result = run_backtest(rets, _strategy(service, req, data, tickers, esg_history), cfg)
 
     b_res: BacktestResult | None = None
     if bench is not None:
@@ -1099,21 +1154,17 @@ def run_backtest_service(service: MarketDataService, req: s.BacktestRequest) -> 
         "Survivorship bias: the asset list is chosen today, which can flatter historical results.",
         "No taxes, market impact beyond linear costs, or cash holdings.",
     ]
-    st = req.strategy
-    if isinstance(st, s.OptimisedStrategyIn):
-        if st.constraints.uses_esg:
-            assumptions.append(
-                "ESG scores are today's, applied at every past rebalance: they were not known "
-                "then, so the ESG part of the strategy is not a strict out-of-sample test."
-            )
-        if (
-            req.estimation.mean_estimator is MeanEstimator.BLACK_LITTERMAN
-            and (req.estimation.black_litterman or s.BlackLittermanIn()).prior == "market_cap"
-        ):
-            assumptions.append(
-                "Black-Litterman prior weights use the market capitalisations known at each "
-                "rebalance date (the latest month that had ended)."
-            )
+    if esg_note:
+        assumptions.append(esg_note)
+    if (
+        isinstance(st, s.OptimisedStrategyIn)
+        and req.estimation.mean_estimator is MeanEstimator.BLACK_LITTERMAN
+        and (req.estimation.black_litterman or s.BlackLittermanIn()).prior == "market_cap"
+    ):
+        assumptions.append(
+            "Black-Litterman prior weights use the market capitalisations known at each "
+            "rebalance date (the latest month that had ended)."
+        )
     return s.BacktestResponse(
         strategy=result.strategy,
         dates=[d.date() for d in result.dates],

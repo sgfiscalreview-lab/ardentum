@@ -7,7 +7,7 @@ import pytest
 from scipy.stats import rankdata
 
 from ardentum.quant.errors import InvalidInputError
-from ardentum.quant.esg import percentile_scores, scale_linear
+from ardentum.quant.esg import percentile_scores, scale_linear, yearly_scores
 
 
 def test_scale_linear_known_values_and_direction() -> None:
@@ -31,3 +31,15 @@ def test_percentile_scores_match_scipy_average_ranks() -> None:
     np.testing.assert_allclose(percentile_scores(np.array([3.0, 1.0, 2.0])), [100, 0, 50])
     with pytest.raises(InvalidInputError, match="at least two"):
         percentile_scores(np.array([1.0]))
+
+
+def test_yearly_scores_score_each_year_on_its_own() -> None:
+    values = {2022: {"A": 1000.0}, 2023: {"A": 800.0, "B": 400.0}}
+    # A fixed scale scores value by value, whatever else was reported that year.
+    linear = yearly_scores(values, "linear", higher_is_better=False, lower=0.0, upper=2000.0)
+    assert linear == {2022: {"A": 50.0}, 2023: {"A": 60.0, "B": 80.0}}
+    # Percentile ranks compare a year's values only; one value alone has no rank.
+    ranks = yearly_scores(values, "percentile", higher_is_better=False)
+    assert ranks == {2023: {"A": 0.0, "B": 100.0}}
+    with pytest.raises(InvalidInputError, match="lower and an upper"):
+        yearly_scores(values, "linear")

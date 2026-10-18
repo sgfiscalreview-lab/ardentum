@@ -580,3 +580,28 @@ on its side.
   is not starting.
 * Dependabot already leaves Docker base images alone; change the Python version by hand,
   together with `requires-python` and CI.
+
+## D-045 A bootstrap Sharpe test for short histories; ESG scores as they were known
+Two items left open by D-043.
+* **Bootstrap.** The Sharpe test of D-043 rests on a normal approximation that can be
+  poor on short histories. A backtest whose evaluation has at most 1,000 returns now also
+  runs Ledoit and Wolf's studentized circular block bootstrap (2008, section 3.2): 999
+  resamples, blocks of `round(T^(1/3))` periods, a fixed seed (0 unless the request sets
+  `bootstrap_seed`) echoed in the result. Ledoit and Wolf calibrate the block length; the
+  cube-root rule is simpler and standard. Above 1,000 returns the bootstrap is skipped and
+  the result says why: the asymptotic test is reliable there, and the resampling would
+  lengthen every long backtest for nothing. It runs inside the backtest, which
+  is already a background job, so it needs no job of its own.
+* **Point-in-time ESG.** Applying today's scores at past rebalances let later
+  information steer earlier decisions. Each score now keeps the date from which it was
+  known: an uploaded score its `esg_as_of`, a WikiRate score one score per answer year,
+  known from 30 June of the next year (WikiRate does not record when an answer became
+  available, and most annual reports are out by then). Percentile ranks are taken within
+  each year, and a composite exists only for years in which every metric has a score, so
+  nothing is imputed across years. A backtest uses only the latest score known at each
+  rebalance, but only when every scored asset has dated scores and each was known by the
+  first rebalance. Mixing point-in-time scores with today's, or dropping assets until
+  their first score appears, would change the universe or the meaning of the constraint
+  part way through; instead the backtest applies today's scores, says which assets had no
+  score yet and from which date all are known, so a later start can be chosen.
+  Undated scores (the demo data's) remain today's at every rebalance, with a note.

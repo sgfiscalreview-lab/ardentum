@@ -6,6 +6,7 @@ import datetime as dt
 from collections.abc import Iterator
 
 import httpx
+import pandas as pd
 import pytest
 import respx
 from fastapi.testclient import TestClient
@@ -290,3 +291,67 @@ def test_saved_overlays_per_user_are_capped(
     r = client.post("/api/v1/esg/overlays", json=body, headers=auth)
     assert r.status_code == 422
     assert "at most 1 ESG overlays" in r.json()["error"]["message"]
+
+
+@respx.mock
+def test_backtests_use_only_the_esg_scores_known_at_each_rebalance(
+    client: TestClient, auth: dict[str, str]
+) -> None:
+    days = pd.bdate_range("2023-01-02", periods=450)
+    prices = "date,AAA,CCC\n" + "\n".join(
+        f"{d.date()},{100 + i * 0.1 + (i % 7) * 0.3:.4f},{20 + (i % 5) * 0.1 + i * 0.02:.4f}"
+        for i, d in enumerate(days)
+    )
+    meta = "ticker,name,isin\nAAA,Apple,US0378331005\nCCC,Puma,\n"
+    up = client.post(
+        "/api/v1/datasets",
+        data={"name": "Two brands"},
+        files={"prices": ("p.csv", prices, "text/csv"), "metadata": ("m.csv", meta, "text/csv")},
+        headers=auth,
+    )
+    assert up.status_code == 201, up.text
+    ds = up.json()["id"]
+    _mock_wikirate()
+    linear = {"method": "linear", "lower": 0, "upper": 2000, "higher_is_better": False}
+    preview = _preview(ds, tickers=["AAA", "CCC"], company_overrides={"CCC": 300}, transform=linear)
+
+    # Every year's answer is scored: Apple 1000 (2022) and 800 (2023), Puma 400 (2023).
+    out = client.post("/api/v1/esg/open/preview", json=preview, headers=auth).json()
+    history = {e["ticker"]: e["history"] for e in out["entries"]}
+    assert history == {
+        "AAA": [{"year": 2022, "score": 50.0}, {"year": 2023, "score": 60.0}],
+        "CCC": [{"year": 2023, "score": 80.0}],
+    }
+    saved = client.post(
+        "/api/v1/esg/overlays", json={"name": "Scope 1", "preview": preview}, headers=auth
+    )
+    assert saved.status_code == 201, saved.text
+
+    def backtest(start: str) -> list[str]:
+        body = {
+            "universe": {
+                "dataset_id": ds,
+                "tickers": ["AAA", "CCC"],
+                "esg_overlay_id": saved.json()["id"],
+                "start": start,
+            },
+            "strategy": {
+                "type": "optimised",
+                "objective": {"objective": "min_volatility"},
+                "constraints": {"min_esg_score": 55},
+            },
+            "lookback_years": 0.25,
+            "benchmark": None,
+        }
+        r = client.post("/api/v1/backtest", json=body, headers=auth)
+        assert r.status_code == 200, r.text
+        return r.json()["assumptions"]  # type: ignore[no-any-return]
+
+    # Puma's 2023 answer counts from 30 June 2024: a backtest deciding earlier uses
+    # today's scores and says so; one deciding later uses only what was known.
+    early = " ".join(backtest("2023-02-01"))
+    assert "today's at every rebalance: AAA, CCC had no score yet" in early
+    assert "all are known from 30 Jun 2024" in early
+    late = " ".join(backtest("2024-04-15"))
+    assert "ESG scores are point in time" in late
+    assert "30 June of the next year" in late

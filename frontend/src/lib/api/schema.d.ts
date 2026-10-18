@@ -1596,6 +1596,13 @@ export interface components {
              */
             upper?: number | null;
         };
+        /** EsgYearScoreOut */
+        EsgYearScoreOut: {
+            /** Year */
+            year: number;
+            /** Score */
+            score: number;
+        };
         /** EstimationOut */
         EstimationOut: {
             /** Risk Free Rate */
@@ -2182,6 +2189,11 @@ export interface components {
              * @description Composite overlays: the score from each metric.
              */
             parts: components["schemas"]["CompositePartOut"][] | null;
+            /**
+             * History
+             * @description The score of every year with an answer, scored within that year; backtests use the one known at each rebalance.
+             */
+            history: components["schemas"]["EsgYearScoreOut"][];
         };
         /** OverlayOut */
         OverlayOut: {

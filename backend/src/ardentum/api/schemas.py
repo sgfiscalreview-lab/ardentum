@@ -1206,6 +1206,11 @@ class CompositePartOut(ResponseModel):
     status: Literal["scored", "no_company", "no_answer", "not_numeric"]
 
 
+class EsgYearScoreOut(ResponseModel):
+    year: int
+    score: float
+
+
 class OverlayEntryOut(ResponseModel):
     ticker: str
     asset_name: str
@@ -1221,6 +1226,11 @@ class OverlayEntryOut(ResponseModel):
     note: str
     parts: list[CompositePartOut] | None = Field(
         None, description="Composite overlays: the score from each metric."
+    )
+    history: list[EsgYearScoreOut] = Field(
+        default_factory=list,
+        description="The score of every year with an answer, scored within that year; "
+        "backtests use the one known at each rebalance.",
     )
 
 
