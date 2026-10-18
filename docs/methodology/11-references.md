@@ -32,6 +32,7 @@ Primary sources for the methods used in Ardentum.
 - Mertens, E. (2002). Comments on variance of the IID estimator in Lo (2002). Working paper, University of Basel.
 - Michaud, R. O. (1998). *Efficient Asset Management*. Harvard Business School Press.
 - Pedersen, L. H., Fitzgibbons, S., & Pomorski, L. (2021). Responsible investing: The ESG-efficient frontier. *Journal of Financial Economics*, 142(2), 572–597.
+- Politis, D. N., & Romano, J. P. (1992). A circular block-resampling procedure for stationary data. In R. LePage & L. Billard (Eds.), *Exploring the Limits of Bootstrap* (pp. 263–270). Wiley.
 - Politis, D. N., & Romano, J. P. (1994). The stationary bootstrap. *Journal of the American Statistical Association*, 89(428), 1303–1313.
 - Sharpe, W. F. (1966). Mutual fund performance. *Journal of Business*, 39(1), 119–138.
 - Sharpe, W. F. (1994). The Sharpe ratio. *Journal of Portfolio Management*, 21(1), 49–58.

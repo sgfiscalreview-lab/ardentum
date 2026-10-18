@@ -15,8 +15,11 @@ from scipy import stats
 
 from ardentum.quant.errors import InvalidInputError, UndefinedMetricError
 from ardentum.quant.metrics import (
+    _sharpe_difference_and_se,
+    default_block_length,
     newey_west_lags,
     performance_summary,
+    sharpe_difference_bootstrap,
     sharpe_difference_test,
     sharpe_ratio,
     sharpe_ratio_interval,
@@ -185,3 +188,74 @@ def test_performance_summary_carries_the_interval_or_why_not() -> None:
 def test_newey_west_lags() -> None:
     assert newey_west_lags(100) == 4
     assert newey_west_lags(680) == 6
+
+
+# ----------------------------------------------------------------------------- bootstrap
+
+
+def test_block_standard_error_with_blocks_of_one_is_the_moment_formula() -> None:
+    # Blocks of one period make the block estimate the plain covariance of the moments,
+    # i.e. the HAC estimate without lags; checked against the scalar implementation.
+    rng = np.random.default_rng(31)
+    a = rng.standard_t(6, 300) * 0.02 + 0.004
+    b = 0.5 * a + rng.normal(0.001, 0.015, 300)
+    diff, se = _sharpe_difference_and_se(a[None, :], b[None, :], 1)
+    hac = sharpe_difference_test(a, b, 12, lags=0)
+    assert se[0] == pytest.approx(hac.standard_error / math.sqrt(12), rel=1e-10)
+    sr = lambda x: x.mean() / x.std()  # noqa: E731 - population moments
+    assert diff[0] == pytest.approx(sr(a) - sr(b), rel=1e-12)
+
+
+def test_bootstrap_is_reproducible_and_bounded() -> None:
+    rng = np.random.default_rng(32)
+    a = rng.normal(0.006, 0.04, 180)
+    b = 0.6 * a + rng.normal(0.003, 0.03, 180)
+    first = sharpe_difference_bootstrap(a, b, 12, seed=7)
+    assert first == sharpe_difference_bootstrap(a, b, 12, seed=7)
+    assert (first.seed, first.resamples) == (7, 999)
+    assert first.block_length == default_block_length(180) == 6
+    assert 1 / 1000 <= first.p_value <= 1.0
+
+
+def test_bootstrap_identical_series_and_a_large_difference() -> None:
+    rng = np.random.default_rng(33)
+    x = rng.normal(0.005, 0.04, 120)
+    assert sharpe_difference_bootstrap(x, x, 12, seed=1).p_value == 1.0
+    a = rng.normal(0.03, 0.04, 120)
+    b = rng.normal(0.0, 0.04, 120)
+    # Hardly any resample is as extreme (the smallest p-value 999 resamples give is 0.001).
+    assert sharpe_difference_bootstrap(a, b, 12, seed=1).p_value <= 0.005
+
+
+def test_bootstrap_agrees_with_the_asymptotic_test_in_a_long_normal_sample() -> None:
+    rng = np.random.default_rng(34)
+    cov = np.array([[0.0016, 0.0010], [0.0010, 0.0025]])
+    a, b = rng.multivariate_normal([0.008, 0.0095], cov, 2000).T
+    hac = sharpe_difference_test(a, b, 12)
+    boot = sharpe_difference_bootstrap(a, b, 12, seed=2)
+    assert 0.05 < hac.p_value < 0.95
+    assert boot.p_value == pytest.approx(hac.p_value, abs=0.08)
+
+
+def test_bootstrap_size_with_fat_tails_and_autocorrelation_in_short_samples() -> None:
+    # Equal true Sharpe ratios, 120 monthly returns: rejections at 5% stay near 5%.
+    rng = np.random.default_rng(35)
+    rejections, trials = 0, 200
+    for _ in range(trials):
+        shocks = rng.standard_t(5, size=(120, 2)) * 0.03
+        shocks[:, 1] = 0.6 * shocks[:, 0] + 0.8 * shocks[:, 1]
+        x = _ar1(shocks, 0.2)
+        test = sharpe_difference_bootstrap(
+            0.005 + x[:, 0], 0.005 + x[:, 1], 12, seed=int(rng.integers(1 << 31)), resamples=199
+        )
+        rejections += test.p_value < 0.05
+    assert 0.01 < rejections / trials < 0.10
+
+
+def test_bootstrap_refusals() -> None:
+    x = np.linspace(-0.02, 0.03, 60)
+    y = np.sin(np.arange(60)) * 0.02
+    with pytest.raises(InvalidInputError, match="between 99 and 9,999 resamples"):
+        sharpe_difference_bootstrap(x, y, 12, seed=1, resamples=10)
+    with pytest.raises(InvalidInputError, match="block length must be between 1 and 15"):
+        sharpe_difference_bootstrap(x, y, 12, seed=1, block_length=16)

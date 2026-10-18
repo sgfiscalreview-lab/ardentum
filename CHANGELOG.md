@@ -6,6 +6,13 @@ All notable changes to Ardentum are recorded here. Versions follow
 ## [Unreleased]
 
 ### Added
+- Backtests with ESG constraints or a tilt use only the ESG scores known at each
+  rebalance: dated uploads and WikiRate overlays keep a score per year, each counted from
+  30 June of the next year. When some score was not yet known at the start, the backtest
+  says which and from when, and applies today's scores.
+- On histories of up to 1,000 returns, the strategy-versus-benchmark Sharpe test is
+  checked by a bootstrap (Ledoit and Wolf's studentized block bootstrap) with a fixed,
+  echoed seed.
 - How sure is a Sharpe ratio: every one now comes with a 95% interval, and a backtest
   tests whether the strategy really beat its benchmark, with the p-value in plain words.
   Both allow for fat tails and autocorrelation (Ledoit and Wolf, 2008).

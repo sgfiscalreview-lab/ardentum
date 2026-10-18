@@ -20,7 +20,7 @@ Legend: **[F]** needs a founder decision/credential · **[E]** engineering
 ## Engineering — next
 - [ ] **[E]** Deploy to staging once accounts exist; run E2E against staging; manual acceptance pass.
 - [x] **[E]** Verify Docker builds in CI (first run).
-- [ ] **[E]** Live calls to Ken French, Frankfurter, WikiRate and FRED from the deployed API: `scripts/smoke.py`, run daily by the Live smoke test workflow; act on its first results.
+- [x] **[E]** Live calls to Ken French, Frankfurter, WikiRate and FRED from the deployed API: `scripts/smoke.py`, run daily by the Live smoke test workflow. All checks pass; FRED is skipped until a FRED key is set.
 - [x] **[E]** Crisis replay, factor exposure, trade list and the new pages in `scripts/smoke.py` (after D-040 was deployed).
 
 ## Engineering — backlog
@@ -35,6 +35,6 @@ Legend: **[F]** needs a founder decision/credential · **[E]** engineering
 - [x] Multi-currency universes, unhedged conversion at ECB rates (D-021).
 - [x] Currency-hedged returns: rolling one-period forward priced by covered interest parity from BIS central-bank policy rates (D-031).
 - [x] Backend review (D-043): frequency checks, point-in-time market caps, n/a with reasons, truthful explanations, outage fixes; Sharpe ratio intervals and the strategy-vs-benchmark Sharpe test.
-- [ ] **[F]** After merging the image fix (D-044), Render deploys it by itself; check that the keep-alive workflow turns green within a few minutes. If it does not, open the deploy's log on Render (Events) and use Manual Deploy.
-- [ ] **[E]** ESG score history (an "as of" date per score from uploads and WikiRate answer years), so backtests with ESG constraints use only the scores known at each rebalance.
-- [ ] **[E]** Optional bootstrap version of the Sharpe test (Ledoit and Wolf's studentized block bootstrap) for short histories, run as a background job.
+- [x] **[F]** After merging the image fix (D-044), Render deployed it; the keep-alive and live smoke checks are green.
+- [x] **[E]** ESG score history: dated uploads and one WikiRate score per answer year, so backtests with ESG constraints use only the scores known at each rebalance (D-045).
+- [x] **[E]** Bootstrap version of the Sharpe test (Ledoit and Wolf's studentized block bootstrap) for histories of up to 1,000 returns, inside the backtest job (D-045).

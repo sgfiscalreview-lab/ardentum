@@ -59,6 +59,7 @@ export default function BacktestPage() {
       rebalance,
       transaction_cost_bps: costs,
       benchmark: bench === "none" ? null : bench === "equal_weight" ? { type: "equal_weight" } : { type: "asset", ticker: bench },
+      bootstrap_seed: 0, // a fixed seed: the same settings give the same bootstrap p-value
     });
   };
 
@@ -259,6 +260,7 @@ function Results({ data }: { data: BacktestResponse }) {
               <p className="mt-1 text-xs text-ink-2">
                 Test of equal Sharpe ratios that allows for fat tails, autocorrelation and the correlation between the two (Ledoit and Wolf, 2008)
                 {data.sharpe_test.lags != null ? `, with ${data.sharpe_test.lags} lags` : ""}. Intervals use the same method.
+                {data.sharpe_test.bootstrap_note ? ` ${data.sharpe_test.bootstrap_note}` : ""}
               </p>
             </div>
           )}

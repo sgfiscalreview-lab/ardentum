@@ -31,6 +31,15 @@ class EsgRecord:
     source: str
     as_of: dt.date | None = None
     is_synthetic: bool = False
+    # Earlier scores, oldest first, as (date from which the score was known, score); the
+    # last is ``score``. Empty: only ``score`` is known, from ``as_of`` if it has one.
+    history: tuple[tuple[dt.date, float], ...] = ()
+
+    def known_scores(self) -> tuple[tuple[dt.date | None, float], ...]:
+        """Every score with the date from which it was known (None: undated)."""
+        if self.history:
+            return tuple(self.history)
+        return ((self.as_of, self.score),)
 
 
 @dataclass(frozen=True)

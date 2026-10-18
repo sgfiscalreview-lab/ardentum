@@ -21,11 +21,19 @@ If the optimisation becomes infeasible at some date, the strategy keeps its drif
 
 An automated test runs an optimised strategy, then replaces every return after a cut-off date with an implausibly large value and runs it again. All weights chosen on or before the cut-off, and all returns up to it, must be **bit-identical**; later decisions must change (showing the test has power). A second test asserts that the window handed to the strategy always ends exactly on the decision date.
 
-Inputs that exist only as today's values cannot be used at past decisions. **Black-Litterman market-capitalisation prior weights** use, at each rebalance, the capitalisations of the latest month that had ended (the Ken French files give the number of firms and the average firm size for every month). A dataset with a single, current capitalisation per asset is refused for backtests with that prior, with a suggestion to use equal or custom prior weights. **ESG scores** have no history in the data, so a backtest with ESG constraints or a tilt says that it applies today's scores at every past rebalance.
+Inputs that exist only as today's values cannot be used at past decisions. **Black-Litterman market-capitalisation prior weights** use, at each rebalance, the capitalisations of the latest month that had ended (the Ken French files give the number of firms and the average firm size for every month). A dataset with a single, current capitalisation per asset is refused for backtests with that prior, with a suggestion to use equal or custom prior weights. **ESG scores** are used point in time when every score has a date: each rebalance uses the latest score known by then (methodology 05, *Scores over time*). When a score has no date, or was not yet known at the first rebalance, a backtest with ESG constraints or a tilt applies today's scores at every rebalance and says so.
 
 ## Is the strategy better than the benchmark?
 
 A higher Sharpe ratio over one history may be luck. The backtest tests whether the strategy's and the benchmark's Sharpe ratios are equal (Ledoit & Wolf, 2008, section 3.1). The difference of the two ratios is a function of the four moments $(\mu_a, \mu_b, g_a, g_b)$; its standard error comes from the delta method with a Newey-West long-run covariance of those moments, so the test allows for fat tails, autocorrelation and the correlation between the two return series, which the Jobson-Korkie test (with Memmel's correction) assumes away. The result is a two-sided p-value, stated in words: below 5%, a difference that large would rarely arise by chance; above it, this history cannot tell the two apart. Ledoit and Wolf prefer a quadratic-spectral kernel with prewhitening or a bootstrap; the Bartlett kernel is a simpler, standard choice. Automated tests check agreement with the Jobson-Korkie-Memmel test for independent normal returns and a rejection rate near 5% for equal true ratios with fat tails and autocorrelation.
+
+On a short history that normal approximation can be poor. When the evaluation has at most 1,000 returns, the backtest also runs Ledoit and Wolf's studentized circular block bootstrap (2008, section 3.2). The paired returns are resampled $M = 999$ times in circular blocks of $b$ periods (Politis & Romano, 1992), with $b = \mathrm{round}(T^{1/3})$; each resample's difference $\hat\Delta^*$ is divided by its own standard error $s^*$, computed from the blocks, and the p-value is
+
+$$
+p = \frac{\#\{\,|\hat\Delta^* - \hat\Delta|/s^* \ge |\hat\Delta|/s\,\} + 1}{M + 1}.
+$$
+
+The seed is fixed (0 unless the request sets another) and shown with the result, so the same request gives the same p-value. Ledoit and Wolf choose $b$ by a calibration step; the cube-root rule is a simpler, standard choice. Automated tests check that with one-period blocks the standard error equals the HAC one without lags, that the bootstrap and HAC p-values agree on long histories, and a rejection rate near 5% for equal true ratios on short histories with fat tails and autocorrelation. Longer histories skip the bootstrap, and the result says so: there the test above is reliable.
 
 ## Performance attribution
 

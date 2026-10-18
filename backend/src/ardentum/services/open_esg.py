@@ -43,6 +43,7 @@ from ardentum.quant.esg import (
     outside_scale,
     percentile_scores,
     scale_linear,
+    yearly_scores,
 )
 from ardentum.services.market_data import MarketDataService, NotFoundError
 from ardentum.services.provider_cache import CachedPayload
@@ -236,6 +237,7 @@ class OpenEsgService:
         answers = self._answers(metric.id, ids) if ids else {}
 
         rows: list[dict[str, object]] = []
+        by_year: dict[int, dict[str, float]] = {}  # every numeric answer: year -> ticker -> value
         for a in assets:
             row: dict[str, object] = {
                 "ticker": a.ticker,
@@ -268,6 +270,9 @@ class OpenEsgService:
                 )
                 rows.append(row)
                 continue
+            for ans in cands:
+                if (v := wikirate.parse_number(ans.value)) is not None:
+                    by_year.setdefault(ans.year, {})[a.ticker] = v
             best = max(cands, key=lambda x: x.year)
             row.update(year=best.year, answer_url=best.url or None)
             value = wikirate.parse_number(best.value)
@@ -310,6 +315,15 @@ class OpenEsgService:
             if scores is not None:
                 for r, sc in zip(scored, scores, strict=True):
                     r["score"] = round(float(sc), 4)
+        # Every year's scores too, for backtests that use only the scores known at each
+        # rebalance; percentile ranks are taken among the answers of the same year.
+        yearly = yearly_scores(by_year, t.method, t.higher_is_better, t.lower, t.upper)
+        for r in rows:
+            r["history"] = [
+                {"year": y, "score": round(yearly[y][str(r["ticker"])], 4)}
+                for y in sorted(yearly)
+                if r["score"] is not None and str(r["ticker"]) in yearly[y]
+            ]
         entries = [s.OverlayEntryOut.model_validate(r) for r in rows]
         return s.OverlayPreviewOut(
             metric=metric_out(metric),
@@ -375,6 +389,19 @@ class OpenEsgService:
                     f"needs all of them. Missing: {', '.join(missing)}."
                 )
             years = [pt.year for pt in part_out if pt.score is not None and pt.year is not None]
+            # Composite history: the years in which every metric has a score.
+            per_part = [{h.year: h.score for h in e.history} for e in own]
+            common = sorted(set.intersection(*(set(h) for h in per_part))) if score else []
+            history = [
+                s.EsgYearScoreOut(
+                    year=y,
+                    score=round(
+                        float(composite_scores(np.array([[h[y] for h in per_part]]), weights)[0]),
+                        4,
+                    ),
+                )
+                for y in common
+            ]
             entries.append(
                 base.model_copy(
                     update={
@@ -385,6 +412,7 @@ class OpenEsgService:
                         "status": status,
                         "note": note,
                         "parts": part_out,
+                        "history": history,
                     }
                 )
             )
@@ -560,6 +588,13 @@ def overlay_out(r: EsgOverlay) -> s.OverlayOut:
     )
 
 
+def known_from(year: int) -> dt.date:
+    """When an answer for ``year`` counts as known in a backtest: 30 June of the next year.
+    Companies publish annual figures within about six months of the year end, so a
+    decision before then could not have used them."""
+    return dt.date(year + 1, 6, 30)
+
+
 def overlay_assets(
     info: DatasetInfo, tickers: Sequence[str], r: EsgOverlay
 ) -> tuple[AssetInfo, ...]:
@@ -577,8 +612,16 @@ def overlay_assets(
         esg = None
         if e and e.get("score") is not None:
             year = int(e["year"])
+            # Overlays saved before yearly scores were kept have the latest year only.
+            history = e.get("history") or [{"year": year, "score": e["score"]}]
             esg = EsgRecord(
-                score=float(e["score"]), source=_score_source(r, e), as_of=dt.date(year, 12, 31)
+                score=float(e["score"]),
+                source=_score_source(r, e),
+                as_of=dt.date(year, 12, 31),
+                history=tuple(
+                    (known_from(int(h["year"])), float(h["score"]))
+                    for h in sorted(history, key=lambda h: int(h["year"]))
+                ),
             )
         out.append(replace(a, esg=esg))
     return tuple(out)
