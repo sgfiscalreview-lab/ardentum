@@ -292,6 +292,12 @@ class BacktestRequest(RequestModel):
     rebalance: RebalanceFrequency = RebalanceFrequency.MONTHLY
     transaction_cost_bps: float = Field(10.0, ge=0.0, le=500.0)
     benchmark: BenchmarkIn | None = Field(default_factory=BenchmarkIn)
+    bootstrap_seed: int = Field(
+        0,
+        ge=0,
+        le=2**31 - 1,
+        description="Seed of the bootstrap test of equal Sharpe ratios (echoed in results).",
+    )
 
 
 class PortfolioSpecIn(RequestModel):
@@ -545,6 +551,13 @@ class PerformanceOut(ResponseModel):
     )
 
 
+class SharpeBootstrapOut(ResponseModel):
+    p_value: float = Field(description="Two-sided, from the studentized block bootstrap.")
+    resamples: int
+    block_length: int = Field(description="Periods per resampled block.")
+    seed: int
+
+
 class SharpeTestOut(ResponseModel):
     """Test that the strategy and the benchmark have equal Sharpe ratios."""
 
@@ -553,6 +566,10 @@ class SharpeTestOut(ResponseModel):
     p_value: float | None = Field(description="Two-sided.")
     lags: int | None
     statement: str = Field(description="What the result means, or why it is n/a.")
+    bootstrap: SharpeBootstrapOut | None = Field(
+        None, description="Ledoit and Wolf's bootstrap test, on histories of up to 1,000 returns."
+    )
+    bootstrap_note: str | None = Field(None, description="Why the bootstrap did not run.")
 
 
 class AssetStatsOut(ResponseModel):
@@ -1189,6 +1206,11 @@ class CompositePartOut(ResponseModel):
     status: Literal["scored", "no_company", "no_answer", "not_numeric"]
 
 
+class EsgYearScoreOut(ResponseModel):
+    year: int
+    score: float
+
+
 class OverlayEntryOut(ResponseModel):
     ticker: str
     asset_name: str
@@ -1204,6 +1226,11 @@ class OverlayEntryOut(ResponseModel):
     note: str
     parts: list[CompositePartOut] | None = Field(
         None, description="Composite overlays: the score from each metric."
+    )
+    history: list[EsgYearScoreOut] = Field(
+        default_factory=list,
+        description="The score of every year with an answer, scored within that year; "
+        "backtests use the one known at each rebalance.",
     )
 
 

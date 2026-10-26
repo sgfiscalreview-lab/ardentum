@@ -7,6 +7,7 @@ response models. All numbers originate in ``ardentum.quant``.
 
 from __future__ import annotations
 
+import datetime as dt
 import math
 import secrets
 from collections.abc import Mapping, Sequence
@@ -26,6 +27,7 @@ from ardentum.quant.backtest import (
     FixedWeightStrategy,
     OptimisedStrategy,
     Strategy,
+    first_rebalance,
     run_backtest,
 )
 from ardentum.quant.black_litterman import BlackLittermanSpec, View
@@ -47,6 +49,7 @@ from ardentum.quant.metrics import (
     correlation_matrix_with_gaps,
     drawdown_series,
     performance_summary,
+    sharpe_difference_bootstrap,
     sharpe_difference_test,
     tracking_error,
 )
@@ -210,10 +213,20 @@ def performance_out(p: PerformanceSummary) -> s.PerformanceOut:
     )
 
 
+# The bootstrap Sharpe test runs on histories up to this many returns: where the
+# asymptotic test is least reliable, and fast enough on the free plan's small instance.
+MAX_BOOTSTRAP_RETURNS = 1000
+
+
 def sharpe_test_out(
-    strategy: np.ndarray, benchmark: np.ndarray, periods_per_year: int, risk_free_rate: float
+    strategy: np.ndarray,
+    benchmark: np.ndarray,
+    periods_per_year: int,
+    risk_free_rate: float,
+    seed: int = 0,
 ) -> s.SharpeTestOut:
-    """The test of equal Sharpe ratios, with a plain reading of the p-value."""
+    """The test of equal Sharpe ratios, with a plain reading of the p-value; on short
+    histories also the bootstrap test, which is more reliable there."""
     try:
         d = sharpe_difference_test(strategy, benchmark, periods_per_year, risk_free_rate)
     except (UndefinedMetricError, InvalidInputError) as exc:
@@ -238,12 +251,37 @@ def sharpe_test_out(
             f"{size}, but with p = {d.p_value:.2f} that could well be chance: this history "
             "cannot tell the two apart."
         )
+    boot: s.SharpeBootstrapOut | None = None
+    note: str | None = None
+    n = len(strategy)
+    if n > MAX_BOOTSTRAP_RETURNS:
+        note = (
+            f"No bootstrap: with {n:,} returns the test above is reliable (the bootstrap "
+            f"runs on histories of up to {MAX_BOOTSTRAP_RETURNS:,} returns)."
+        )
+    elif d.standard_error > 0.0:
+        b = sharpe_difference_bootstrap(
+            strategy, benchmark, periods_per_year, risk_free_rate, seed=seed
+        )
+        boot = s.SharpeBootstrapOut(
+            p_value=_finite(b.p_value),
+            resamples=b.resamples,
+            block_length=b.block_length,
+            seed=b.seed,
+        )
+        reading += (
+            f" A bootstrap test, more reliable on a history this short, gives "
+            f"p = {b.p_value:.3f} ({b.resamples} resamples in blocks of {b.block_length} "
+            f"periods, seed {b.seed})."
+        )
     return s.SharpeTestOut(
         difference=_finite(d.difference),
         standard_error=_finite(d.standard_error),
         p_value=_finite(d.p_value),
         lags=d.lags,
         statement=reading,
+        bootstrap=boot,
+        bootstrap_note=note,
     )
 
 
@@ -933,8 +971,55 @@ def run_montecarlo(service: MarketDataService, req: s.MonteCarloRequest) -> s.Mo
 # ----------------------------------------------------------------------------- backtest
 
 
+def _esg_plan(
+    data: LoadedData, tickers: Sequence[str], first: dt.date | None, overlay: bool
+) -> tuple[dict[str, tuple[tuple[dt.date, float], ...]] | None, str]:
+    """Which ESG scores a backtest uses, and the assumption saying so.
+
+    Point in time (each rebalance uses the latest score known by then) when every scored
+    asset has dated scores and one of them was known by the first rebalance; otherwise
+    today's scores at every rebalance, with the reason and what would change it.
+    """
+    known = {t: rec.known_scores() for t in tickers if (rec := data.asset(t).esg) is not None}
+    undated = [t for t, pts in known.items() if any(d is None for d, _ in pts)]
+    today = (
+        "they were not known then, so the ESG part of the strategy is not a strict "
+        "out-of-sample test."
+    )
+    if undated:
+        return None, (
+            f"ESG scores of {', '.join(undated)} have no date, so today's scores are applied at "
+            f"every rebalance: {today}"
+        )
+    dated = {t: tuple((d, v) for d, v in pts if d is not None) for t, pts in known.items()}
+    earliest = {t: pts[0][0] for t, pts in dated.items() if pts}
+    late = [t for t, d in earliest.items() if first is not None and d > first]
+    if late or first is None:
+        start = max(earliest.values()) if earliest else None
+        when = f" (all are known from {start:%d %b %Y})" if start else ""
+        return None, (
+            f"ESG scores are today's at every rebalance: {', '.join(late)} had no score yet at "
+            f"the first rebalance{when}, and {today} A backtest whose first rebalance falls on "
+            "or after that date uses only the scores known at each rebalance."
+        )
+    lag = (
+        " Open-data answers for a year count from 30 June of the next year, when annual "
+        "figures are published."
+        if overlay
+        else ""
+    )
+    return dated, (
+        "ESG scores are point in time: each rebalance uses the latest score known by then, "
+        f"so later scores never inform earlier decisions.{lag}"
+    )
+
+
 def _strategy(
-    service: MarketDataService, req: s.BacktestRequest, data: LoadedData, tickers: Sequence[str]
+    service: MarketDataService,
+    req: s.BacktestRequest,
+    data: LoadedData,
+    tickers: Sequence[str],
+    esg_history: dict[str, tuple[tuple[dt.date, float], ...]] | None = None,
 ) -> Strategy:
     st = req.strategy
     if isinstance(st, s.EqualWeightStrategyIn):
@@ -970,6 +1055,7 @@ def _strategy(
         name=f"Optimised ({label})",
         black_litterman_spec=spec,
         prior_history=history,
+        esg_history=esg_history,
     )
 
 
@@ -996,7 +1082,12 @@ def run_backtest_service(service: MarketDataService, req: s.BacktestRequest) -> 
         periods_per_year=ppy,
     )
     rets = data.returns[tickers]
-    result = run_backtest(rets, _strategy(service, req, data, tickers), cfg)
+    esg_history, esg_note = None, None
+    st = req.strategy
+    if isinstance(st, s.OptimisedStrategyIn) and st.constraints.uses_esg:
+        first = first_rebalance(pd.DatetimeIndex(rets.index), cfg)
+        esg_history, esg_note = _esg_plan(data, tickers, first, bool(req.universe.esg_overlay_id))
+    result = run_backtest(rets, _strategy(service, req, data, tickers, esg_history), cfg)
 
     b_res: BacktestResult | None = None
     if bench is not None:
@@ -1063,21 +1154,17 @@ def run_backtest_service(service: MarketDataService, req: s.BacktestRequest) -> 
         "Survivorship bias: the asset list is chosen today, which can flatter historical results.",
         "No taxes, market impact beyond linear costs, or cash holdings.",
     ]
-    st = req.strategy
-    if isinstance(st, s.OptimisedStrategyIn):
-        if st.constraints.uses_esg:
-            assumptions.append(
-                "ESG scores are today's, applied at every past rebalance: they were not known "
-                "then, so the ESG part of the strategy is not a strict out-of-sample test."
-            )
-        if (
-            req.estimation.mean_estimator is MeanEstimator.BLACK_LITTERMAN
-            and (req.estimation.black_litterman or s.BlackLittermanIn()).prior == "market_cap"
-        ):
-            assumptions.append(
-                "Black-Litterman prior weights use the market capitalisations known at each "
-                "rebalance date (the latest month that had ended)."
-            )
+    if esg_note:
+        assumptions.append(esg_note)
+    if (
+        isinstance(st, s.OptimisedStrategyIn)
+        and req.estimation.mean_estimator is MeanEstimator.BLACK_LITTERMAN
+        and (req.estimation.black_litterman or s.BlackLittermanIn()).prior == "market_cap"
+    ):
+        assumptions.append(
+            "Black-Litterman prior weights use the market capitalisations known at each "
+            "rebalance date (the latest month that had ended)."
+        )
     return s.BacktestResponse(
         strategy=result.strategy,
         dates=[d.date() for d in result.dates],
@@ -1095,7 +1182,13 @@ def run_backtest_service(service: MarketDataService, req: s.BacktestRequest) -> 
         sharpe_test=(
             None
             if b_res is None
-            else sharpe_test_out(result.returns, b_res.returns, ppy, req.estimation.risk_free_rate)
+            else sharpe_test_out(
+                result.returns,
+                b_res.returns,
+                ppy,
+                req.estimation.risk_free_rate,
+                seed=req.bootstrap_seed,
+            )
         ),
         estimation_start=result.estimation_start,
         evaluation_start=result.evaluation_start,

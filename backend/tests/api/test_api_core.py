@@ -289,6 +289,32 @@ def test_backtest_asset_benchmark(client: TestClient) -> None:
     assert client.post("/api/v1/backtest", json=body).json()["sharpe_test"] is None
 
 
+def test_backtest_bootstraps_the_sharpe_test_on_short_histories(client: TestClient) -> None:
+    body = {
+        "universe": universe(start="2016-01-01", end="2020-12-31", frequency="weekly"),
+        "strategy": {"type": "optimised", "objective": {"objective": "min_volatility"}},
+        "lookback_years": 1,
+        "bootstrap_seed": 11,
+    }
+    r = client.post("/api/v1/backtest", json=body)
+    assert r.status_code == 200, r.text
+    test = r.json()["sharpe_test"]
+    boot = test["bootstrap"]
+    assert boot["seed"] == 11
+    assert boot["resamples"] == 999
+    assert 1 / 1000 <= boot["p_value"] <= 1.0
+    assert "A bootstrap test" in test["statement"]
+    assert test["bootstrap_note"] is None
+    # The same seed gives the same p-value.
+    assert client.post("/api/v1/backtest", json=body).json()["sharpe_test"] == test
+
+    # A long daily history: the asymptotic test alone, and the reason.
+    body["universe"] = universe(start="2012-01-01", end="2021-12-31")
+    long = client.post("/api/v1/backtest", json=body).json()["sharpe_test"]
+    assert long["bootstrap"] is None
+    assert "No bootstrap" in long["bootstrap_note"]
+
+
 def test_compare(client: TestClient) -> None:
     n = len(DEMO_TICKERS)
     r = client.post(

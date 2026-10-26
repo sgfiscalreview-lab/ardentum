@@ -137,6 +137,32 @@ def percentile_scores(values: np.ndarray, higher_is_better: bool = True) -> np.n
     return 100.0 * (ranks - 1.0) / (x.size - 1.0)
 
 
+def yearly_scores(
+    values: Mapping[int, Mapping[str, float]],
+    method: str,
+    higher_is_better: bool = True,
+    lower: float | None = None,
+    upper: float | None = None,
+) -> dict[int, dict[str, float]]:
+    """0-100 scores for each year's raw values, scored as a single year is: on a fixed
+    linear scale value by value, or by percentile rank among that year's values only
+    (a year with fewer than two values gets no percentile scores). Keys are kept."""
+    out: dict[int, dict[str, float]] = {}
+    for year, by_key in values.items():
+        keys = list(by_key)
+        raw = np.array([by_key[k] for k in keys], dtype=float)
+        if method == "linear":
+            if lower is None or upper is None:
+                raise InvalidInputError("A linear scale needs a lower and an upper value.")
+            scores = scale_linear(raw, lower, upper, higher_is_better)
+        elif len(keys) >= 2:
+            scores = percentile_scores(raw, higher_is_better)
+        else:
+            continue
+        out[year] = {k: float(v) for k, v in zip(keys, scores, strict=True)}
+    return out
+
+
 def composite_scores(component_scores: np.ndarray, weights: np.ndarray) -> np.ndarray:
     """Weighted average of several 0-100 scores per asset (rows) and metric (columns).
 

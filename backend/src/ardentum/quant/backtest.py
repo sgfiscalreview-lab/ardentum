@@ -27,6 +27,7 @@ impact beyond linear costs, no cash drag, no taxes.
 from __future__ import annotations
 
 import datetime as dt
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from enum import StrEnum
 from typing import Protocol
@@ -108,8 +109,23 @@ class OptimisedStrategy:
     # (rows: dates, columns: tickers), so a decision never uses later capitalisations.
     black_litterman_spec: BlackLittermanSpec | None = None
     prior_history: pd.DataFrame | None = None
+    # ESG scores as (date known from, score), oldest first, per ticker. When given, each
+    # rebalance uses the latest score known on that date instead of ``metadata``'s.
+    esg_history: Mapping[str, Sequence[tuple[dt.date, float]]] | None = None
 
     def target_weights(self, window: pd.DataFrame, context: StrategyContext) -> np.ndarray:
+        metadata = self.metadata
+        if self.esg_history is not None:
+            scores: dict[str, float | None] = dict(metadata.esg_scores)
+            for t, points in self.esg_history.items():
+                before = [score for since, score in points if since <= context.as_of.date()]
+                if not before:
+                    raise InsufficientDataError(
+                        f"The ESG score of {t} is first known on {points[0][0]:%d %b %Y}, after "
+                        f"this rebalance on {context.as_of:%d %b %Y}."
+                    )
+                scores[t] = before[-1]
+            metadata = replace(metadata, esg_scores=scores)
         spec = self.black_litterman_spec
         if spec is not None and self.prior_history is not None:
             known = self.prior_history.loc[: context.as_of, list(context.tickers)].dropna()
@@ -128,7 +144,7 @@ class OptimisedStrategy:
             covariance_estimator=self.covariance_estimator,
             black_litterman_spec=spec,
         )
-        return optimise(est, self.request, self.metadata).weights
+        return optimise(est, self.request, metadata).weights
 
 
 @dataclass(frozen=True)
@@ -184,6 +200,25 @@ def rebalance_schedule(index: pd.DatetimeIndex, frequency: RebalanceFrequency) -
     return dates
 
 
+def _rebalance_rows(index: pd.DatetimeIndex, config: BacktestConfig) -> list[int]:
+    """Rows of ``index`` on which the strategy rebalances: scheduled dates with a full
+    estimation window and at least one return after them."""
+    schedule = set(rebalance_schedule(index, config.rebalance))
+    return [
+        i
+        for i in range(config.lookback_periods - 1, len(index) - 1)
+        if index[i] in schedule
+        and (config.evaluation_start is None or index[i].date() >= config.evaluation_start)
+    ]
+
+
+def first_rebalance(index: pd.DatetimeIndex, config: BacktestConfig) -> dt.date | None:
+    """The date of the first decision :func:`run_backtest` makes on ``index`` (None when
+    there is too little data for any)."""
+    rows = _rebalance_rows(index, config)
+    return index[rows[0]].date() if rows else None
+
+
 def run_backtest(
     returns: pd.DataFrame, strategy: Strategy, config: BacktestConfig
 ) -> BacktestResult:
@@ -202,13 +237,7 @@ def run_backtest(
     tickers = tuple(str(c) for c in returns.columns)
     lookback = config.lookback_periods
 
-    schedule = set(rebalance_schedule(index, config.rebalance))
-    eligible = [
-        i
-        for i in range(lookback - 1, t_len - 1)
-        if index[i] in schedule
-        and (config.evaluation_start is None or index[i].date() >= config.evaluation_start)
-    ]
+    eligible = _rebalance_rows(index, config)
     if not eligible:
         raise InsufficientDataError(
             f"Not enough data: a {lookback}-period estimation window plus at least one "

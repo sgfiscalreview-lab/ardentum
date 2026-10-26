@@ -27,6 +27,7 @@ Definitions (``P`` = periods per year, ``n`` = number of observations):
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, replace
 
 import numpy as np
@@ -248,6 +249,102 @@ def sharpe_difference_test(
         return SharpeDifference(0.0, 0.0, 0.0, 1.0, lags)
     z = diff / se
     return SharpeDifference(diff, se, z, float(2.0 * stats.norm.sf(abs(z))), lags)
+
+
+@dataclass(frozen=True)
+class SharpeBootstrap:
+    """Bootstrap p-value for equal Sharpe ratios, with what is needed to reproduce it."""
+
+    p_value: float
+    resamples: int
+    block_length: int
+    seed: int
+
+
+def default_block_length(t: int) -> int:
+    """About ``T^(1/3)`` periods, the usual order for block bootstraps of means."""
+    return max(1, round(math.cbrt(t)))
+
+
+def _sharpe_difference_and_se(
+    a: np.ndarray, b: np.ndarray, block: int | None
+) -> tuple[np.ndarray, np.ndarray]:
+    """Per-period Sharpe difference and its delta-method standard error for each row of
+    ``a`` and ``b`` (shape ``(m, T)``). The long-run covariance of the moments is the
+    block estimate ``(1/l) sum_j z_j z_j'`` over ``l`` blocks of ``block`` periods, with
+    ``z_j`` the block sum divided by ``sqrt(block)`` (Ledoit and Wolf 2008, eq. 10)."""
+    t = a.shape[1]
+    mu_a, mu_b = a.mean(axis=1), b.mean(axis=1)
+    g_a, g_b = (a**2).mean(axis=1), (b**2).mean(axis=1)
+    v_a, v_b = g_a - mu_a**2, g_b - mu_b**2
+    with np.errstate(divide="ignore", invalid="ignore"):
+        diff = mu_a / np.sqrt(v_a) - mu_b / np.sqrt(v_b)
+        grad = np.stack(
+            [g_a / v_a**1.5, -g_b / v_b**1.5, -0.5 * mu_a / v_a**1.5, 0.5 * mu_b / v_b**1.5],
+            axis=1,
+        )
+    y = np.stack(
+        [a - mu_a[:, None], b - mu_b[:, None], a**2 - g_a[:, None], b**2 - g_b[:, None]],
+        axis=2,
+    )
+    blk = block or 1
+    blocks = t // blk
+    z = y[:, : blocks * blk].reshape(y.shape[0], blocks, blk, 4).sum(axis=2) / np.sqrt(blk)
+    psi = np.einsum("mlk,mlj->mkj", z, z) / blocks
+    var = np.einsum("mk,mkj,mj->m", grad, psi, grad) / t
+    return diff, np.sqrt(np.maximum(var, 0.0))
+
+
+def sharpe_difference_bootstrap(
+    returns_a: ArrayLike1D,
+    returns_b: ArrayLike1D,
+    periods_per_year: int,
+    risk_free_rate: float = 0.0,
+    *,
+    seed: int,
+    resamples: int = 999,
+    block_length: int | None = None,
+) -> SharpeBootstrap:
+    """Studentized circular block bootstrap test of equal Sharpe ratios.
+
+    Ledoit and Wolf (2008, section 3.2), recommended over the asymptotic test for short
+    histories. Pairs ``(a_t, b_t)`` are resampled in circular blocks of ``block_length``
+    periods (default :func:`default_block_length`), which keeps short-range dependence
+    and the correlation between the two series. With ``d = |D| / s(D)`` for the observed
+    difference ``D`` (HAC standard error, as in :func:`sharpe_difference_test`), the
+    p-value is ``(#{|D*_m - D| / s(D*_m) >= d} + 1) / (M + 1)``, where ``s(D*_m)`` is the
+    block standard error of each resample. Reproducible from ``seed``.
+    """
+    if not 99 <= resamples <= 9999:
+        raise InvalidInputError("The bootstrap needs between 99 and 9,999 resamples.")
+    a = _excess_for_inference(returns_a, periods_per_year, risk_free_rate, "strategy returns")
+    b = _excess_for_inference(returns_b, periods_per_year, risk_free_rate, "benchmark returns")
+    if a.shape != b.shape:
+        raise InvalidInputError("Both return series must cover the same dates.")
+    t = a.shape[0]
+    blk = default_block_length(t) if block_length is None else block_length
+    if not 1 <= blk <= t // 4:
+        raise InvalidInputError(
+            f"The block length must be between 1 and {t // 4} periods (a quarter of the "
+            f"{t} returns)."
+        )
+    observed = sharpe_difference_test(returns_a, returns_b, periods_per_year, risk_free_rate)
+    if observed.standard_error == 0.0:  # the same series twice
+        return SharpeBootstrap(1.0, resamples, blk, seed)
+    scale = np.sqrt(periods_per_year)
+    d_hat, _ = _sharpe_difference_and_se(a[None, :], b[None, :], None)
+    stat = abs(float(d_hat[0])) / (observed.standard_error / scale)
+    rng = np.random.default_rng(seed)
+    blocks = -(-t // blk)  # enough blocks to cover T, then cut to T
+    exceed = 0
+    for start in range(0, resamples, 100):  # in batches: memory stays small on 512 MB
+        m = min(100, resamples - start)
+        first = rng.integers(0, t, size=(m, blocks))
+        idx = ((first[:, :, None] + np.arange(blk)) % t).reshape(m, -1)[:, :t]
+        d_star, se_star = _sharpe_difference_and_se(a[idx], b[idx], blk)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            exceed += int(np.sum(np.abs(d_star - d_hat[0]) / se_star >= stat))
+    return SharpeBootstrap((exceed + 1) / (resamples + 1), resamples, blk, seed)
 
 
 def downside_deviation(

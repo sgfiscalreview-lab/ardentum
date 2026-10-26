@@ -819,6 +819,12 @@ export interface components {
              */
             transaction_cost_bps: number;
             benchmark?: components["schemas"]["BenchmarkIn"] | null;
+            /**
+             * Bootstrap Seed
+             * @description Seed of the bootstrap test of equal Sharpe ratios (echoed in results).
+             * @default 0
+             */
+            bootstrap_seed: number;
         };
         /** BacktestResponse */
         BacktestResponse: {
@@ -1590,6 +1596,13 @@ export interface components {
              */
             upper?: number | null;
         };
+        /** EsgYearScoreOut */
+        EsgYearScoreOut: {
+            /** Year */
+            year: number;
+            /** Score */
+            score: number;
+        };
         /** EstimationOut */
         EstimationOut: {
             /** Risk Free Rate */
@@ -2176,6 +2189,11 @@ export interface components {
              * @description Composite overlays: the score from each metric.
              */
             parts: components["schemas"]["CompositePartOut"][] | null;
+            /**
+             * History
+             * @description The score of every year with an answer, scored within that year; backtests use the one known at each rebalance.
+             */
+            history: components["schemas"]["EsgYearScoreOut"][];
         };
         /** OverlayOut */
         OverlayOut: {
@@ -2555,6 +2573,23 @@ export interface components {
             /** Drawdown */
             drawdown: number[];
         };
+        /** SharpeBootstrapOut */
+        SharpeBootstrapOut: {
+            /**
+             * P Value
+             * @description Two-sided, from the studentized block bootstrap.
+             */
+            p_value: number;
+            /** Resamples */
+            resamples: number;
+            /**
+             * Block Length
+             * @description Periods per resampled block.
+             */
+            block_length: number;
+            /** Seed */
+            seed: number;
+        };
         /** SharpeIntervalOut */
         SharpeIntervalOut: {
             /** Low */
@@ -2598,6 +2633,13 @@ export interface components {
              * @description What the result means, or why it is n/a.
              */
             statement: string;
+            /** @description Ledoit and Wolf's bootstrap test, on histories of up to 1,000 returns. */
+            bootstrap: components["schemas"]["SharpeBootstrapOut"] | null;
+            /**
+             * Bootstrap Note
+             * @description Why the bootstrap did not run.
+             */
+            bootstrap_note: string | null;
         };
         /**
          * SimulationMethod

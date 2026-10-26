@@ -21,7 +21,7 @@ Instead of supplying scores yourself, you can build them from **WikiRate**, a no
 An *ESG overlay* is built in three steps:
 
 1. **Matching.** Assets are matched to WikiRate companies **automatically only by ISIN**, an exact identifier. Assets without an ISIN match are matched only when you pick the company yourself; names are never fuzzy-matched silently, because a wrong match would attach another company's data.
-2. **Answers.** For each company the latest answer up to the chosen year is used. Values that are not numbers (e.g. "Unknown") are left unscored.
+2. **Answers.** For each company the latest answer up to the chosen year is used. Values that are not numbers (e.g. "Unknown") are left unscored. Earlier answers are kept as the score's history (see *Scores over time*).
 3. **Scores.** Raw values $x$ become 0–100 scores by either
    - a **fixed linear scale** $s = 100\,\mathrm{clip}\!\left(\frac{x-L}{U-L}, 0, 1\right)$, comparable across groups (values outside $[L, U]$ all score 0 or 100; the preview marks them and warns, since the differences between them are lost), or
    - a **percentile rank** within the matched companies $s = 100\,\frac{\mathrm{rank}(x)-1}{n-1}$ (ties share their average rank), which is relative only and needs at least two values;
@@ -41,6 +41,15 @@ s_i = \sum_k \frac{v_k}{\sum_j v_j}\, s_{ik} .
 $$
 
 This is a convex combination, so the composite stays on 0-100 and rises with every component. An asset receives a composite score **only if it has a score for every metric**. Averaging over the metrics an asset happens to have would silently fill the missing ones with that average, and would compare companies on different measures; such assets are shown as incomplete, with each part and the reason for the gap. Percentile ranks are computed per metric among the companies with values for that metric. The weights are a value judgement, not an estimate: they are shown next to every composite score and recorded in each score's provenance.
+
+### Scores over time
+
+A backtest that applied today's scores at every past rebalance would let later information steer earlier decisions. So every score keeps the date from which it was known, and a backtest uses at each rebalance only the latest score known by then.
+
+- **WikiRate answers.** Every year up to the chosen year with a numeric answer gives a score for that year, transformed as above; percentile ranks are taken among the companies with an answer for that year. An answer for year $Y$ counts as known from 30 June of year $Y+1$. This is a convention: most annual reports for a calendar year are out by then, but some sustainability reports appear later, and WikiRate does not record when each answer became available. A composite score exists for a year only when every metric has a score for that year.
+- **Uploaded scores.** The optional `esg_as_of` column is read as the date from which a score was known. A score without it has no date.
+
+A backtest uses these point-in-time scores only when every scored asset has dated scores and each had a score by the first rebalance. Otherwise it applies today's scores at every rebalance and says why: which assets had no score yet, and the date from which all are known, so that a backtest starting on or after that date can be run instead. Undated scores, such as the demo data's, are always applied as today's, with a note.
 
 ## How ESG changes the optimisation
 
