@@ -79,7 +79,7 @@ test("combine several open metrics into one composite ESG score", async ({ page 
   await expect(page.getByText(/Uploaded “Brands mix” with 3 assets/)).toBeVisible();
 
   await page.getByRole("link", { name: /ESG data/ }).first().click();
-  await page.getByLabel("Search metrics").fill("board");
+  await page.getByLabel("Search metrics").fill("emissions");
   await page.getByRole("button", { name: "Search", exact: true }).click();
   // Emissions, lower is better, on a fixed scale; weight 3.
   await page.getByRole("button", { name: /Direct greenhouse gas/ }).click();
@@ -90,6 +90,8 @@ test("combine several open metrics into one composite ESG score", async ({ page 
   await page.getByRole("button", { name: "Add to composite" }).click();
   await page.getByLabel("Weight").first().fill("3");
   // Board diversity, higher is better, percentile rank; weight 1.
+  await page.getByLabel("Search metrics").fill("board");
+  await page.getByRole("button", { name: "Search", exact: true }).click();
   await page.getByRole("button", { name: /Women on the board/ }).click();
   await page.getByLabel("Direction").selectOption("higher");
   await page.getByLabel("Scale").selectOption("percentile");

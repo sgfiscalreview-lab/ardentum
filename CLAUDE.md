@@ -25,6 +25,8 @@ Read this first, then `ARCHITECTURE.md`, `DECISIONS.md`, `PROGRESS.md`, `TODO.md
   (never pure white or black backgrounds), one navy accent, muted earth-tone chart series.
   No purple, neon, pastel or rainbow palettes; no gradients, orbs or dot-grid backdrops
   (the header's scroll edge uses a fading mask on a blur, which colours nothing).
+* New pages and restyles use `.claude/skills/frontend-design` for direction, hierarchy and
+  copy, within these rules.
 * Depth and motion follow `.claude/skills/apple-design` (DECISIONS D-041, D-042).
   Translucent materials (`.material`, `.material-thick`) only for floating chrome:
   header, popovers, tooltips, sheets, notices; never one translucent layer on another.
@@ -94,7 +96,7 @@ npm run gen:api        # regenerate src/lib/api/schema.d.ts from the running bac
 npm run lint && npm run typecheck && npm test
 npm run build
 npm run e2e            # Playwright (starts backend, frontend and a WikiRate stand-in)
-# in the dev container: PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm run e2e
+# in the dev container: PLAYWRIGHT_CHROMIUM_PATH=$(ls /opt/pw-browsers/chromium-*/chrome-linux*/chrome) npm run e2e
 ```
 
 Local PostgreSQL (dev container): `initdb` + `pg_ctl -o '-p 5433'` (see PROGRESS.md notes).

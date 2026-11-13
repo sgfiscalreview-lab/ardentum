@@ -12,8 +12,8 @@ cost is an optional domain name.
 | API (container) | **Render** free web service via `render.yaml` (no card), or **Google Cloud Run** | Render: 512 MB, small CPU share, sleeps after 15 idle minutes (the keep-alive prevents it). Cloud Run: ~2M requests, 180k vCPU-s, 360k GiB-s per month; card required, budget alert recommended |
 | PostgreSQL + sign-in | **Supabase** | 500 MB database; pauses after 7 idle days (prevented by the keep-alive) |
 | Keep-alive | GitHub Actions (`.github/workflows/keepalive.yml`) | `GET /api/v1/health/db` every 5 minutes |
-| Data | Built in, no keys | Ken French industries and risk-free rate, ECB FX (Frankfurter), WikiRate open ESG data |
-| Optional keys | FRED (free), WikiRate (free account) | Only needed for FRED's T-bill series, or if WikiRate requires a key |
+| Data | Built in, no keys | Ken French industries and risk-free rate, ECB FX (Frankfurter), BIS policy rates |
+| Free keys | FRED, WikiRate (free accounts) | FRED's T-bill series; WikiRate open ESG data, which is switched off until its two keys are set |
 | Optional domain | Cloudflare Registrar | About $10/year for a `.com` |
 
 Order: Supabase → API → web app → OAuth redirect URLs → keep-alive → verify.
@@ -90,7 +90,7 @@ pooler URL from step 1.3, and grant the Cloud Run service account *Secret Access
 | `ARDENTUM_COMPUTE_RATE_LIMIT` / `ARDENTUM_WRITE_RATE_LIMIT` | optional; calculations, and saves, uploads, deletions, sign-in and WikiRate lookups, per client per minute (default 60 each) |
 | `WEB_CONCURRENCY` | `1` per vCPU |
 | `ARDENTUM_FRED_API_KEY` | optional (free at fred.stlouisfed.org) |
-| `ARDENTUM_WIKIRATE_API_KEY` | optional (free WikiRate account) |
+| `ARDENTUM_WIKIRATE_PUBLISHABLE_KEY`, `ARDENTUM_WIKIRATE_API_TOKEN` | needed for open ESG data (free WikiRate account, API access page); the token is secret |
 | `ARDENTUM_TIINGO_API_KEY` | optional; commercial use needs a paid licence (D-004) |
 
 The container runs `alembic upgrade head` on start (`ARDENTUM_SKIP_MIGRATIONS=1` disables

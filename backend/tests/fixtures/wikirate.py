@@ -1,149 +1,171 @@
-"""Payloads in the WikiRate API formats (list views and nested single-card views).
+"""Rows in the WikiRate REST API format, and a stand-in that answers its queries.
 
-Shapes follow responses recorded by the wikirate4py client; the values are made up
+Shapes follow the API documentation (https://wikirate.org/api); the values are made up
 for tests.
 """
 
 from __future__ import annotations
 
 import json
+import re
+from collections.abc import Mapping, Sequence
 from typing import Any
 
-LICENSE = "Wikirate.org, licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0)."
-BASE = "https://wikirate.org"
+import httpx
+import respx
+
+from ardentum.data.providers import wikirate as wr
+
+CC_BY = {
+    "id": 1,
+    "name": "Creative Commons Attribution 4.0 International",
+    "abbreviation": "CC BY 4.0",
+    "reference_url": "https://creativecommons.org/licenses/by/4.0/",
+}
+MID = 826615
+HEADERS = {"apikey": "pk-test", "x-api-token": "wr_test"}
 
 
-def _collection(items: list[dict[str, Any]], nxt: str | None = None) -> bytes:
-    return json.dumps(
-        {
-            "id": 1,
-            "name": "x",
-            "type": "Cardtype",
-            "items": items,
-            "paging": {"next": nxt} if nxt else {},
-            "license": LICENSE,
-        }
-    ).encode()
-
-
-def metric_item(mid: int = 826615, value_type: str = "Number", **kw: Any) -> dict[str, Any]:
+def metric_row(mid: int = MID, value_type: str | None = "number", **kw: Any) -> dict[str, Any]:
     d = {
         "id": mid,
-        "name": "Global Reporting Initiative+Direct greenhouse gas (GHG) emissions (Scope 1)",
-        "type": "Metric",
-        "url": f"{BASE}/Global_Reporting_Initiative+Direct_GHG_Scope_1.json",
-        "designer": "Global Reporting Initiative",
-        "title": "Direct greenhouse gas (GHG) emissions (Scope 1)",
-        "metric_type": "Researched",
+        "metric_name": "Direct greenhouse gas (GHG) emissions (Scope 1)",
+        "metric_designer": "Global Reporting Initiative",
+        "question": "What are the company's direct greenhouse gas emissions?",
+        "metric_type": "researched",
         "value_type": value_type,
-        "unit": " tonnes CO2 equivalent",
+        "value_options": None,
+        "unit": "tonnes CO2 equivalent",
         "range": None,
-        "answer": 5271,
-        "topics": ["Wikirate ESG Topics+Environment", "Wikirate ESG Topics+Climate Change"],
+        "assessment_type": "self_reported",
     }
     d.update(kw)
     return d
 
 
-def metrics_payload(*items: dict[str, Any]) -> bytes:
-    return _collection(list(items) or [metric_item()])
-
-
-def metric_card(
-    mid: int = 826615, value_type: str | None = "Number", rng: str | None = None
-) -> bytes:
-    """Single-card view: fields are nested cards with the value under 'content'."""
-
-    def nested(name: str, content: Any, typ: str = "Pointer") -> dict[str, Any]:
-        d: dict[str, Any] = {
-            "id": 1,
-            "name": f"GRI+Scope 1+{name}",
-            "type": typ,
-            "url": f"{BASE}/x.json",
-        }
-        if content is not None:
-            d["content"] = content
-        return d
-
-    return json.dumps(
-        {
-            "id": mid,
-            "name": "Global Reporting Initiative+Direct greenhouse gas (GHG) emissions (Scope 1)",
-            "type": {
-                "id": 43576,
-                "name": "Metric",
-                "type": "Cardtype",
-                "url": f"{BASE}/Metric.json",
-            },
-            "url": f"{BASE}/~{mid}.json",
-            "designer": "Global Reporting Initiative",
-            "title": "Direct greenhouse gas (GHG) emissions (Scope 1)",
-            "metric_type": nested("*metric type", "Researched"),
-            "value_type": nested("value type", [value_type] if value_type else None),
-            "unit": nested("unit", "tonnes CO2 equivalent", "Phrase"),
-            "range": nested("Range", rng, "Phrase"),
-            "topics": nested("Topic", None, "List"),
-            "answer": 5271,
-            "license": LICENSE,
-        }
-    ).encode()
-
-
-def company_item(
-    cid: int, name: str, isins: list[str], hq: str = "United States"
-) -> dict[str, Any]:
+def company_row(cid: int, name: str, isins: list[str], hq: str = "United States") -> dict[str, Any]:
     return {
         "id": cid,
         "name": name,
-        "type": "Company",
-        "url": f"{BASE}/{name.replace(' ', '_')}.json",
-        "headquarters": hq,
-        "alias": [name],
-        "international_securities_identification_number": isins,
+        "headquarters": {"id": 2, "name": hq, "type": "region", "country_code": "XX"},
+        "type": "company",
+        "company_identifiers": {"lei": "LEI" + str(cid), "isin": isins},
+        "website": "https://example.com",
     }
 
 
-def companies_payload(*items: dict[str, Any]) -> bytes:
-    return _collection(list(items))
-
-
-def company_card(cid: int, name: str) -> bytes:
-    return json.dumps(
-        {
-            "id": cid,
-            "name": name,
-            "type": {"id": 651, "name": "Company", "type": "Cardtype"},
-            "headquarters": {
-                "id": 2,
-                "name": f"{name}+Headquarters",
-                "type": "Pointer",
-                "content": ["Germany"],
-            },
-            "international_securities_identification_number": {
-                "id": 3,
-                "name": f"{name}+ISIN",
-                "type": "RichText",
-                "content": ["DE0006969603"],
-            },
-        }
-    ).encode()
-
-
-def answer_item(company: str, year: int, value: str, mid: int = 826615) -> dict[str, Any]:
-    slug = company.replace(" ", "_")
-    return {
-        "id": hash((company, year)) % 10**7,
-        "name": f"GRI+Scope 1+{company}+{year}",
-        "type": "Answer",
-        "url": f"{BASE}/GRI+Scope_1+{slug}+{year}.json",
-        "metric": "Global Reporting Initiative+Direct greenhouse gas (GHG) emissions (Scope 1)",
+def answer_row(
+    company_id: int,
+    company: str,
+    year: int,
+    value: str,
+    mid: int = MID,
+    license: Any = CC_BY,
+    **kw: Any,
+) -> dict[str, Any]:
+    slug = company.replace(" ", "-").lower()
+    d = {
+        "id": company_id * 10_000 + year + mid % 1000 * 100_000_000,
+        "company_id": company_id,
         "company": company,
-        "year": year,
+        "metric_id": mid,
         "value": value,
-        "sources": ["Source-000217552"],
-        "answer_url": f"{BASE}/GRI+Scope_1+{slug}.json",
+        "year": year,
+        "sources": [
+            {
+                "id": 9,
+                "name": f"{company} report {year}",
+                "original_url": f"https://example.com/{slug}-{year}.pdf",
+                "file_url": "https://data.wikirate.org/storage/v1/object/public/sources/9.pdf",
+            }
+        ],
+        "license_id": 1,
+        "license": license,
     }
+    d.update(kw)
+    return d
 
 
-def answers_payload(*items: dict[str, Any], nxt: str | None = None) -> bytes:
-    return _collection(list(items), nxt)
+def payload(*rows: dict[str, Any]) -> bytes:
+    return json.dumps(list(rows)).encode()
+
+
+def _matches(row: Mapping[str, Any], column: str, test: str) -> bool:
+    op, _, arg = test.partition(".")
+    if "->>" in column:
+        outer, inner = column.split("->>")
+        value: Any = row.get(outer, {}).get(inner)
+        value = value if isinstance(value, str) else json.dumps(value)
+    else:
+        value = row.get(column)
+    if op == "eq":
+        return str(value) == arg
+    if op == "in":
+        return str(value) in arg.strip("()").split(",")
+    if op in ("like", "ilike"):
+        pattern = ".*".join(re.escape(part) for part in arg.split("*"))
+        return bool(re.fullmatch(pattern, str(value), re.IGNORECASE if op == "ilike" else 0))
+    raise ValueError(f"unsupported operator {op!r}")
+
+
+class FakeWikiRate:
+    """The parts of the API that Ardentum uses, over rows held in memory."""
+
+    def __init__(
+        self,
+        metrics: Sequence[dict[str, Any]] = (),
+        companies: Sequence[dict[str, Any]] = (),
+        answers: Sequence[dict[str, Any]] = (),
+    ) -> None:
+        self.tables = {
+            "/v1_metrics": list(metrics),
+            "/v1_companies": list(companies),
+            "/v1_answers": list(answers),
+        }
+        self.requests: list[tuple[str, dict[str, str]]] = []
+        self.refuse_or = False  # answer HTTP 400 to combined ("or") filters
+
+    def respond(
+        self, path: str, params: Mapping[str, str], headers: Mapping[str, str]
+    ) -> tuple[int, bytes]:
+        self.requests.append((path, dict(params)))
+        if any(headers.get(k) != v for k, v in HEADERS.items()):
+            return 401, b'{"message": "Invalid API token"}'
+        if headers.get("accept-profile") != "api" or path not in self.tables:
+            return 404, b'{"message": "Not found"}'
+        rows = self.tables[path]
+        for column, test in params.items():
+            if column in ("select", "order", "limit", "offset"):
+                continue
+            if column == "or":
+                if self.refuse_or:
+                    return 400, b'{"message": "failed to parse logic tree"}'
+                tests = [t.split(".", 1) for t in test.strip("()").split(",")]
+                rows = [r for r in rows if any(_matches(r, c, t) for c, t in tests)]
+            else:
+                rows = [r for r in rows if _matches(r, column, test)]
+        order = params.get("order")
+        if order:
+            rows = sorted(rows, key=lambda r: r[order])
+        offset = int(params.get("offset", 0))
+        if offset and offset >= len(rows):
+            return 416, b'{"message": "Requested range not satisfiable"}'
+        rows = rows[offset : offset + int(params.get("limit", 1000))]
+        columns = params.get("select")
+        if columns:
+            rows = [{c: r.get(c) for c in columns.split(",")} for r in rows]
+        return 200, json.dumps(rows).encode()
+
+    def install(self) -> respx.Route:
+        """Answer the provider's requests inside a ``respx.mock`` test."""
+
+        def handle(request: httpx.Request) -> httpx.Response:
+            path = request.url.path.removeprefix(httpx.URL(wr.BASE_URL).path)
+            status, body = self.respond(path, dict(request.url.params), request.headers)
+            return httpx.Response(status, content=body)
+
+        return respx.route(url__startswith=wr.BASE_URL).mock(side_effect=handle)
+
+    def params(self, path: str) -> dict[str, str]:
+        """The query of the latest request to one endpoint."""
+        return next(q for p, q in reversed(self.requests) if p == path)

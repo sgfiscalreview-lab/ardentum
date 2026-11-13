@@ -5,30 +5,21 @@ from __future__ import annotations
 import datetime as dt
 from collections.abc import Iterator
 
-import httpx
 import pandas as pd
 import pytest
 import respx
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from ardentum.data.providers import wikirate as wr
-from ardentum.db.models import ProviderCache
+from ardentum.api.main import create_app
+from ardentum.config import Settings
+from ardentum.db.models import Base, ProviderCache
 from ardentum.services import market_data, open_esg, provider_cache
 from ardentum.services.provider_cache import clear_memory
 from tests.api.conftest import login
 from tests.api.test_api_auth_portfolios import PRICES
-from tests.fixtures.wikirate import (
-    answer_item,
-    answers_payload,
-    companies_payload,
-    company_card,
-    company_item,
-    metric_card,
-    metrics_payload,
-)
+from tests.fixtures.wikirate import MID, FakeWikiRate, answer_row, company_row, metric_row
 
-MID = 826615
 META = "ticker,name,isin\nAAA,Apple,US0378331005\nBBB,Adidas,DE000A1EWWW0\nCCC,Puma,\n"
 
 
@@ -40,35 +31,23 @@ def _fresh() -> Iterator[None]:
     clear_memory()
 
 
-def _mock_wikirate(value_type: str = "Number") -> dict[str, respx.Route]:
-    return {
-        "metric": respx.get(f"{wr.BASE_URL}/~{MID}.json").mock(
-            return_value=httpx.Response(200, content=metric_card(MID, value_type))
-        ),
-        "companies": respx.get(f"{wr.BASE_URL}/Companies.json").mock(
-            return_value=httpx.Response(
-                200,
-                content=companies_payload(
-                    company_item(100, "Apple Inc.", ["US0378331005", "US0378331088"]),
-                    company_item(200, "Adidas AG", ["DE000A1EWWW0"], "Germany"),
-                ),
-            )
-        ),
-        "puma": respx.get(f"{wr.BASE_URL}/~300.json").mock(
-            return_value=httpx.Response(200, content=company_card(300, "Puma"))
-        ),
-        "answers": respx.get(f"{wr.BASE_URL}/~{MID}+Answers.json").mock(
-            return_value=httpx.Response(
-                200,
-                content=answers_payload(
-                    answer_item("Apple Inc.", 2022, "1000"),
-                    answer_item("Apple Inc.", 2023, "800"),
-                    answer_item("Adidas AG", 2023, "Unknown"),
-                    answer_item("Puma", 2023, "400"),
-                ),
-            )
-        ),
-    }
+def _mock_wikirate(value_type: str = "number") -> FakeWikiRate:
+    fake = FakeWikiRate(
+        metrics=[metric_row(MID, value_type)],
+        companies=[
+            company_row(100, "Apple Inc.", ["US0378331005", "US0378331088"]),
+            company_row(200, "Adidas AG", ["DE000A1EWWW0"], "Germany"),
+            company_row(300, "Puma", ["DE0006969603"], "Germany"),
+        ],
+        answers=[
+            answer_row(100, "Apple Inc.", 2022, "1000"),
+            answer_row(100, "Apple Inc.", 2023, "800"),
+            answer_row(200, "Adidas AG", 2023, "Unknown"),
+            answer_row(300, "Puma", 2023, "400"),
+        ],
+    )
+    fake.install()
+    return fake
 
 
 def _upload(client: TestClient, auth: dict[str, str]) -> str:
@@ -95,16 +74,20 @@ def _preview(ds: str, **kw: object) -> dict[str, object]:
 
 @respx.mock
 def test_search_metrics_and_companies(client: TestClient) -> None:
-    respx.get(f"{wr.BASE_URL}/Metrics.json").mock(
-        return_value=httpx.Response(200, content=metrics_payload())
-    )
+    fake = _mock_wikirate()
     r = client.get("/api/v1/esg/open/metrics?q=emissions")
     assert r.status_code == 200, r.text
     assert r.json()[0]["numeric"] is True
     assert r.json()[0]["unit"] == "tonnes CO2 equivalent"
-    _mock_wikirate()
+    assert r.json()[0]["url"].startswith("https://wikirate.org/Global_Reporting_Initiative+")
+    assert fake.params("/v1_metrics")["metric_name"] == "ilike.*emissions*"
+    assert client.get("/api/v1/esg/open/metrics?q=water").json() == []
     r = client.get("/api/v1/esg/open/companies?q=apple")
     assert r.json()[0]["isins"][0] == "US0378331005"
+    assert r.json()[0]["headquarters"] == "United States"
+    # An ISIN typed into the company search finds the company that lists it.
+    r = client.get("/api/v1/esg/open/companies?q=de000a1ewww0")
+    assert [c["name"] for c in r.json()] == ["Adidas AG"]
     # Free-text searches are kept in memory only: a row per distinct query would grow forever.
     engine = client.app.state.engine  # type: ignore[attr-defined]
     with engine.connect() as conn:
@@ -139,7 +122,7 @@ def test_preview_matches_by_isin_only_and_never_imputes(
     client: TestClient, auth: dict[str, str]
 ) -> None:
     ds = _upload(client, auth)
-    routes = _mock_wikirate()
+    fake = _mock_wikirate()
     # With one numeric value, percentile ranks are undefined: no scores and a warning (the
     # table is still returned so the user can match more companies), never a guess.
     r = client.post("/api/v1/esg/open/preview", json=_preview(ds), headers=auth)
@@ -162,9 +145,87 @@ def test_preview_matches_by_isin_only_and_never_imputes(
     assert rows["AAA"]["score"] == pytest.approx(20.0)  # 800 on a 0-1000 scale, lower better
     assert out["scored"] == 1
     assert "CC BY 4.0" in out["attribution"]
-    q = routes["companies"].calls.last.request.url.params["filter[company_identifier[value]]"]
-    assert "US0378331005" in q
-    assert "DE000A1EWWW0" in q
+    q = fake.params("/v1_companies")["or"]
+    assert "company_identifiers->>isin.like.*US0378331005*" in q
+    assert "company_identifiers->>isin.like.*DE000A1EWWW0*" in q
+    assert rows["AAA"]["answer_url"] == "https://example.com/apple-inc.-2023.pdf"
+
+
+@respx.mock
+def test_isins_are_looked_up_one_at_a_time_if_the_combined_filter_is_refused(
+    client: TestClient, auth: dict[str, str]
+) -> None:
+    ds = _upload(client, auth)
+    fake = _mock_wikirate()
+    fake.refuse_or = True
+    linear = {"method": "linear", "lower": 0, "upper": 1000, "higher_is_better": False}
+    r = client.post("/api/v1/esg/open/preview", json=_preview(ds, transform=linear), headers=auth)
+    assert r.status_code == 200, r.text
+    rows = {e["ticker"]: e for e in r.json()["entries"]}
+    assert rows["AAA"]["matched_by"] == "isin"
+    assert rows["BBB"]["company"] == "Adidas AG"
+    single = [q for p, q in fake.requests if "company_identifiers->>isin" in q]
+    assert {q["company_identifiers->>isin"] for q in single} == {
+        "like.*US0378331005*",
+        "like.*DE000A1EWWW0*",
+    }
+
+
+@respx.mock
+def test_a_company_is_matched_only_if_it_lists_the_exact_isin(
+    client: TestClient, auth: dict[str, str]
+) -> None:
+    ds = _upload(client, auth)
+    fake = _mock_wikirate()
+    # The identifiers are searched as text, so a longer identifier containing the ISIN is
+    # returned by WikiRate; it is not the asset's company.
+    fake.tables["/v1_companies"][0]["company_identifiers"] = {"isin": ["XUS0378331005X"]}
+    linear = {"method": "linear", "lower": 0, "upper": 1000, "higher_is_better": False}
+    out = client.post(
+        "/api/v1/esg/open/preview", json=_preview(ds, transform=linear), headers=auth
+    ).json()
+    rows = {e["ticker"]: e for e in out["entries"]}
+    assert rows["AAA"]["status"] == "no_company"
+
+
+NON_COMMERCIAL = {
+    "name": "Creative Commons Attribution-NonCommercial 4.0",
+    "abbreviation": "CC BY-NC 4.0",
+}
+LINEAR_2000 = {"method": "linear", "lower": 0, "upper": 2000, "higher_is_better": False}
+
+
+@respx.mock
+@pytest.mark.parametrize("years", [{2023}, {2022, 2023}])
+def test_answers_under_another_licence_are_not_used(
+    client: TestClient, auth: dict[str, str], years: set[int]
+) -> None:
+    ds = _upload(client, auth)
+    fake = _mock_wikirate()
+    for row in fake.tables["/v1_answers"]:
+        if row["company"] == "Apple Inc." and row["year"] in years:
+            row["license"] = NON_COMMERCIAL
+    out = client.post(
+        "/api/v1/esg/open/preview", json=_preview(ds, transform=LINEAR_2000), headers=auth
+    ).json()
+    apple = {e["ticker"]: e for e in out["entries"]}["AAA"]
+    if years == {2023}:
+        # The 2023 answer is left out; the 2022 answer (CC BY 4.0) is the latest usable one.
+        assert (apple["year"], apple["raw_value"], apple["score"]) == (2022, 1000, 50)
+    else:
+        assert apple["status"] == "no_answer"
+        assert "another licence (CC BY-NC 4.0)" in apple["note"]
+        assert apple["score"] is None
+
+
+def test_without_wikirate_keys_the_feature_says_how_to_switch_it_on(settings: Settings) -> None:
+    app = create_app(settings.model_copy(update={"wikirate_api_token": None}))
+    Base.metadata.create_all(app.state.engine)
+    with TestClient(app) as c:
+        assert c.get("/api/v1/meta").json()["open_esg_available"] is False
+        r = c.get("/api/v1/esg/open/metrics?q=emissions")
+    assert r.status_code == 502
+    assert "ARDENTUM_WIKIRATE_API_TOKEN" in r.json()["error"]["message"]
 
 
 @respx.mock
@@ -218,16 +279,14 @@ def test_user_confirmed_company_and_scores(client: TestClient, auth: dict[str, s
 
 @respx.mock
 def test_refusals(client: TestClient, auth: dict[str, str]) -> None:
-    _mock_wikirate()
+    fake = _mock_wikirate()
     r = client.post("/api/v1/esg/open/preview", json=_preview("demo", tickers=["NWS.SYN"]))
     assert r.status_code == 422
     assert "fictional" in r.json()["error"]["message"]
     r = client.post("/api/v1/esg/open/preview", json=_preview("kf12", tickers=["NODUR"]))
     assert "not companies" in r.json()["error"]["message"]
     ds = _upload(client, auth)
-    respx.get(f"{wr.BASE_URL}/~{MID}.json").mock(
-        return_value=httpx.Response(200, content=metric_card(MID, "Category"))
-    )
+    fake.tables["/v1_metrics"][0]["value_type"] = "category"
     r = client.post("/api/v1/esg/open/preview", json=_preview(ds), headers=auth)
     assert r.status_code == 422
     assert "only numeric metrics" in r.json()["error"]["message"]

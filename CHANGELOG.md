@@ -42,6 +42,11 @@ All notable changes to Ardentum are recorded here. Versions follow
 - The live smoke test also checks the usage counts and the tour, usage and classroom pages.
 
 ### Changed
+- Open ESG data uses WikiRate's new API, which needs a free WikiRate account's two keys on
+  the server (`ARDENTUM_WIKIRATE_PUBLISHABLE_KEY`, `ARDENTUM_WIKIRATE_API_TOKEN`); until
+  they are set, the page says the feature is switched off. Scores link to the answer's
+  source document. Answers that state a licence other than CC BY 4.0 are not used, and
+  their row says so. An ISIN typed into the company search finds its company.
 - The interface design is complete against the apple-design skill: on phones the page
   steps back behind the steps sheet, which can be caught while closing and starts to
   move only after a 10 px drag; popovers and notices form as they arrive and never block

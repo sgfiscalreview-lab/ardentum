@@ -16,11 +16,11 @@ Ardentum's rules:
 
 ## Open ESG data (WikiRate)
 
-Instead of supplying scores yourself, you can build them from **WikiRate**, a non-profit, community-researched database of company disclosures (greenhouse-gas emissions, energy, water, pay gaps, fines, supply-chain transparency and more), published under **CC BY 4.0**. Each WikiRate answer is one company's value for one metric and year, linked to its source document.
+Instead of supplying scores yourself, you can build them from **WikiRate**, a non-profit, community-researched database of company disclosures (greenhouse-gas emissions, energy, water, pay gaps, fines, supply-chain transparency and more), almost all of it published under **CC BY 4.0**. Each WikiRate answer is one company's value for one metric and year, with its source document and its licence. An answer that states another licence is left out, with a note saying so, because every score here is published as CC BY 4.0 data.
 
 An *ESG overlay* is built in three steps:
 
-1. **Matching.** Assets are matched to WikiRate companies **automatically only by ISIN**, an exact identifier. Assets without an ISIN match are matched only when you pick the company yourself; names are never fuzzy-matched silently, because a wrong match would attach another company's data.
+1. **Matching.** Assets are matched to WikiRate companies **automatically only by ISIN**, an exact identifier: a company is accepted only if its WikiRate record lists exactly the asset's ISIN. Assets without an ISIN match are matched only when you pick the company yourself; names are never fuzzy-matched silently, because a wrong match would attach another company's data.
 2. **Answers.** For each company the latest answer up to the chosen year is used. Values that are not numbers (e.g. "Unknown") are left unscored. Earlier answers are kept as the score's history (see *Scores over time*).
 3. **Scores.** Raw values $x$ become 0–100 scores by either
    - a **fixed linear scale** $s = 100\,\mathrm{clip}\!\left(\frac{x-L}{U-L}, 0, 1\right)$, comparable across groups (values outside $[L, U]$ all score 0 or 100; the preview marks them and warns, since the differences between them are lost), or
@@ -28,7 +28,7 @@ An *ESG overlay* is built in three steps:
 
    with the direction you choose (for emissions or fines, lower is better: $s \to 100 - s$).
 
-Assets without a match, an answer or a numeric value get **no score**: nothing is imputed, and the existing rules apply (ESG constraints fail until unscored assets are excluded explicitly). A saved overlay replaces the dataset's own ESG scores for its assets, so scores from different sources are never mixed in one portfolio score. Every score records the metric, its designer, the year, the company, the transformation and a link to the WikiRate answer; results carry the CC BY 4.0 attribution.
+Assets without a match, an answer or a numeric value get **no score**: nothing is imputed, and the existing rules apply (ESG constraints fail until unscored assets are excluded explicitly). A saved overlay replaces the dataset's own ESG scores for its assets, so scores from different sources are never mixed in one portfolio score. Every score records the metric, its designer, the year, the company, the transformation and a link to the answer's source document where WikiRate lists one; results carry the CC BY 4.0 attribution.
 
 A single metric is a narrow view of "ESG". Choose one that is material for the assets in question, and read the scores as that metric's ranking only. Demo (synthetic) assets and industry portfolios cannot be matched to companies, so overlays require your own dataset.
 

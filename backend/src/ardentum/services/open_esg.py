@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import datetime as dt
 import hashlib
-import json
 import uuid
 from collections.abc import Sequence
 from dataclasses import replace
@@ -117,7 +116,9 @@ class OpenEsgService:
     def __init__(self, market: MarketDataService) -> None:
         self.market = market
         self.client = wikirate.WikiRateClient(
-            market.settings.wikirate_api_key, base_url=market.settings.wikirate_base_url
+            market.settings.wikirate_publishable_key,
+            market.settings.wikirate_api_token,
+            base_url=market.settings.wikirate_base_url,
         )
 
     def _get(
@@ -140,18 +141,22 @@ class OpenEsgService:
         return wikirate.parse_metrics(self._get(path, params, persist=False).payload)
 
     def search_companies(self, q: str, limit: int = 10) -> list[wikirate.OpenCompany]:
+        isin = q.strip().upper()
+        if wikirate.ISIN_RE.fullmatch(isin):  # an ISIN finds its company exactly
+            path, params = wikirate.companies_by_isin_query([isin])
+            found = wikirate.parse_companies(self._get(path, params, persist=False).payload)
+            return [c for c in found if isin in c.isins][:limit]
         path, params = wikirate.companies_by_name_query(q, limit)
         return wikirate.parse_companies(self._get(path, params, persist=False).payload)
 
     def metric(self, metric_id: int) -> wikirate.OpenMetric:
-        return wikirate.parse_metric(self._get(wikirate.metric_path(metric_id), []).payload)
+        return wikirate.parse_metric(self._get(*wikirate.metric_query(metric_id)).payload)
 
     def company_name(self, company_id: int) -> str:
-        payload = self._get(f"/~{company_id}.json", []).payload
-        try:
-            return str(json.loads(payload)["name"])
-        except (KeyError, TypeError, ValueError) as exc:
-            raise DataProviderError("Unexpected company format from WikiRate.") from exc
+        found = wikirate.parse_companies(self._get(*wikirate.company_query(company_id)).payload)
+        if not found:
+            raise DataProviderError("WikiRate has no such company.")
+        return found[0].name
 
     # ------------------------------------------------------------------ preview
 
@@ -168,31 +173,35 @@ class OpenEsgService:
 
     def _companies_by_isin(self, isins: list[str]) -> dict[str, wikirate.OpenCompany]:
         found: dict[str, wikirate.OpenCompany] = {}
+        isins = [i for i in isins if wikirate.ISIN_RE.fullmatch(i)]
         for i in range(0, len(isins), ISIN_CHUNK):
             chunk = isins[i : i + ISIN_CHUNK]
-            for c in wikirate.parse_companies(
-                self._get(*wikirate.companies_by_isin_query(chunk)).payload
-            ):
+            try:
+                payloads = [self._get(*wikirate.companies_by_isin_query(chunk)).payload]
+            except wikirate.BadRequestError:
+                # The combined filter was not accepted: ask for one ISIN at a time.
+                payloads = [
+                    self._get(*wikirate.companies_by_isin_query([isin])).payload for isin in chunk
+                ]
+            for c in (c for p in payloads for c in wikirate.parse_companies(p)):
                 for isin in chunk:
-                    if isin in c.isins:
+                    if isin in c.isins:  # exact, whatever the text search returned
                         found[isin] = c
         return found
 
     def _answers(
         self, metric_id: int, company_ids: list[int]
-    ) -> dict[str, list[wikirate.OpenAnswer]]:
-        by_company: dict[str, list[wikirate.OpenAnswer]] = {}
+    ) -> dict[int, list[wikirate.OpenAnswer]]:
+        by_company: dict[int, list[wikirate.OpenAnswer]] = {}
         for i in range(0, len(company_ids), COMPANY_CHUNK):
             chunk = company_ids[i : i + COMPANY_CHUNK]
             for page in range(wikirate.MAX_PAGES):
-                answers, nxt = wikirate.parse_answers(
-                    self._get(
-                        *wikirate.answers_query(metric_id, chunk, page * wikirate.PAGE)
-                    ).payload
-                )
-                for a in answers:
-                    by_company.setdefault(a.company, []).append(a)
-                if not nxt or len(answers) < wikirate.PAGE:
+                payload = self._get(
+                    *wikirate.answers_query(metric_id, chunk, page * wikirate.PAGE)
+                ).payload
+                for a in wikirate.parse_answers(payload):
+                    by_company.setdefault(a.company_id, []).append(a)
+                if len(wikirate.rows(payload)) < wikirate.PAGE:
                     break
         return by_company
 
@@ -262,12 +271,20 @@ class OpenEsgService:
                 continue
             cid, cname, how = company[a.ticker]
             row.update(company=cname, company_id=cid, matched_by=how)
-            cands = [x for x in answers.get(cname, []) if req.year is None or x.year <= req.year]
+            found = [x for x in answers.get(cid, []) if req.year is None or x.year <= req.year]
+            cands = [x for x in found if x.cc_by]
             if not cands:
                 row["status"] = "no_answer"
-                row["note"] = f"{cname} has no answer for this metric" + (
-                    f" up to {req.year}." if req.year else "."
-                )
+                if found:
+                    other = ", ".join(sorted({x.license or "unnamed" for x in found}))
+                    row["note"] = (
+                        f"{cname}'s answers for this metric carry another licence ({other}), "
+                        "not CC BY 4.0, so they are not used."
+                    )
+                else:
+                    row["note"] = f"{cname} has no answer for this metric" + (
+                        f" up to {req.year}." if req.year else "."
+                    )
                 rows.append(row)
                 continue
             for ans in cands:

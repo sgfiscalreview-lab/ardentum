@@ -29,7 +29,7 @@ def search_companies(
     q: Annotated[str, Query(min_length=2, max_length=100)],
     limit: Annotated[int, Query(ge=1, le=25)] = 10,
 ) -> list[s.OpenCompanyOut]:
-    """Search WikiRate companies by name, to confirm matches for assets without an ISIN."""
+    """Search WikiRate companies by name or ISIN, to confirm matches by hand."""
     return [
         s.OpenCompanyOut(
             id=c.id, name=c.name, headquarters=c.headquarters, isins=list(c.isins[:5]), url=c.url

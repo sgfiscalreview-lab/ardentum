@@ -580,7 +580,7 @@ export interface paths {
         };
         /**
          * Search Companies
-         * @description Search WikiRate companies by name, to confirm matches for assets without an ISIN.
+         * @description Search WikiRate companies by name or ISIN, to confirm matches by hand.
          */
         get: operations["search_companies_api_v1_esg_open_companies_get"];
         put?: never;
@@ -1930,6 +1930,8 @@ export interface components {
             supabase_url: string | null;
             /** Live Data Available */
             live_data_available: boolean;
+            /** Open Esg Available */
+            open_esg_available: boolean;
             /** Methodology Version */
             methodology_version: string;
             /** Commit */
