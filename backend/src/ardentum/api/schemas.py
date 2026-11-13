@@ -1095,6 +1095,8 @@ class MetaOut(ResponseModel):
     auth_mode: str
     supabase_url: str | None
     live_data_available: bool
+    # False until the operator sets the two WikiRate keys (open ESG data).
+    open_esg_available: bool
     methodology_version: str
     # Git commit of the running build when the host reports it, else null.
     commit: str | None = None

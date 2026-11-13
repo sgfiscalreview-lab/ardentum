@@ -43,6 +43,9 @@ once, and again after any change of account or host.
 - [ ] **Supabase** > Authentication > URL Configuration: only the website's addresses in
   Redirect URLs.
 - [ ] **Accounts**: two-factor sign-in on GitHub, Supabase, Render, Cloudflare and Google.
+- [ ] **WikiRate**: the personal API token (`ARDENTUM_WIKIRATE_API_TOKEN`) is a secret; it lives
+  only in the API host's settings. If it leaks, revoke it on WikiRate's API access page and
+  generate a new one.
 - [ ] **If a secret was ever shared** (in a chat, an email or an issue): rotate it. That
   means the Supabase database password (then update `ARDENTUM_DATABASE_URL` on Render),
   the Supabase secret key, and the Google and GitHub OAuth client secrets (then update

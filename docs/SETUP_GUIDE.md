@@ -41,7 +41,8 @@ REGION                    =
 API_URL                   = https://ardentum-api.onrender.com  (Cloud Run: https://ardentum-api-<number>.<region>.run.app)
 SITE_URL                  = https://<name>.pages.dev
 FRED_API_KEY              =                        (secret)
-WIKIRATE_API_KEY          =                        (secret)
+WIKIRATE_PUBLISHABLE_KEY  =
+WIKIRATE_API_TOKEN        =                        (secret)
 ```
 
 Never paste values marked "secret" into the repository, a chat or an issue.
@@ -416,17 +417,30 @@ will stop before the month ends.
    ("risk-free rate for a portfolio-analysis web app"), accept the terms. The key appears
    at once.
 
-**WikiRate (open ESG data)** may work without a key; a key avoids refusals.
+**WikiRate (open ESG data)**. Since autumn 2026 WikiRate answers only requests that
+carry a free account's two values; until both are set, the Open ESG data page says the
+feature is switched off.
 
-1. Sign up at https://wikirate.org.
-2. Open your profile page, tab **Accounts**, and generate an API key.
+1. Sign up at https://wikirate.org and sign in.
+2. Open the account menu (your initials, top right) > **API access**.
+3. Under **Project connection**, copy the **Publishable key** (the same for everyone, not
+   secret) as `WIKIRATE_PUBLISHABLE_KEY`.
+4. Under **Your personal token**, type a label such as "Ardentum" and click **Generate
+   token**. Copy it at once as `WIKIRATE_API_TOKEN`: it starts with `wr_`, is shown only
+   once and is secret. If you lose it, revoke it there and generate another.
 
-**Add them to the API**, in Cloud Shell (reopen it; run `cd ardentum` first). If you have
-only one of the two keys, leave out the lines and the `--update-secrets` entry for the other:
+**Add them to the API on Render**: **ardentum-api** > **Environment** > **Add Environment
+Variable**, one per value, then **Save, rebuild, and deploy**:
+`ARDENTUM_FRED_API_KEY`, `ARDENTUM_WIKIRATE_PUBLISHABLE_KEY`, `ARDENTUM_WIKIRATE_API_TOKEN`.
+Then run the live check (step 14, **Automatic check**): the FRED and WikiRate lines pass.
+
+**Or on Cloud Run**, in Cloud Shell (reopen it; run `cd ardentum` first). If you have only
+one of the two services' keys, leave out the lines and the entries for the other:
 
 ```bash
 read -rsp "FRED key: " V && printf '%s' "$V" | gcloud secrets create ardentum-fred --data-file=- ; echo
-read -rsp "WikiRate key: " V && printf '%s' "$V" | gcloud secrets create ardentum-wikirate --data-file=- ; echo
+read -rsp "WikiRate token: " V && printf '%s' "$V" | gcloud secrets create ardentum-wikirate --data-file=- ; echo
+read -rp "WikiRate publishable key: " WIKIRATE_PUBLISHABLE_KEY
 PROJECT_NUMBER=$(gcloud projects describe $(gcloud config get-value project) --format='value(projectNumber)')
 for s in ardentum-fred ardentum-wikirate; do
   gcloud secrets add-iam-policy-binding $s \
@@ -434,7 +448,8 @@ for s in ardentum-fred ardentum-wikirate; do
     --role="roles/secretmanager.secretAccessor"
 done
 gcloud run services update ardentum-api \
-  --update-secrets "ARDENTUM_FRED_API_KEY=ardentum-fred:latest,ARDENTUM_WIKIRATE_API_KEY=ardentum-wikirate:latest"
+  --update-secrets "ARDENTUM_FRED_API_KEY=ardentum-fred:latest,ARDENTUM_WIKIRATE_API_TOKEN=ardentum-wikirate:latest" \
+  --update-env-vars "ARDENTUM_WIKIRATE_PUBLISHABLE_KEY=$WIKIRATE_PUBLISHABLE_KEY"
 ```
 
 ## 11. Legal texts

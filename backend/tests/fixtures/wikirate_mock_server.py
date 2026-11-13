@@ -1,14 +1,14 @@
 """A local stand-in for WikiRate and the Kenneth French Data Library (for E2E tests).
 
 Run: ``uv run python -m tests.fixtures.wikirate_mock_server 8765`` and point the API at
-it with ``ARDENTUM_WIKIRATE_BASE_URL=http://localhost:8765`` and
+it with ``ARDENTUM_WIKIRATE_BASE_URL=http://localhost:8765/rest/v1``, the keys
+``ARDENTUM_WIKIRATE_PUBLISHABLE_KEY=pk-test`` and ``ARDENTUM_WIKIRATE_API_TOKEN=wr_test``, and
 ``ARDENTUM_KENFRENCH_BASE_URL=http://localhost:8765/kenfrench/``. The Ken French files
 are the generated test fixtures (400 business days from 2020-01-02), not real data.
 """
 
 from __future__ import annotations
 
-import json
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
@@ -20,67 +20,31 @@ from tests.fixtures.kenfrench import (
     industries_monthly_text,
     zipped,
 )
-from tests.fixtures.wikirate import (
-    answer_item,
-    answers_payload,
-    companies_payload,
-    company_card,
-    company_item,
-    metric_card,
-    metric_item,
-    metrics_payload,
-)
+from tests.fixtures.wikirate import FakeWikiRate, answer_row, company_row, metric_row
 
 MID = 826615
 MID2 = 900001  # a second numeric metric, for composite scores
-COMPANIES = [
-    company_item(100, "Apple Inc.", ["US0378331005"]),
-    company_item(200, "Adidas AG", ["DE000A1EWWW0"], "Germany"),
-    company_item(300, "Puma", ["DE0006969603"], "Germany"),
-]
-
-
-def respond(path: str, query: dict[str, list[str]]) -> bytes | None:
-    if path == "/Metrics.json":
-        return metrics_payload(
-            metric_item(MID),
-            metric_item(MID2, title="Women on the board", unit="%"),
-            metric_item(1, value_type="Category", title="Report available"),
-        )
-    if path == f"/~{MID}.json":
-        return metric_card(MID)
-    if path == f"/~{MID2}.json":
-        card = json.loads(metric_card(MID2))
-        card["title"] = "Women on the board"
-        return json.dumps(card).encode()
-    if path == "/~300.json":
-        return company_card(300, "Puma")
-    if path == "/Companies.json":
-        ids = query.get("filter[company_identifier[value]]", [""])[0]
-        name = query.get("filter[name]", [""])[0].lower()
-        hits = (
-            [
-                c
-                for c in COMPANIES
-                if any(i in ids for i in c["international_securities_identification_number"])
-            ]
-            if ids
-            else [c for c in COMPANIES if name and name in c["name"].lower()]
-        )
-        return companies_payload(*hits)
-    if path == f"/~{MID}+Answers.json":
-        return answers_payload(
-            answer_item("Apple Inc.", 2023, "800"),
-            answer_item("Adidas AG", 2023, "Unknown"),
-            answer_item("Puma", 2023, "400"),
-        )
-    if path == f"/~{MID2}+Answers.json":
-        return answers_payload(
-            answer_item("Apple Inc.", 2023, "40", MID2),
-            answer_item("Adidas AG", 2023, "35", MID2),
-            answer_item("Puma", 2023, "20", MID2),
-        )
-    return None
+PREFIX = "/rest/v1"
+FAKE = FakeWikiRate(
+    metrics=[
+        metric_row(MID),
+        metric_row(MID2, metric_name="Women on the board", unit="%"),
+        metric_row(1, value_type="category", metric_name="Emissions report available"),
+    ],
+    companies=[
+        company_row(100, "Apple Inc.", ["US0378331005"]),
+        company_row(200, "Adidas AG", ["DE000A1EWWW0"], "Germany"),
+        company_row(300, "Puma", ["DE0006969603"], "Germany"),
+    ],
+    answers=[
+        answer_row(100, "Apple Inc.", 2023, "800"),
+        answer_row(200, "Adidas AG", 2023, "Unknown"),
+        answer_row(300, "Puma", 2023, "400"),
+        answer_row(100, "Apple Inc.", 2023, "40", MID2),
+        answer_row(200, "Adidas AG", 2023, "35", MID2),
+        answer_row(300, "Puma", 2023, "20", MID2),
+    ],
+)
 
 
 KENFRENCH = {
@@ -102,11 +66,13 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(make() if make else b"")
             return
-        body = respond(url.path, parse_qs(url.query))
-        self.send_response(200 if body is not None else 404)
+        query = {k: v[0] for k, v in parse_qs(url.query).items()}
+        headers = {k.lower(): v for k, v in self.headers.items()}
+        status, body = FAKE.respond(url.path.removeprefix(PREFIX), query, headers)
+        self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.end_headers()
-        self.wfile.write(body or b"{}")
+        self.wfile.write(body)
 
     def log_message(self, *_args: object) -> None:
         pass

@@ -605,3 +605,34 @@ Two items left open by D-043.
   part way through; instead the backtest applies today's scores, says which assets had no
   score yet and from which date all are known, so a later start can be chosen.
   Undated scores (the demo data's) remain today's at every rebalance, with a note.
+
+## D-046 WikiRate's new API: keys, licences per answer, and saying when it is off
+The daily live check began failing in early November 2026 on one line of 42: WikiRate
+refused every request. WikiRate has replaced the API that answered at `wikirate.org/*.json`
+without a key by a new one at `data.wikirate.org/rest/v1` (documented at
+wikirate.org/api), which answers only requests carrying a free account's publishable key
+and personal token. The provider was rewritten for it (D-026 stands otherwise).
+* **Keys.** Two settings, `ARDENTUM_WIKIRATE_PUBLISHABLE_KEY` and
+  `ARDENTUM_WIKIRATE_API_TOKEN` (secret). Without both the API sends nothing and says that
+  open ESG data is switched off and how the operator switches it on; `/meta` reports
+  `open_esg_available`, so the live check warns instead of failing, as for FRED.
+* **Matching stays exact.** The new API holds identifiers as an object, searched as text,
+  so a search for an ISIN can return a company whose identifier merely contains it. A
+  company is accepted only if its parsed ISINs include the asset's ISIN exactly. Only
+  well-formed ISINs are put into a filter, so user text can never change a filter's
+  meaning. If WikiRate refuses the combined filter for several ISINs, they are looked up
+  one at a time. An ISIN typed into the company search finds its company the same way.
+* **Licence per answer.** Each answer now states its licence, "mostly CC BY 4.0". Every
+  score here is published with a CC BY 4.0 attribution, so an answer stating another
+  licence is not used, and its row says so, rather than being mixed in under the wrong
+  terms. An answer stating none is treated as before.
+* **Links.** Answers no longer carry a WikiRate address. A score links to the answer's
+  source document where WikiRate lists one, which is the better provenance; metrics and
+  companies link to their wikirate.org pages, addressed by name.
+* **Lost.** The number of answers per metric and its topics are no longer reported, so
+  the metric list no longer shows them.
+* **Not tried live.** The rewrite follows WikiRate's documentation and is tested against
+  a stand-in that implements the documented filters. It could not be run against
+  WikiRate itself without an account. The live check's WikiRate line (a metric search
+  and an ISIN lookup of a real company) is its first real trial, once the operator has
+  set the keys (docs/LAUNCH_PLAN.md, step 2).

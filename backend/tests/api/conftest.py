@@ -38,6 +38,8 @@ def settings(tmp_path: Path) -> Settings:
         cors_origins=["http://localhost:3000"],
         compute_rate_limit=0,
         write_rate_limit=0,
+        wikirate_publishable_key="pk-test",
+        wikirate_api_token="wr_test",
     )
 
 

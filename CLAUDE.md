@@ -96,7 +96,7 @@ npm run gen:api        # regenerate src/lib/api/schema.d.ts from the running bac
 npm run lint && npm run typecheck && npm test
 npm run build
 npm run e2e            # Playwright (starts backend, frontend and a WikiRate stand-in)
-# in the dev container: PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm run e2e
+# in the dev container: PLAYWRIGHT_CHROMIUM_PATH=$(ls /opt/pw-browsers/chromium-*/chrome-linux*/chrome) npm run e2e
 ```
 
 Local PostgreSQL (dev container): `initdb` + `pg_ctl -o '-p 5433'` (see PROGRESS.md notes).

@@ -30,7 +30,7 @@ export default defineConfig({
     {
       // Backend in dev-auth mode with a throwaway SQLite database.
       command:
-        "cd ../backend && rm -f /tmp/ardentum-e2e.sqlite3 && ARDENTUM_DATABASE_URL=sqlite:////tmp/ardentum-e2e.sqlite3 ARDENTUM_ENV=test ARDENTUM_WIKIRATE_BASE_URL=http://127.0.0.1:8765 ARDENTUM_KENFRENCH_BASE_URL=http://127.0.0.1:8765/kenfrench/ uv run uvicorn ardentum.api.main:create_app --factory --port 8000",
+        "cd ../backend && rm -f /tmp/ardentum-e2e.sqlite3 && ARDENTUM_DATABASE_URL=sqlite:////tmp/ardentum-e2e.sqlite3 ARDENTUM_ENV=test ARDENTUM_WIKIRATE_BASE_URL=http://127.0.0.1:8765/rest/v1 ARDENTUM_WIKIRATE_PUBLISHABLE_KEY=pk-test ARDENTUM_WIKIRATE_API_TOKEN=wr_test ARDENTUM_KENFRENCH_BASE_URL=http://127.0.0.1:8765/kenfrench/ uv run uvicorn ardentum.api.main:create_app --factory --port 8000",
       url: "http://localhost:8000/api/v1/health",
       reuseExistingServer: reuse,
       timeout: 120_000,

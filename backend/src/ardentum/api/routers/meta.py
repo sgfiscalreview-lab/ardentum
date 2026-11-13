@@ -34,6 +34,7 @@ def meta(settings: SettingsDep) -> s.MetaOut:
         auth_mode=settings.auth_mode.value,
         supabase_url=settings.supabase_url,
         live_data_available=bool(settings.tiingo_api_key),
+        open_esg_available=bool(settings.wikirate_publishable_key and settings.wikirate_api_token),
         methodology_version=METHODOLOGY_VERSION,
         commit=settings.build_commit or os.environ.get("RENDER_GIT_COMMIT") or None,
     )

@@ -33,7 +33,7 @@ Status as of 2026-10-15.
 | Minimum-CVaR optimisation (and historical VaR/CVaR on every result) | ✅ | SciPy HiGHS LP, brute-force grid, closed-form CVaR |
 | Shared rate limiting (PostgreSQL), verified-user keys, forged-header protection | ✅ | `tests/api/test_ratelimit.py` (SQLite + PostgreSQL) |
 | Background jobs with long-polling and recovery of abandoned runs | ✅ | `tests/api/test_jobs.py` |
-| Open ESG data from WikiRate (CC BY 4.0): match by ISIN, score, save, apply | ✅ | `tests/data/test_wikirate.py`, `tests/api/test_open_esg_api.py`, `e2e/open-esg.spec.ts` |
+| Open ESG data from WikiRate (CC BY 4.0): match by ISIN, score, save, apply; WikiRate's new API with account keys, answers under other licences left out (D-046). Not yet tried against WikiRate itself: needs the operator's keys | ✅ (live trial pending) | `tests/data/test_wikirate.py`, `tests/api/test_open_esg_api.py`, `e2e/open-esg.spec.ts` |
 | Plain visual design (founder's list of patterns to avoid), real screenshots on the landing page, skeleton loaders | ✅ (look superseded by D-041) | CLAUDE.md UI rules, D-027; axe checks on every page in both themes |
 | Terms of Service, Privacy Policy, account export and deletion | ✅ | `tests/api/test_account.py`, E2E legal/account flow |
 | Founder setup guide (click by click) | ✅ | `docs/SETUP_GUIDE.md` |
@@ -57,7 +57,7 @@ Status as of 2026-10-15.
 | Bootstrap Sharpe test on short backtests and point-in-time ESG scores (D-045) | ✅ | `tests/quant/test_sharpe_inference.py` (one-period blocks equal HAC without lags, agreement with HAC, simulated size with fat tails and autocorrelation), `tests/quant/test_backtest.py` (later scores never change earlier weights; scores not yet known are refused), `tests/quant/test_esg_scaling.py`, `tests/api/test_open_esg_api.py`, `tests/api/test_api_core.py` |
 
 ## Test status
-- Backend: 474 tests passing (SQLite; 2 more run only on PostgreSQL); API suite (137 tests, including the database lock-down checks) also passing on PostgreSQL 16; ruff clean; mypy --strict clean. Migrations 0001–0007 upgrade, `alembic check` and downgrade cleanly on PostgreSQL.
+- Backend: 489 tests passing (SQLite; 2 more run only on PostgreSQL); API suite (142 tests, including the database lock-down checks) also passing on PostgreSQL 16; ruff clean; mypy --strict clean. Migrations 0001–0007 upgrade, `alembic check` and downgrade cleanly on PostgreSQL.
 - Research: 13 tests for the study statistics and hedging set-up (`research/tests`), run by the Research workflow before each run.
 - Frontend: ESLint (incl. React Compiler rules) clean; `tsc --strict` clean; 35 Vitest unit tests passing; builds fail if a secret key reaches browser files.
 - Deployment image: CI builds the API image and starts it as Render runs it (its own user, migrations, PostgreSQL), then restarts it and checks it answers again (D-044).
@@ -88,5 +88,5 @@ psql -h /tmp -p 5433 -U postgres -c "CREATE DATABASE ardentum_test;"
 
 E2E in this container (Playwright's bundled browser is not installed; use the system one):
 ```bash
-cd frontend && PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm run e2e
+cd frontend && PLAYWRIGHT_CHROMIUM_PATH=$(ls /opt/pw-browsers/chromium-*/chrome-linux*/chrome) npm run e2e
 ```

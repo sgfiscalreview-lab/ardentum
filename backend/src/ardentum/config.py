@@ -47,8 +47,11 @@ class Settings(BaseSettings):
     # Render sets RENDER_GIT_COMMIT itself; other hosts can set ARDENTUM_BUILD_COMMIT.
     build_commit: str | None = None
     fred_api_key: str | None = None
-    wikirate_api_key: str | None = None  # free account at wikirate.org
-    wikirate_base_url: str = "https://wikirate.org"
+    # Open ESG data: a free account at wikirate.org, account menu, API access. The
+    # publishable key is the same for everyone; the token is personal and secret.
+    wikirate_publishable_key: str | None = None
+    wikirate_api_token: str | None = None
+    wikirate_base_url: str = "https://data.wikirate.org/rest/v1"
     kenfrench_base_url: str = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/"
 
     max_upload_bytes: int = 5 * 1024 * 1024

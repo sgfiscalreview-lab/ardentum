@@ -2,19 +2,16 @@
 
 from __future__ import annotations
 
-import json
 from collections.abc import Iterator
 
-import httpx
 import pytest
 import respx
 from fastapi.testclient import TestClient
 
-from ardentum.data.providers import wikirate as wr
 from ardentum.services import market_data
 from ardentum.services.provider_cache import clear_memory
 from tests.api.test_open_esg_api import MID, _mock_wikirate, _upload
-from tests.fixtures.wikirate import answer_item, answers_payload, metric_card
+from tests.fixtures.wikirate import FakeWikiRate, answer_row, metric_row
 
 MID2 = 900001
 LINEAR_LOWER = {"method": "linear", "lower": 0, "upper": 1000, "higher_is_better": False}
@@ -29,23 +26,15 @@ def _fresh() -> Iterator[None]:
     clear_memory()
 
 
-def _mock_second_metric() -> None:
-    card = json.loads(metric_card(MID2))
-    card["title"] = "Board gender diversity"
-    card["name"] = "Example Designer+Board gender diversity"
-    respx.get(f"{wr.BASE_URL}/~{MID2}.json").mock(
-        return_value=httpx.Response(200, content=json.dumps(card).encode())
+def _mock_second_metric(fake: FakeWikiRate) -> None:
+    fake.tables["/v1_metrics"].append(
+        metric_row(MID2, metric_name="Board gender diversity", metric_designer="Example Designer")
     )
-    respx.get(f"{wr.BASE_URL}/~{MID2}+Answers.json").mock(
-        return_value=httpx.Response(
-            200,
-            content=answers_payload(
-                answer_item("Apple Inc.", 2023, "50", MID2),
-                answer_item("Adidas AG", 2023, "30", MID2),
-                answer_item("Puma", 2022, "20", MID2),
-            ),
-        )
-    )
+    fake.tables["/v1_answers"] += [
+        answer_row(100, "Apple Inc.", 2023, "50", MID2),
+        answer_row(200, "Adidas AG", 2023, "30", MID2),
+        answer_row(300, "Puma", 2022, "20", MID2),
+    ]
 
 
 def _body(ds: str, **kw: object) -> dict[str, object]:
@@ -67,8 +56,7 @@ def test_composite_is_the_weighted_average_and_never_imputes(
     client: TestClient, auth: dict[str, str]
 ) -> None:
     ds = _upload(client, auth)
-    _mock_wikirate()
-    _mock_second_metric()
+    _mock_second_metric(_mock_wikirate())
     r = client.post("/api/v1/esg/open/composite-preview", json=_body(ds), headers=auth)
     assert r.status_code == 200, r.text
     out = r.json()
@@ -114,8 +102,7 @@ def test_composite_validation(client: TestClient, auth: dict[str, str]) -> None:
 @respx.mock
 def test_save_composite_and_use_it(client: TestClient, auth: dict[str, str]) -> None:
     ds = _upload(client, auth)
-    _mock_wikirate()
-    _mock_second_metric()
+    _mock_second_metric(_mock_wikirate())
     r = client.post(
         "/api/v1/esg/overlays", json={"name": "Blend", "composite": _body(ds)}, headers=auth
     )
@@ -160,8 +147,7 @@ def test_composite_with_no_complete_asset_cannot_be_saved(
     client: TestClient, auth: dict[str, str]
 ) -> None:
     ds = _upload(client, auth)
-    _mock_wikirate()
-    _mock_second_metric()
+    _mock_second_metric(_mock_wikirate())
     body = _body(ds, company_overrides={}, tickers=["BBB", "CCC"])
     r = client.post("/api/v1/esg/overlays", json={"name": "x", "composite": body}, headers=auth)
     assert r.status_code == 422

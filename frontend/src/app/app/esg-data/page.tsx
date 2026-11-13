@@ -166,7 +166,7 @@ export default function EsgDataPage() {
     <>
       <PageHeader
         title="Open ESG data"
-        description="Build ESG scores for your assets from WikiRate, a free, community-researched database of company disclosures (CC BY 4.0). Every score links to its source answer; assets without data stay unscored."
+        description="Build ESG scores for your assets from WikiRate, a free, community-researched database of company disclosures (CC BY 4.0). Every score links to its source document where WikiRate lists one; assets without data stay unscored."
       />
       {unsupported && (
         <Callout tone="info" title="Choose a dataset of real companies">

@@ -321,13 +321,34 @@ def check_api(rep: Report, api: str, site: str) -> None:
             rep.fail("Policy rates for hedging (BIS)", f"HTTP {r.status}: {error_message(r)}")
 
     def wikirate() -> None:
+        name = "WikiRate open ESG data"
+        available = request("GET", f"{v1}/meta").json().get("open_esg_available")
+        if available is None:
+            rep.warn(name, "the deployed API predates WikiRate's new API; deploy the current code")
+            return
+        if not available:
+            rep.warn(
+                name,
+                "switched off: no WikiRate keys on the API (free account; guide step 10)",
+            )
+            return
         r = request("GET", f"{v1}/esg/open/metrics?q=greenhouse&limit=5", timeout=120)
-        if r.status == 200 and r.json():
-            rep.ok("WikiRate open ESG data", f"{len(r.json())} metrics found for 'greenhouse'")
-        elif r.status == 200:
-            rep.fail("WikiRate open ESG data", "search returned no metrics")
+        if r.status != 200:
+            rep.fail(name, f"HTTP {r.status}: {error_message(r)}")
+            return
+        if not r.json():
+            rep.fail(name, "search returned no metrics")
+            return
+        # Adidas AG lists this ISIN on wikirate.org; finding it checks the identifier
+        # lookup that automatic matching relies on.
+        c = request("GET", f"{v1}/esg/open/companies?q=DE000A1EWWW0", timeout=120)
+        if c.status == 200 and c.json():
+            found = c.json()[0]["name"]
+            rep.ok(name, f"{len(r.json())} metrics for 'greenhouse'; ISIN finds {found}")
+        elif c.status == 200:
+            rep.fail(name, "no company found for the ISIN DE000A1EWWW0 (Adidas AG)")
         else:
-            rep.fail("WikiRate open ESG data", f"HTTP {r.status}: {error_message(r)}")
+            rep.fail(name, f"ISIN lookup, HTTP {c.status}: {error_message(c)}")
 
     def optimise() -> None:
         r = request("POST", f"{v1}/optimise", {"universe": KF_UNIVERSE}, timeout=180)
