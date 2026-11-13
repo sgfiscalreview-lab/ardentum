@@ -12,10 +12,32 @@ test.beforeEach(async ({ page }) => {
 test("landing page leads to the workspace with synthetic data clearly labelled", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Portfolio analysis that shows its working." })).toBeVisible();
-  await page.getByRole("link", { name: "Open the workspace" }).click();
+  await page.getByRole("link", { name: "Open the workspace" }).first().click();
   await expect(page.getByRole("heading", { name: "Universe" })).toBeVisible();
   await expect(page.getByText("Synthetic demo data").first()).toBeVisible();
   await expect(page.getByText(/Assets \(14 selected\)/)).toBeVisible();
+});
+
+test("the landing page's worked example follows its limit and opens in the workspace", async ({ page }) => {
+  await page.goto("/");
+  const example = page.getByRole("region", { name: "One answer, with its working" });
+  await expect(example.getByText("Synthetic demo data")).toBeVisible();
+  await expect(example.getByText(/Held at its maximum weight of 30\.0%/).first()).toBeVisible();
+
+  // Arrow keys move the choice, as in every segmented control.
+  await example.getByRole("radio", { name: "30%" }).focus();
+  await page.keyboard.press("ArrowLeft");
+  await expect(example.getByRole("radio", { name: "20%" })).toBeChecked();
+  await expect(example.getByText(/Held at its maximum weight of 20\.0%/).first()).toBeVisible();
+  await expect(example.getByText(/Held at its maximum weight of 30\.0%/)).toHaveCount(0);
+
+  // The recorded answer is what the workspace computes from the same settings.
+  const answer = (await example.getByText(/^Expected Sharpe ratio \d\.\d\d$/).innerText()).replace("Expected ", "");
+  await example.getByRole("link", { name: "Open this result in the workspace" }).click();
+  await expect(page.getByRole("heading", { name: "Optimise" })).toBeVisible();
+  await expect(page.getByText("You opened a shared link")).toBeVisible();
+  await expect(page.getByText(`Best expected risk-adjusted return: ${answer}.`)).toBeVisible();
+  await expect(page.getByLabel("Max weight")).toHaveValue("20");
 });
 
 test("optimise shows metrics, explanations and binding constraints", async ({ page }) => {

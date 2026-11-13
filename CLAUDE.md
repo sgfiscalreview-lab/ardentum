@@ -68,9 +68,10 @@ Read this first, then `ARCHITECTURE.md`, `DECISIONS.md`, `PROGRESS.md`, `TODO.md
   sizes, never `text-[13px]`. Never Inter, Geist or Space Grotesk.
 * No feature-card rows, bento grids, terminal windows, testimonials or pricing tables.
   Show the real product (`npm run screenshots` in `frontend/` with the app running
-  captures the landing-page screenshots: whole cards only, on the app's own background,
-  shown without a frame of their own) and plain statements; avoid "it's not X, it's Y"
-  copy.
+  records the landing page's worked example and captures its screenshots: whole cards
+  only, on the app's own background, shown without a frame of their own) and plain
+  statements; avoid "it's not X, it's Y" copy. The worked example
+  (`src/lib/landing-example.json`) is recorded output, never edited by hand (D-047).
 * Loading states use static skeletons (`Skeleton`, `SkeletonRows`, `ResultsSkeleton`).
 * Every page links the Terms of Service and Privacy Policy (site footer).
 
