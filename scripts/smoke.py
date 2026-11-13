@@ -179,7 +179,10 @@ def git(*args: str) -> tuple[int, str]:
 
 
 def deploy_freshness(rep: Report, running: str | None) -> None:
-    """Whether the API runs the latest backend change in this checkout (main in CI)."""
+    """Whether the API runs main's latest backend change, as this checkout knows main.
+
+    The host deploys main, so a branch's own backend changes are not expected there yet.
+    """
     name = "API deploy is current"
     if not running:
         rep.warn(
@@ -189,7 +192,9 @@ def deploy_freshness(rep: Report, running: str | None) -> None:
             "is behind main: on Render, Manual Deploy > Deploy latest commit.",
         )
         return
-    code, latest = git("log", "-1", "--format=%H", "--", "backend")
+    code, latest = git("log", "-1", "--format=%H", "origin/main", "--", "backend")
+    if code != 0 or not latest:  # no origin/main here (a bare download): use this checkout
+        code, latest = git("log", "-1", "--format=%H", "--", "backend")
     if code != 0 or not latest:
         rep.warn(name, f"the API runs {running[:7]}; no git history here to compare with")
         return
