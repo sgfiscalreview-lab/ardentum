@@ -51,7 +51,14 @@ markers = [
   "slow: long-running numerical tests",
   "postgres: requires a PostgreSQL database (DATABASE_URL)",
 ]
-filterwarnings = ["error::RuntimeWarning:ardentum.*"]
+# A numerical warning from our code is a bug. A library's notice that something we call
+# will be removed fails too, so an update shows what to change before it breaks.
+filterwarnings = [
+  "error::RuntimeWarning:ardentum.*",
+  "error::DeprecationWarning",
+  "error::FutureWarning",
+  "error::pandas.errors.Pandas4Warning",
+]
 
 [tool.ruff]
 line-length = 100

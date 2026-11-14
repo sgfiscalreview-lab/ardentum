@@ -113,7 +113,7 @@ def test_uses_nothing_before_the_purchase() -> None:
 
 def test_start_on_a_holiday_buys_at_the_previous_close() -> None:
     rets = _returns(np.full(30, 0.002))
-    friday = next(i for i, d in enumerate(rets.index) if d.dayofweek == 4)
+    friday = next(i for i, d in enumerate(rets.index) if d.day_of_week == 4)
     saturday = (rets.index[friday] + pd.Timedelta(days=1)).date()
     res = replay(rets, np.array([1.0]), saturday, rets.index[15].date())
     assert res.dates[0] == rets.index[friday]

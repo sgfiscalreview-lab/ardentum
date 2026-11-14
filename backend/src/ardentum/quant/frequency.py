@@ -76,7 +76,7 @@ def check_frequency(index: pd.DatetimeIndex, requested: Frequency) -> None:
             f"annualised as if there were {requested.periods_per_year} a year. {fix}"
         )
     if requested is Frequency.DAILY:
-        weekend = float(np.mean(index.dayofweek >= 5))
+        weekend = float(np.mean(index.day_of_week >= 5))
         if weekend > 0.1:
             raise InvalidInputError(
                 f"{weekend:.0%} of the price dates fall on a weekend, so these look like calendar "
