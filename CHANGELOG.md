@@ -42,6 +42,8 @@ All notable changes to Ardentum are recorded here. Versions follow
 - The live smoke test also checks the usage counts and the tour, usage and classroom pages.
 
 ### Changed
+- The backend tests fail on any deprecation notice from a library, so an update shows what
+  to change before the old call is removed (the first: pandas' `dayofweek`).
 - The landing page opens with a real result set out as an answer with its working: each
   asset's weight beside the engine's reason for it. Choosing the maximum weight of one
   asset changes the answer and its reasons, and a link opens the same result in the
@@ -106,6 +108,9 @@ All notable changes to Ardentum are recorded here. Versions follow
 - Wide formulas on the methodology pages can be scrolled with the keyboard on phones.
 
 ### Security
+- The frontend's minor and patch updates (Next.js, React, Motion, KaTeX 0.19, Playwright and
+  others) applied on top of the security fixes; the backend's (FastAPI, pandas 3.1, Pydantic
+  and others) were merged directly.
 - Dependency updates that clear every audit finding: Next.js (critical), undici, Vite and
   Zod (high) and others in the frontend; certifi, opentelemetry-api and setuptools in the
   API. One KaTeX version for the maths pages.

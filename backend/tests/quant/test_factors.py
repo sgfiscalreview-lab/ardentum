@@ -110,7 +110,7 @@ def test_daily_periods_reproduce_the_daily_factors() -> None:
 
 def test_weekly_periods_compound_the_days_inside() -> None:
     f = _factors(80, seed=11)
-    ends = pd.DatetimeIndex([d for d in f.index if d.dayofweek == 4])  # Fridays
+    ends = pd.DatetimeIndex([d for d in f.index if d.day_of_week == 4])  # Fridays
     pf = period_factors(f, ends)
     second = f.loc[(f.index > ends[0]) & (f.index <= ends[1])]
     assert len(second) == 5
