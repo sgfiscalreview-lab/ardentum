@@ -43,6 +43,15 @@ services:
       # JSON list, e.g. ["https://ardentum.pages.dev"]
       - key: ARDENTUM_CORS_ORIGINS
         sync: false
+      # Open ESG data: both values from a free account at wikirate.org (account menu, API
+      # access). Without them the feature says it is switched off. The token is secret.
+      - key: ARDENTUM_WIKIRATE_PUBLISHABLE_KEY
+        sync: false
+      - key: ARDENTUM_WIKIRATE_API_TOKEN
+        sync: false
+      # Optional: free key from fredaccount.stlouisfed.org (3-month Treasury bill rate)
+      - key: ARDENTUM_FRED_API_KEY
+        sync: false
       # Supabase transaction pooler URL (port 6543), with the password filled in
       - key: ARDENTUM_DATABASE_URL
         sync: false

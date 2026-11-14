@@ -636,3 +636,44 @@ and personal token. The provider was rewritten for it (D-026 stands otherwise).
   WikiRate itself without an account. The live check's WikiRate line (a metric search
   and an ISIN lookup of a real company) is its first real trial, once the operator has
   set the keys (docs/LAUNCH_PLAN.md, step 2).
+
+## D-047 Landing page: the working, shown; and a ratio that can be checked
+The landing page said that results show their working and then showed screenshots. It now
+opens, under the headline, with one real result set out as an answer with its working:
+eight assets of the demo data, each weight beside the reason the engine gives for it, with
+the engine's own cautions and assumptions underneath
+(`frontend/src/components/worked-example.tsx`, designed with
+`.claude/skills/frontend-design` inside the UI rules).
+* **Real output, recorded.** The four results (a maximum weight of 20%, 30%, 40% or none)
+  are recorded from the running app by `scripts/capture-example.mjs`, which
+  `npm run screenshots` now runs first. Nothing in `src/lib/landing-example.json` is
+  written by hand: the reasons, cautions and assumptions are the API's sentences, and the
+  page only formats weights. A unit test checks the file (weights sum to one, respect the
+  limit, every holding has a reason) and a browser test checks that the workspace computes
+  the same answer from the link beside it. The example is labelled as synthetic demo data.
+* **One thing to do.** Choosing the maximum weight changes the answer and its reasons: an
+  asset reaches its limit, another drops out because its return no longer pays for its
+  risk, and with no limit the engine's concentration warning appears. The weight bars move
+  on the standard spring, transforms only (reviewed frame by frame: no overshoot, settled
+  in about half a second, a jump under reduced motion). Nothing else on the page moves.
+* **One grid.** Every section uses the same two columns, a narrow one that says what a
+  thing is and a wide one with the thing, so the page reads as answer and working
+  throughout. Beside the tall screenshots the text stays in view while the picture scrolls.
+  Headings name the question each page answers, in the app's own words ("constraints",
+  "Max weight"), and each links to its page.
+* **A flaw this exposed.** The app stated a Sharpe ratio next to an expected return, a
+  volatility and "a 2.00% risk-free rate", but (11.36% less 2.00%) / 16.01% is 0.58 and
+  the ratio shown was 0.59. The engine is right and documented (the effective annual
+  risk-free rate is put on the linear annual scale of the expected return, 1.98% here,
+  which keeps expected and realised ratios identical on the same sample), but the reader
+  could not reproduce the figure. The statement now gives the working, "the expected
+  return less the risk-free rate (11.36% less 1.98%), divided by the volatility
+  (16.01%)", and the assumption states both scales. A test parses the sentence and checks
+  that its own figures give the ratio.
+* **Review alongside.** Compatible updates clear every finding of both dependency audits
+  (Next.js critical, undici, Vite and Zod high, among others; certifi, opentelemetry-api
+  and setuptools in Python). The maths pages rendered with one KaTeX version and styled
+  with another; an override now keeps a single version. The lint tools are pinned to a
+  fixed minimatch. 1,702 requests at the edges of every calculation endpoint's allowed
+  ranges gave 811 results and 891 refusals with reasons: no server error, no NaN in a
+  result, no hang, and nothing in the server's log.

@@ -200,9 +200,13 @@ def explain(
         "per year are model estimates from the historical window, not forecasts of realised returns."
     )
     if result.sharpe_ratio is not None:
+        # The working, so the ratio can be checked from the figures beside it: the
+        # risk-free rate is on the same linear annual scale as the expected return.
+        rf = estimates.risk_free_arithmetic(request.risk_free_rate)
         statements.append(
-            f"Expected Sharpe ratio {result.sharpe_ratio:.2f} using a {request.risk_free_rate:.2%} "
-            "risk-free rate."
+            f"Expected Sharpe ratio {result.sharpe_ratio:.2f}: the expected return less the "
+            f"risk-free rate ({result.expected_return:.2%} less {rf:.2%}), divided by the "
+            f"volatility ({result.volatility:.2%})."
         )
     if top:
         statements.append(
@@ -465,7 +469,9 @@ def assumptions_for(estimates: MarketEstimates, request: OptimisationRequest) ->
             if estimates.covariance_shrinkage is not None
             else "."
         ),
-        f"Risk-free rate: {request.risk_free_rate:.2%} (effective annual).",
+        f"Risk-free rate: {request.risk_free_rate:.2%} (effective annual), which is "
+        f"{estimates.risk_free_arithmetic(request.risk_free_rate):.2%} a year on the linear "
+        "scale used for expected returns.",
         "Single-period mean-variance model: returns are summarised by their mean and covariance; "
         "higher moments and regime changes are ignored.",
         "No transaction costs, taxes or liquidity constraints in the optimisation.",

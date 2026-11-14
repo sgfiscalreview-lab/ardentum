@@ -1,0 +1,339 @@
+{
+  "source": "Synthetic demo data",
+  "cases": [
+    {
+      "limit": 0.2,
+      "href": "/app/optimise#share=7VJNbxQxDP0vPmdXM4uKxNwoleAABW1REaqqKJt4Zs1mksXO7Ieq-e8omWlL-QGcent-eX52bD_AAZpawRDogCwIzQM4k4xg0uSgAYd9BAWJ7A5ZoLmD6x83y5uf16Dgy9WHGb1fX87o2_f1jD6ur2b0aX37yH29vXyCn6f3ewWSDCdoYFXVbxdVvahqUIDBFWp1sahXizeZahl_DxjsOTdmyJ9BgR2YM6W36Dp00LTGC44KUBL1JlEM-VM9mqBnKjI0sCVJkckan03iwTCZYPGFxqOLlPQx-hYUMMlOt4yo2SSEplpWq1FB3PxCm-hQZvdXAL05adka3mOucDCsbQwtOQy2ZL-7GHPlIIkNhSSlTQr6iNRtEzSVKhZP4XKlwEjezCYOwWX9qEDQpsjaU0_Z4u5eAZ6sHxw6XdT_klPCzOZ6KJ0WGxmhCYP3eXKdTuSnFuY8PYSieTYtc55a7DiKaDztowzPNomN3VHoNDLncWZ2VHCMnNlHVVmpTL-P-0Q9TVf4epGvF_mfLlKS2ZCndNaMYvq9RymFBPP2imgc_wA",
+      "sharpe_ratio": 0.49533898278815025,
+      "sharpe_statement": "Expected Sharpe ratio 0.50: the expected return less the risk-free rate (8.33% less 1.98%), divided by the volatility (12.81%).",
+      "holdings": [
+        {
+          "ticker": "NWS.SYN",
+          "name": "Northwind Semiconductors (synthetic)",
+          "sector": "Information Technology",
+          "weight": 0.1999999999878885,
+          "status": "at_upper_bound",
+          "reason": "Held at its maximum weight of 20.0%; the optimiser would hold more without this limit."
+        },
+        {
+          "ticker": "MDC.SYN",
+          "name": "Meridian Medical Devices (synthetic)",
+          "sector": "Health Care",
+          "weight": 0.19999999989808734,
+          "status": "at_upper_bound",
+          "reason": "Held at its maximum weight of 20.0%; the optimiser would hold more without this limit."
+        },
+        {
+          "ticker": "ARB.SYN",
+          "name": "Arbor Regional Bank (synthetic)",
+          "sector": "Financials",
+          "weight": 0,
+          "status": "zero_by_optimiser",
+          "reason": "Not held: its expected return (0.97%) is below the 11.57% its covariance with the portfolio would require, so adding it would lower the Sharpe ratio."
+        },
+        {
+          "ticker": "PTR.SYN",
+          "name": "Petra Energy (synthetic)",
+          "sector": "Energy",
+          "weight": 0.04004531548773798,
+          "status": "held",
+          "reason": "Held at 4.0%: its expected excess return compensates for the risk it adds (return proportional to its beta to the portfolio). It contributes 6% of risk."
+        },
+        {
+          "ticker": "GRD.SYN",
+          "name": "Gridline Utilities (synthetic)",
+          "sector": "Utilities",
+          "weight": 0.19999999992002426,
+          "status": "at_upper_bound",
+          "reason": "Held at its maximum weight of 20.0%; the optimiser would hold more without this limit."
+        },
+        {
+          "ticker": "HRV.SYN",
+          "name": "Harvest Consumer Staples (synthetic)",
+          "sector": "Consumer Staples",
+          "weight": 2.542274201290442e-8,
+          "status": "zero_by_optimiser",
+          "reason": "Not held: its expected return (1.86%) is below the 6.60% its covariance with the portfolio would require, so adding it would lower the Sharpe ratio."
+        },
+        {
+          "ticker": "GOVB.SYN",
+          "name": "Synthetic Government Bond Index (synthetic)",
+          "sector": "Government Bonds",
+          "weight": 0.19999999992254808,
+          "status": "at_upper_bound",
+          "reason": "Held at its maximum weight of 20.0%; the optimiser would hold more without this limit."
+        },
+        {
+          "ticker": "GOLD.SYN",
+          "name": "Synthetic Gold (synthetic)",
+          "sector": "Commodities",
+          "weight": 0.15995465936097192,
+          "status": "held",
+          "reason": "Held at 16.0%: its expected excess return compensates for the risk it adds (return proportional to its beta to the portfolio). It contributes 3% of risk."
+        }
+      ],
+      "warnings": [
+        "Return-seeking objectives are sensitive to expected-return estimates; the typical standard error of an asset's estimated annual mean here is about 6.5%."
+      ],
+      "assumptions": [
+        "Estimation window: 2016-01-04 to 2025-12-31 (2608 observations, 10.3 years, 252 periods per year).",
+        "Expected returns: historical sample mean of arithmetic mean returns, annualised linearly.",
+        "Covariance: Ledoit-Wolf shrinkage toward a scaled identity (shrinkage intensity 0.01).",
+        "Risk-free rate: 2.00% (effective annual), which is 1.98% a year on the linear scale used for expected returns.",
+        "Single-period mean-variance model: returns are summarised by their mean and covariance; higher moments and regime changes are ignored.",
+        "No transaction costs, taxes or liquidity constraints in the optimisation."
+      ]
+    },
+    {
+      "limit": 0.3,
+      "href": "/app/optimise#share=7VJNbxQxDP0vPmdXM1sViblRKsEBCtqiIlRVUTbxzJrNJIud2Q9V899RMtMW-AGcent-eX52bD_CAZpawRDogCwIzSM4k4xg0uSgAYd9BAWJ7A5ZoLmHm--3y9sfN6Dg8_X7Gb1bX83o67f1jD6sr2f0cX33xH25u3qGn6b3BwWSDCdoYFXVbxZVvahqUIDBFWp1uahXi4tMtYy_Bgz2nBsz5M-gwA7MmdJbdB06aFrjBUcFKIl6kyiG_KkeTdAzFRka2JKkyGSNzybxYJhMsPiXxqOLlPQx-hYUMMlOt4yo2SSEplpWq1FB3PxEm-hQZvdHAL05adka3mOucDCsbQwtOQy2ZL-9HHPlIIkNhSSlTQr6iNRtEzSVKhbP4fJCgZG8mU0cgsv6UYGgTZG1p56yxf2DAjxZPzh0uqj_JaeEmc31UDotNjJCEwbv8-Q6nchPLcx5eghF82Ja5jy12HEU0XjaRxlebBIbu6PQaWTO48zsqOAYObNPqrJSmX4f94l6mq7w9SJfL_I_XaQksyFP6awZxfR7j1IKCebtFdE4_gY",
+      "sharpe_ratio": 0.5857003816486136,
+      "sharpe_statement": "Expected Sharpe ratio 0.59: the expected return less the risk-free rate (11.36% less 1.98%), divided by the volatility (16.01%).",
+      "holdings": [
+        {
+          "ticker": "NWS.SYN",
+          "name": "Northwind Semiconductors (synthetic)",
+          "sector": "Information Technology",
+          "weight": 0.2999999998294535,
+          "status": "at_upper_bound",
+          "reason": "Held at its maximum weight of 30.0%; the optimiser would hold more without this limit."
+        },
+        {
+          "ticker": "MDC.SYN",
+          "name": "Meridian Medical Devices (synthetic)",
+          "sector": "Health Care",
+          "weight": 0.19622097312279235,
+          "status": "held",
+          "reason": "Held at 19.6%: its expected excess return compensates for the risk it adds (return proportional to its beta to the portfolio). It contributes 21% of risk."
+        },
+        {
+          "ticker": "ARB.SYN",
+          "name": "Arbor Regional Bank (synthetic)",
+          "sector": "Financials",
+          "weight": 0,
+          "status": "zero_by_optimiser",
+          "reason": "Not held: its expected return (0.97%) is below the 13.04% its covariance with the portfolio would require, so adding it would lower the Sharpe ratio."
+        },
+        {
+          "ticker": "PTR.SYN",
+          "name": "Petra Energy (synthetic)",
+          "sector": "Energy",
+          "weight": 0,
+          "status": "zero_by_optimiser",
+          "reason": "Not held: its expected return (6.59%) is below the 11.69% its covariance with the portfolio would require, so adding it would lower the Sharpe ratio."
+        },
+        {
+          "ticker": "GRD.SYN",
+          "name": "Gridline Utilities (synthetic)",
+          "sector": "Utilities",
+          "weight": 0.29999977969055525,
+          "status": "at_upper_bound",
+          "reason": "Held at its maximum weight of 30.0%; the optimiser would hold more without this limit."
+        },
+        {
+          "ticker": "HRV.SYN",
+          "name": "Harvest Consumer Staples (synthetic)",
+          "sector": "Consumer Staples",
+          "weight": 0,
+          "status": "zero_by_optimiser",
+          "reason": "Not held: its expected return (1.86%) is below the 7.38% its covariance with the portfolio would require, so adding it would lower the Sharpe ratio."
+        },
+        {
+          "ticker": "GOVB.SYN",
+          "name": "Synthetic Government Bond Index (synthetic)",
+          "sector": "Government Bonds",
+          "weight": 0.20377924735719882,
+          "status": "held",
+          "reason": "Held at 20.4%: its expected excess return compensates for the risk it adds (return proportional to its beta to the portfolio). It contributes -1% of risk."
+        },
+        {
+          "ticker": "GOLD.SYN",
+          "name": "Synthetic Gold (synthetic)",
+          "sector": "Commodities",
+          "weight": 0,
+          "status": "zero_by_optimiser",
+          "reason": "Not held: its expected return (-1.29%) is below the 2.41% its covariance with the portfolio would require, so adding it would lower the Sharpe ratio."
+        }
+      ],
+      "warnings": [
+        "Return-seeking objectives are sensitive to expected-return estimates; the typical standard error of an asset's estimated annual mean here is about 6.5%."
+      ],
+      "assumptions": [
+        "Estimation window: 2016-01-04 to 2025-12-31 (2608 observations, 10.3 years, 252 periods per year).",
+        "Expected returns: historical sample mean of arithmetic mean returns, annualised linearly.",
+        "Covariance: Ledoit-Wolf shrinkage toward a scaled identity (shrinkage intensity 0.01).",
+        "Risk-free rate: 2.00% (effective annual), which is 1.98% a year on the linear scale used for expected returns.",
+        "Single-period mean-variance model: returns are summarised by their mean and covariance; higher moments and regime changes are ignored.",
+        "No transaction costs, taxes or liquidity constraints in the optimisation."
+      ]
+    },
+    {
+      "limit": 0.4,
+      "href": "/app/optimise#share=7VJNbxQxDP0vPmdXMwtFYm6USnCAgraoCFVVlE08s2YzyWJn9kPV_HeUzLQFfgCn3p5fnp8d2w9wgKZWMAQ6IAtC8wDOJCOYNDlowGEfQUEiu0MWaO7g-vvN8ubHNSj4fPV-Ru_WlzP6-m09ow_rqxl9XN8-cl9uL5_gp-n9XoEkwwkaWFX1m0VVL6oaFGBwhVpdLOrV4lWmWsZfAwZ7zo0Z8mdQYAfmTOktug4dNK3xgqMClES9SRRD_lSPJuiZigwNbElSZLLGZ5N4MEwmWPxL49FFSvoYfQsKmGSnW0bUbBJCUy2r1aggbn6iTXQos_sjgN6ctGwN7zFXOBjWNoaWHAZbst9ejLlykMSGQpLSJgV9ROq2CZpKFYuncPlagZG8mU0cgsv6UYGgTZG1p56yxd29AjxZPzh0uqj_JaeEmc31UDotNjJCEwbv8-Q6nchPLcx5eghF82xa5jy12HEU0XjaRxmebRIbu6PQaWTO48zsqOAYObOPqrJSmX4f94l6mq7w5SJfLvI_XaQksyFP6awZxfR7j1IKCebtFdE4_gY",
+      "sharpe_ratio": 0.610481985098685,
+      "sharpe_statement": "Expected Sharpe ratio 0.61: the expected return less the risk-free rate (13.73% less 1.98%), divided by the volatility (19.25%).",
+      "holdings": [
+        {
+          "ticker": "NWS.SYN",
+          "name": "Northwind Semiconductors (synthetic)",
+          "sector": "Information Technology",
+          "weight": 0.4000000000225863,
+          "status": "at_upper_bound",
+          "reason": "Held at its maximum weight of 40.0%; the optimiser would hold more without this limit."
+        },
+        {
+          "ticker": "MDC.SYN",
+          "name": "Meridian Medical Devices (synthetic)",
+          "sector": "Health Care",
+          "weight": 0.1809909257175813,
+          "status": "held",
+          "reason": "Held at 18.1%: its expected excess return compensates for the risk it adds (return proportional to its beta to the portfolio). It contributes 15% of risk."
+        },
+        {
+          "ticker": "ARB.SYN",
+          "name": "Arbor Regional Bank (synthetic)",
+          "sector": "Financials",
+          "weight": 0,
+          "status": "zero_by_optimiser",
+          "reason": "Not held: its expected return (0.97%) is below the 13.44% its covariance with the portfolio would require, so adding it would lower the Sharpe ratio."
+        },
+        {
+          "ticker": "PTR.SYN",
+          "name": "Petra Energy (synthetic)",
+          "sector": "Energy",
+          "weight": 0,
+          "status": "zero_by_optimiser",
+          "reason": "Not held: its expected return (6.59%) is below the 12.07% its covariance with the portfolio would require, so adding it would lower the Sharpe ratio."
+        },
+        {
+          "ticker": "GRD.SYN",
+          "name": "Gridline Utilities (synthetic)",
+          "sector": "Utilities",
+          "weight": 0.31223791141588203,
+          "status": "held",
+          "reason": "Held at 31.2%: its expected excess return compensates for the risk it adds (return proportional to its beta to the portfolio). It contributes 17% of risk."
+        },
+        {
+          "ticker": "HRV.SYN",
+          "name": "Harvest Consumer Staples (synthetic)",
+          "sector": "Consumer Staples",
+          "weight": 0,
+          "status": "zero_by_optimiser",
+          "reason": "Not held: its expected return (1.86%) is below the 7.59% its covariance with the portfolio would require, so adding it would lower the Sharpe ratio."
+        },
+        {
+          "ticker": "GOVB.SYN",
+          "name": "Synthetic Government Bond Index (synthetic)",
+          "sector": "Government Bonds",
+          "weight": 0.10677116284395037,
+          "status": "held",
+          "reason": "Held at 10.7%: its expected excess return compensates for the risk it adds (return proportional to its beta to the portfolio). It contributes -1% of risk."
+        },
+        {
+          "ticker": "GOLD.SYN",
+          "name": "Synthetic Gold (synthetic)",
+          "sector": "Commodities",
+          "weight": 0,
+          "status": "zero_by_optimiser",
+          "reason": "Not held: its expected return (-1.29%) is below the 2.42% its covariance with the portfolio would require, so adding it would lower the Sharpe ratio."
+        }
+      ],
+      "warnings": [
+        "Concentration: NWS.SYN is 40% of the portfolio.",
+        "Return-seeking objectives are sensitive to expected-return estimates; the typical standard error of an asset's estimated annual mean here is about 6.5%."
+      ],
+      "assumptions": [
+        "Estimation window: 2016-01-04 to 2025-12-31 (2608 observations, 10.3 years, 252 periods per year).",
+        "Expected returns: historical sample mean of arithmetic mean returns, annualised linearly.",
+        "Covariance: Ledoit-Wolf shrinkage toward a scaled identity (shrinkage intensity 0.01).",
+        "Risk-free rate: 2.00% (effective annual), which is 1.98% a year on the linear scale used for expected returns.",
+        "Single-period mean-variance model: returns are summarised by their mean and covariance; higher moments and regime changes are ignored.",
+        "No transaction costs, taxes or liquidity constraints in the optimisation."
+      ]
+    },
+    {
+      "limit": 1,
+      "href": "/app/optimise#share=7VJNbxQxDP0vPmerma2KxNwolegBCtqiIlRVUTbxzJrNJIud2Q9V899RMrMU-AGcent-eX52bD_DHppawRBojywIzTM4k4xg0uSgAYd9BAWJ7BZZoHmEu2_3F_ff70DBp5v3M3q3up7Rl6-rGX1Y3czodvVw5j4_XP-GH6f3JwWSDCdoYFnVbxZVvahqUIDBFWp5taiXi8tMtYw_Bwz2lBsz5E-gwA7MmdIbdB06aFrjBUcFKIl6kyiG_KkeTdAzFRka2JCkyGSNzyZxb5hMsPiXxqOLlPQh-hYUMMlWt4yo2SSEprqolqOCuP6BNtG-zO6PAHpz1LIxvMNcYW9Y2xhachhsyX57NebKQRIbCklKmxT0AanbJGgqVSzOYa3ASN7LOg7BZfWoQNCmyNpTT9ng8UkBHq0fHDpd1P-SU8LM5moonRYbGaEJg_d5bp1O5KcG5jw9hKJ5MS1TnhrsOIpoPO6iDC82iY3dUug0MudhZnZUcIic2bOqLFSmv8ddop6mG3y9x9d7_C_3KMmsyVM6aUYx_c6jlEKCeXdFNI6_AA",
+      "sharpe_ratio": 0.638221655333616,
+      "sharpe_statement": "Expected Sharpe ratio 0.64: the expected return less the risk-free rate (20.90% less 1.98%), divided by the volatility (29.64%).",
+      "holdings": [
+        {
+          "ticker": "NWS.SYN",
+          "name": "Northwind Semiconductors (synthetic)",
+          "sector": "Information Technology",
+          "weight": 0.7873865135456328,
+          "status": "held",
+          "reason": "Held at 78.7%: its expected excess return compensates for the risk it adds (return proportional to its beta to the portfolio). It contributes 93% of risk."
+        },
+        {
+          "ticker": "MDC.SYN",
+          "name": "Meridian Medical Devices (synthetic)",
+          "sector": "Health Care",
+          "weight": 0.07134837322335831,
+          "status": "held",
+          "reason": "Held at 7.1%: its expected excess return compensates for the risk it adds (return proportional to its beta to the portfolio). It contributes 3% of risk."
+        },
+        {
+          "ticker": "ARB.SYN",
+          "name": "Arbor Regional Bank (synthetic)",
+          "sector": "Financials",
+          "weight": 0,
+          "status": "zero_by_optimiser",
+          "reason": "Not held: its expected return (0.97%) is below the 13.19% its covariance with the portfolio would require, so adding it would lower the Sharpe ratio."
+        },
+        {
+          "ticker": "PTR.SYN",
+          "name": "Petra Energy (synthetic)",
+          "sector": "Energy",
+          "weight": 0,
+          "status": "zero_by_optimiser",
+          "reason": "Not held: its expected return (6.59%) is below the 11.82% its covariance with the portfolio would require, so adding it would lower the Sharpe ratio."
+        },
+        {
+          "ticker": "GRD.SYN",
+          "name": "Gridline Utilities (synthetic)",
+          "sector": "Utilities",
+          "weight": 0.14126511323100896,
+          "status": "held",
+          "reason": "Held at 14.1%: its expected excess return compensates for the risk it adds (return proportional to its beta to the portfolio). It contributes 4% of risk."
+        },
+        {
+          "ticker": "HRV.SYN",
+          "name": "Harvest Consumer Staples (synthetic)",
+          "sector": "Consumer Staples",
+          "weight": 0,
+          "status": "zero_by_optimiser",
+          "reason": "Not held: its expected return (1.86%) is below the 7.52% its covariance with the portfolio would require, so adding it would lower the Sharpe ratio."
+        },
+        {
+          "ticker": "GOVB.SYN",
+          "name": "Synthetic Government Bond Index (synthetic)",
+          "sector": "Government Bonds",
+          "weight": 0,
+          "status": "zero_by_optimiser",
+          "reason": "Not held: its expected return (-0.12%) is below the 1.24% its covariance with the portfolio would require, so adding it would lower the Sharpe ratio."
+        },
+        {
+          "ticker": "GOLD.SYN",
+          "name": "Synthetic Gold (synthetic)",
+          "sector": "Commodities",
+          "weight": 0,
+          "status": "zero_by_optimiser",
+          "reason": "Not held: its expected return (-1.29%) is below the 2.37% its covariance with the portfolio would require, so adding it would lower the Sharpe ratio."
+        }
+      ],
+      "warnings": [
+        "Concentration: NWS.SYN is 79% of the portfolio.",
+        "Return-seeking objectives are sensitive to expected-return estimates; the typical standard error of an asset's estimated annual mean here is about 6.5%."
+      ],
+      "assumptions": [
+        "Estimation window: 2016-01-04 to 2025-12-31 (2608 observations, 10.3 years, 252 periods per year).",
+        "Expected returns: historical sample mean of arithmetic mean returns, annualised linearly.",
+        "Covariance: Ledoit-Wolf shrinkage toward a scaled identity (shrinkage intensity 0.01).",
+        "Risk-free rate: 2.00% (effective annual), which is 1.98% a year on the linear scale used for expected returns.",
+        "Single-period mean-variance model: returns are summarised by their mean and covariance; higher moments and regime changes are ignored.",
+        "No transaction costs, taxes or liquidity constraints in the optimisation."
+      ]
+    }
+  ]
+}

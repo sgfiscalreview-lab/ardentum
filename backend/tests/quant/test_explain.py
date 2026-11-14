@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from ardentum.quant.estimation import estimate
@@ -31,6 +33,37 @@ def test_max_sharpe_explanations_follow_kkt() -> None:
     assert sum(a.risk_contribution_pct for a in ex.assets) == pytest.approx(1.0)
     assert ex.assumptions
     assert any("standard error" in w for w in ex.warnings)
+
+
+@pytest.mark.parametrize("risk_free", [0.0, 0.02, 0.08])
+def test_the_sharpe_ratio_can_be_checked_from_the_figures_in_its_statement(
+    risk_free: float,
+) -> None:
+    # A reader with the statement alone gets the ratio shown: the risk-free rate in it is
+    # on the linear annual scale of the expected return, not the effective rate entered.
+    df = make_returns(n_obs=1500, n_assets=8, seed=21)
+    est = estimate(df, 252)
+    req = OptimisationRequest(Objective.MAX_SHARPE, risk_free)
+    res = optimise(est, req)
+    ex = explain(res, est, req)
+    [statement] = [s for s in ex.statements if s.startswith("Expected Sharpe ratio")]
+    found = re.fullmatch(
+        r"Expected Sharpe ratio (-?[\d.]+): the expected return less the risk-free rate "
+        r"\((-?[\d.]+)% less (-?[\d.]+)%\), divided by the volatility \((-?[\d.]+)%\)\.",
+        statement,
+    )
+    assert found, statement
+    shown, ret, rf, vol = (float(x) for x in found.groups())
+    assert res.sharpe_ratio is not None
+    assert shown == pytest.approx(res.sharpe_ratio, abs=0.005)
+    assert (ret - rf) / vol == pytest.approx(res.sharpe_ratio, abs=0.002)
+    linear = 252 * ((1 + risk_free) ** (1 / 252) - 1)
+    assert rf == pytest.approx(100 * linear, abs=0.005)
+    [stated] = [a for a in ex.assumptions if a.startswith("Risk-free rate")]
+    assert f"{risk_free:.2%} (effective annual)" in stated
+    assert f"{linear:.2%} a year on the linear scale" in stated
+    if risk_free == 0.08:  # here the two scales differ visibly: 8.00% against 7.70%
+        assert rf == pytest.approx(7.70, abs=0.005)
 
 
 def test_a_zero_weight_kept_out_by_a_full_sector_is_attributed_to_that_limit() -> None:

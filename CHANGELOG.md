@@ -42,6 +42,13 @@ All notable changes to Ardentum are recorded here. Versions follow
 - The live smoke test also checks the usage counts and the tour, usage and classroom pages.
 
 ### Changed
+- The landing page opens with a real result set out as an answer with its working: each
+  asset's weight beside the engine's reason for it. Choosing the maximum weight of one
+  asset changes the answer and its reasons, and a link opens the same result in the
+  workspace. Page headings name the question each page answers.
+- A result's Sharpe ratio now comes with the figures that give it (expected return less
+  the risk-free rate on the same annual scale, divided by volatility), so it can be
+  checked by hand.
 - Open ESG data uses WikiRate's new API, which needs a free WikiRate account's two keys on
   the server (`ARDENTUM_WIKIRATE_PUBLISHABLE_KEY`, `ARDENTUM_WIKIRATE_API_TOKEN`); until
   they are set, the page says the feature is switched off. Scores link to the answer's
@@ -99,6 +106,9 @@ All notable changes to Ardentum are recorded here. Versions follow
 - Wide formulas on the methodology pages can be scrolled with the keyboard on phones.
 
 ### Security
+- Dependency updates that clear every audit finding: Next.js (critical), undici, Vite and
+  Zod (high) and others in the frontend; certifi, opentelemetry-api and setuptools in the
+  API. One KaTeX version for the maths pages.
 - The database is closed to Supabase's public Data API: row-level security on every table
   and no access for its public roles, including on tables created later (migration 0007).
   Before this, anyone with the website's public key could read and change the tables.

@@ -15,7 +15,7 @@
     "test": "vitest run",
     "gen:api": "openapi-typescript ${API_URL:-http://localhost:8000}/api/v1/openapi.json -o src/lib/api/schema.d.ts",
     "e2e": "playwright test",
-    "screenshots": "node scripts/capture-screenshots.mjs"
+    "screenshots": "node scripts/capture-example.mjs && node scripts/capture-screenshots.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",
@@ -48,5 +48,17 @@
     "typescript": "~5.9.3",
     "vite": "^8.3.2",
     "vitest": "^5.0.2"
+  },
+  "overrides": {
+    "katex": "$katex",
+    "eslint": {
+      "minimatch": "^11.0.8"
+    },
+    "@eslint/config-array": {
+      "minimatch": "^11.0.8"
+    },
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "^11.0.8"
+    }
   }
 }

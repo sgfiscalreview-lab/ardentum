@@ -12,6 +12,14 @@ export const metadata: Metadata = {
   title: { default: "Ardentum: quantitative portfolio analysis", template: "%s · Ardentum" },
   description:
     "Construct, optimise, simulate, backtest and compare investment portfolios, with the mathematics behind every result.",
+  // What a link to the site shows when it is shared.
+  openGraph: {
+    type: "website",
+    siteName: "Ardentum",
+    title: "Ardentum: portfolio analysis that shows its working",
+    description:
+      "Build, optimise, simulate and backtest investment portfolios. Every result arrives with the data, estimators, constraints and assumptions behind it.",
+  },
 };
 
 // Applies the saved theme before first paint to avoid a light/dark flash.
