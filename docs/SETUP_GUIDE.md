@@ -74,25 +74,15 @@ as `ardentum-app`. Write it as `SITE_URL`.
 
 ## 1. Put the finished code on the `main` branch
 
-The work is on the branch `claude/ardentum-portfolio-platform-u2g53v`. The site and API will
-be built from `main`.
+The site and API are built from `main`.
 
-1. Open https://github.com/sgfiscalreview-lab/ardentum.
-2. A yellow banner may offer **Compare & pull request** for the branch; click it. If not:
-   click **Pull requests** > **New pull request**, set **base: main** and
-   **compare: claude/ardentum-portfolio-platform-u2g53v**, then **Create pull request**.
-3. Give it a title such as "Ardentum platform" and click **Create pull request**.
-4. Wait for the checks at the bottom to finish (about 10 to 15 minutes; CI runs the
+1. Open https://github.com/clumstantine/ardentum and check that the branch menu says `main`.
+2. If newer work sits on another branch, click **Pull requests** > **New pull request**,
+   set **base: main** and **compare:** that branch, then **Create pull request**.
+3. Wait for the checks at the bottom to finish (about 10 to 15 minutes; CI runs the
    tests, the static build and the browser tests). All should be green.
-5. Click **Merge pull request** > **Confirm merge**.
-
-If an earlier pull request from this branch is already merged, do the same again: the new
-pull request contains only the newer changes. Merge it before steps 7 and 8, which build
-from `main`.
-
-If `main` does not exist yet (a brand-new repository), the branch can be made the default
-instead: **Settings** > **General** > **Default branch** > switch to the Claude branch.
-Then use that branch name wherever this guide says `main`.
+4. Click **Merge pull request** > **Confirm merge**. Merge before steps 7 and 8, which
+   build from `main`.
 
 ## 2. Supabase: database and sign-in
 
@@ -226,8 +216,8 @@ The second pull request (step 1) must be merged first: Render reads `render.yaml
    not ask for a card.
 2. Top right: **New** > **Blueprint**.
 3. Connect the repository: click **GitHub** (or **Configure account**) and allow access to
-   `sgfiscalreview-lab/ardentum`, then click **Connect** next to it. (It is a public
-   repository, so pasting `https://github.com/sgfiscalreview-lab/ardentum` as a public Git
+   `clumstantine/ardentum`, then click **Connect** next to it. (It is a public
+   repository, so pasting `https://github.com/clumstantine/ardentum` as a public Git
    repository also works.)
 4. **Blueprint Name**: `ardentum`. **Branch**: `main`. Render lists the service it will
    create, **ardentum-api** (Free, Singapore), and asks for four values:
@@ -299,7 +289,7 @@ You will use **Cloud Shell**, a terminal inside the browser with everything inst
 4. Get the code and write the settings file (edit the two `https://` lines first):
 
    ```bash
-   git clone https://github.com/sgfiscalreview-lab/ardentum.git && cd ardentum
+   git clone https://github.com/clumstantine/ardentum.git && cd ardentum
    cat > cloudrun.env.yaml <<'EOF'
    ARDENTUM_ENV: production
    ARDENTUM_AUTH_MODE: supabase
@@ -340,7 +330,7 @@ You will use **Cloud Shell**, a terminal inside the browser with everything inst
 2. Left sidebar: **Workers & Pages** > **Create application** > **Pages** >
    **Connect to Git**.
 3. Connect your GitHub account when asked and give Cloudflare access to the
-   `sgfiscalreview-lab/ardentum` repository. Select it and click **Begin setup**.
+   `clumstantine/ardentum` repository. Select it and click **Begin setup**.
 4. **Project name**: the name you chose in step 0 (this sets `https://<name>.pages.dev`).
    **Production branch**: `main`.
 5. **Build settings**:

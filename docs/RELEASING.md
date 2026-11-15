@@ -8,7 +8,7 @@ release; releases made earlier are not archived.
 
 1. Go to https://zenodo.org and choose **Log in**, then **Log in with GitHub**.
 2. Open your name (top right), then **GitHub**.
-3. Find `sgfiscalreview-lab/ardentum` in the list and switch it **On**. If it is not
+3. Find `clumstantine/ardentum` in the list and switch it **On**. If it is not
    listed, choose **Sync now** and wait a minute. The repository must be public.
 4. In `CITATION.cff`, replace `name: "The Ardentum authors"` with your own name in
    the form Zenodo expects:

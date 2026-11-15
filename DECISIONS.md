@@ -174,7 +174,7 @@ API key can be set in `ARDENTUM_WIKIRATE_API_KEY` if WikiRate requires one.
 
 ## D-027 Visual design and legal pages (look superseded by D-041)
 The founder asked that the UI avoid a list of patterns typical of generated sites (see
-CLAUDE.md "UI rules"). The design is deliberately plain: restrained warm neutrals, a navy
+AGENTS.md "UI rules"). The design is deliberately plain: restrained warm neutrals, a navy
 accent, flat 2px surfaces, system fonts with a serif for titles, static skeletons, no
 decorative motion. The landing page shows real screenshots of the app (on the labelled
 synthetic data) instead of feature cards. Terms of Service and a Privacy Policy describe
@@ -219,7 +219,7 @@ pipeline (ISIN or user-confirmed matching, latest answer up to a year, linear or
 percentile transform with its own direction), then combined as a weighted average with
 positive user weights normalised to one (`quant.esg.composite_scores`). An asset gets a
 composite only with a score for every metric: renormalising over the available metrics
-is implicit imputation and compares companies on different measures, which CLAUDE.md
+is implicit imputation and compares companies on different measures, which AGENTS.md
 rules out. Saved composites keep `kind: composite` in the overlay spec; `metric` and
 `transform` are null on those overlays and `components` lists the metrics and weights.
 Each asset's score provenance names every metric with its weight, year, part score and
@@ -439,7 +439,7 @@ miss most.
   a local stand-in serving the generated fixtures, so they no longer depend on Dartmouth.
 
 ## D-041 Fluid interface, after Apple's design guidance
-The founder asked for a redesign following `.claude/skills/apple-design` (Apple's WWDC
+The founder asked for a redesign following `.agents/skills/apple-design` (Apple's WWDC
 talks, chiefly *Designing Fluid Interfaces*, translated for the web). This replaces the
 visual parts of D-027 (flat 2px surfaces, no shadows, blur or motion); the palette, the
 system fonts, the plain copy and the other UI rules stay.
@@ -643,7 +643,7 @@ opens, under the headline, with one real result set out as an answer with its wo
 eight assets of the demo data, each weight beside the reason the engine gives for it, with
 the engine's own cautions and assumptions underneath
 (`frontend/src/components/worked-example.tsx`, designed with
-`.claude/skills/frontend-design` inside the UI rules).
+`.agents/skills/frontend-design` inside the UI rules).
 * **Real output, recorded.** The four results (a maximum weight of 20%, 30%, 40% or none)
   are recorded from the running app by `scripts/capture-example.mjs`, which
   `npm run screenshots` now runs first. Nothing in `src/lib/landing-example.json` is

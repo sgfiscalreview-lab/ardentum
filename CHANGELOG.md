@@ -42,6 +42,8 @@ All notable changes to Ardentum are recorded here. Versions follow
 - The live smoke test also checks the usage counts and the tour, usage and classroom pages.
 
 ### Changed
+- The repository's address is https://github.com/clumstantine/ardentum. The working
+  agreement is `AGENTS.md` and the design guides are in `.agents/skills/`.
 - The backend tests fail on any deprecation notice from a library, so an update shows what
   to change before the old call is removed (the first: pandas' `dayofweek`).
 - The landing page opens with a real result set out as an answer with its working: each
@@ -187,4 +189,4 @@ First public release. The full release notes are in
   force, KKT conditions, look-ahead invariance), API tests on PostgreSQL, and 52
   end-to-end browser tests.
 
-[1.0.0]: https://github.com/sgfiscalreview-lab/ardentum/releases/tag/v1.0.0
+[1.0.0]: https://github.com/clumstantine/ardentum/releases/tag/v1.0.0
