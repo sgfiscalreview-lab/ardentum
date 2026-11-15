@@ -42,8 +42,7 @@ All notable changes to Ardentum are recorded here. Versions follow
 - The live smoke test also checks the usage counts and the tour, usage and classroom pages.
 
 ### Changed
-- The repository's address is https://github.com/clumstantine/ardentum. The working
-  agreement is `AGENTS.md` and the design guides are in `.agents/skills/`.
+- The repository's address is https://github.com/clumstantine/ardentum.
 - The backend tests fail on any deprecation notice from a library, so an update shows what
   to change before the old call is removed (the first: pandas' `dayofweek`).
 - The landing page opens with a real result set out as an answer with its working: each
@@ -58,7 +57,7 @@ All notable changes to Ardentum are recorded here. Versions follow
   they are set, the page says the feature is switched off. Scores link to the answer's
   source document. Answers that state a licence other than CC BY 4.0 are not used, and
   their row says so. An ISIN typed into the company search finds its company.
-- The interface design is complete against the apple-design skill: on phones the page
+- The interface design is complete against the design notes: on phones the page
   steps back behind the steps sheet, which can be caught while closing and starts to
   move only after a 10 px drag; popovers and notices form as they arrive and never block
   clicks while leaving; the server notice floats instead of pushing the page down; the

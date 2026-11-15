@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
-// The interface rules in .agents/skills/apple-design: springs that can be grabbed, sheets
+// The interface rules in docs/design/fluid-interfaces.md: springs that can be grabbed, sheets
 // that follow the finger, popovers anchored to their trigger, keyboard paths for all of it.
 
 const bottom = async (el: Locator) => {

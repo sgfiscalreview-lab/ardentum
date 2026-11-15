@@ -1,4 +1,4 @@
-# Ardentum: setup guide for the founder
+# Ardentum: setup guide
 
 Everything you need to do to put Ardentum online, in order, with every click. Nothing here
 needs a paid plan or a card. The API can run on Render (step 7A, no card, no terminal) or

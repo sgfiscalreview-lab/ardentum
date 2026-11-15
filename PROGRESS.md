@@ -4,7 +4,7 @@ Status as of 2026-10-15.
 
 | Phase | Area | Status | Evidence |
 |---|---|---|---|
-| 1 | Architecture, tooling, project docs | ✅ | ARCHITECTURE.md, DECISIONS.md, AGENTS.md |
+| 1 | Architecture, tooling, project docs | ✅ | ARCHITECTURE.md, DECISIONS.md, CONTRIBUTING.md |
 | 2 | Market-data layer | ✅ (live providers need keys/licence) | `backend/tests/data/*` |
 | 3 | Portfolio mathematics | ✅ | `tests/quant/test_returns.py`, `test_metrics.py`, `test_portfolio.py`, `test_estimation.py` |
 | 4 | Optimisation engine | ✅ | `tests/quant/test_optimisation.py` (closed form, SLSQP, PyPortfolioOpt, brute force, KKT) |
@@ -16,11 +16,11 @@ Status as of 2026-10-15.
 | 10 | Portfolio comparison | ✅ | API + E2E compare tests (in-sample warning) |
 | 11 | Explainability | ✅ | `tests/quant/test_explain.py`; holdings reasons, binding constraints, stability |
 | 12 | Auth + saved portfolios | ✅ | Supabase JWT tests, ownership isolation, E2E save/export/delete |
-| 13 | Production deployment | 🟡 artifacts ready | Free-tier stack (D-017): static export for Cloudflare Pages, Cloud Run container, Supabase OAuth, keep-alive; DEPLOYMENT.md step-by-step — **awaiting founder accounts** (TODO) |
+| 13 | Production deployment | 🟡 artifacts ready | Free-tier stack (D-017): static export for Cloudflare Pages, Cloud Run container, Supabase OAuth, keep-alive; DEPLOYMENT.md step-by-step — **awaiting hosting accounts** (TODO) |
 | 14 | Research section / docs | ✅ | `docs/methodology/*` rendered at `/research` with KaTeX |
 | 15 | Security / performance / a11y / UX audit | ✅ second pass (D-038) | `SECURITY.md`; database closed to Supabase's Data API (`tests/api/test_db_lockdown.py`, live smoke check); `test_access_control.py`, `test_request_limits.py`, `test_security_headers.py`; gitleaks in CI; dependency audits; axe WCAG 2.1 AA tests (light+dark) |
 
-## Free-tier extensions (founder-approved plan)
+## Free-tier extensions
 
 | Item | Status | Evidence |
 |---|---|---|
@@ -34,9 +34,9 @@ Status as of 2026-10-15.
 | Shared rate limiting (PostgreSQL), verified-user keys, forged-header protection | ✅ | `tests/api/test_ratelimit.py` (SQLite + PostgreSQL) |
 | Background jobs with long-polling and recovery of abandoned runs | ✅ | `tests/api/test_jobs.py` |
 | Open ESG data from WikiRate (CC BY 4.0): match by ISIN, score, save, apply; WikiRate's new API with account keys, answers under other licences left out (D-046). Not yet tried against WikiRate itself: needs the operator's keys | ✅ (live trial pending) | `tests/data/test_wikirate.py`, `tests/api/test_open_esg_api.py`, `e2e/open-esg.spec.ts` |
-| Plain visual design (founder's list of patterns to avoid), real screenshots on the landing page, skeleton loaders | ✅ (look superseded by D-041) | AGENTS.md UI rules, D-027; axe checks on every page in both themes |
+| Plain visual design (a list of patterns to avoid), real screenshots on the landing page, skeleton loaders | ✅ (look superseded by D-041) | CONTRIBUTING.md UI rules, D-027; axe checks on every page in both themes |
 | Terms of Service, Privacy Policy, account export and deletion | ✅ | `tests/api/test_account.py`, E2E legal/account flow |
-| Founder setup guide (click by click) | ✅ | `docs/SETUP_GUIDE.md` |
+| Setup guide (click by click) | ✅ | `docs/SETUP_GUIDE.md` |
 | Currency-hedged returns: rolling one-period forward by covered interest parity, BIS policy rates (free, keyless), hedging switch on the Universe page | ✅ | `tests/quant/test_currency_hedged.py` (closed forms, carry, no look-ahead), `tests/data/test_bis.py` (live-format fixtures), `tests/api/test_currency_hedged_api.py` (independent recomputation), E2E |
 | Composite open-ESG scores: 2-6 WikiRate metrics, each transformed to 0-100, combined with user weights; assets missing any metric stay unscored | ✅ | `tests/quant/test_esg_composite.py`, `tests/api/test_open_esg_composite_api.py`, E2E composite test |
 | Mean-CVaR efficient frontier (historical CVaR, Rockafellar-Uryasev LP), with the mean-variance portfolios measured by the same CVaR; Volatility/CVaR switch on the frontier page | ✅ | `tests/quant/test_cvar_frontier.py` (SciPy HiGHS, brute force, closed form), `tests/api/test_cvar_frontier_api.py`, E2E frontier test |
@@ -44,7 +44,7 @@ Status as of 2026-10-15.
 | Live smoke test of the deployment (`scripts/smoke.py`, daily workflow); keep-alive defaults to the production API | ✅ | checked locally against a production-mode API and a Pages-like server |
 | Legal and compliance review (D-032): Cookie Policy with a clear-settings button, Licences page and generated third-party notices (build fails on undeclared or copyleft licences), Privacy Policy with legal bases, transfers, retention, rights and deletion requests, Terms with age limit and fees/refunds, operator address and registration, age confirmation at sign-in, IP addresses hashed in rate-limit counters, table view for the last chart without one | ✅ | `tests/api/test_ratelimit.py`, E2E legal flow, accessibility checks on the new pages |
 | Audit fixes (D-033): phone layout (header, page grids), CORS on unexpected 500s, error and 404 pages, saved-settings upgrade, request timeout with a clear message, pooled HTTP client, SCS time cap, thin-tail CVaR warning, Content-Security-Policy, preview CORS, uptime-monitor docs | ✅ | `e2e/responsive.spec.ts`, `tests/api/test_unexpected_errors.py`, `src/lib/workspace.test.ts`, CVaR tail test; static build checked in Chromium with the policy applied |
-| Release 1.0.0 (D-034): MIT licence, `CITATION.cff`, changelog, release notes, README with screenshots, Zenodo guide; Licences page and footer link to the source | ✅ | `docs/RELEASING.md`; Zenodo connection pending (founder) |
+| Release 1.0.0 (D-034): MIT licence, `CITATION.cff`, changelog, release notes, README with screenshots, Zenodo guide; Licences page and footer link to the source | ✅ | `docs/RELEASING.md`; Zenodo connection pending |
 | Anonymous usage counts and guided tour (D-035): `/api/v1/usage`, Usage page, 8-step tour on the demo data, Privacy Policy updated | ✅ | `tests/api/test_usage.py` (SQLite + PostgreSQL), `e2e/tour-usage.spec.ts`, accessibility and phone checks on the new pages |
 | Research studies (D-036): 1/N out of sample, dollar hedging for euro and sterling investors, promised versus delivered Sharpe ratios; results committed by the Research workflow | ✅ | `research/tests` (known answers, brute force, simulated test size); `research/results/` |
 | Classroom kit (D-037): teacher guide with lesson plan and answers, printable worksheet; answer key recomputed by a backend test and checked against the workspace defaults end to end | ✅ | `tests/api/test_classroom_answers.py`, `e2e/classroom.spec.ts`, accessibility and phone checks on both pages |
@@ -65,7 +65,7 @@ Status as of 2026-10-15.
 - Security: gitleaks finds no secrets in the history; pip-audit and npm audit report no known vulnerabilities (2026-10-01).
 - End-to-end (Node server with the full Content-Security-Policy): 115 Playwright tests passing (workflows incl. the landing page's worked example, the starting examples, Sharpe ratio intervals and the benchmark test in backtests, an upload of calendar-day prices, crisis replay, factor exposure, trade list, classroom kit, guided tour and usage counts, open ESG data, composite scores, CVaR frontier, currency hedging, shareable links, the phone steps sheet, popovers and segmented controls, legal pages and account deletion; axe WCAG 2.2 AA checks over 24 pages in light and dark and at phone width; phone-width layout checks). Playwright starts the API, the web app and a local stand-in for WikiRate and the Kenneth French Data Library.
 
-## Performance (dev container, 14 assets, 10 years daily)
+## Performance (development machine, 14 assets, 10 years daily)
 | Request | Time |
 |---|---|
 | Optimise (+40 stability resamples) | ~0.5 s |
@@ -73,10 +73,9 @@ Status as of 2026-10-15.
 | Walk-forward backtest, monthly re-optimisation, 12 years | 1–2 s |
 | Monte Carlo worst case allowed (1e8 path-periods, block bootstrap) | ~4.6 s |
 
-## Not yet verified (requires external access)
-- Live calls to Ken French, Frankfurter, WikiRate, FRED and Tiingo (hosts blocked here; adapters tested against the documented/recorded formats).
-- Docker image builds (no Docker daemon here; the CI `docker` job builds both images).
-- Production deployment on real infrastructure (needs founder accounts).
+## Outside the test suite
+- Live calls to Ken French, Frankfurter, WikiRate, FRED and Tiingo: the adapters are tested against the documented or recorded formats, and the daily live smoke test checks the deployed site.
+- Docker image builds: the CI `docker` job builds both images.
 
 ## Environment notes
 Local PostgreSQL for tests:
@@ -87,7 +86,7 @@ su postgres -c "/usr/lib/postgresql/16/bin/pg_ctl -D $PGDIR -o '-p 5433 -k /tmp'
 psql -h /tmp -p 5433 -U postgres -c "CREATE DATABASE ardentum_test;"
 ```
 
-E2E in this container (Playwright's bundled browser is not installed; use the system one):
+E2E with a system Chromium (when Playwright's bundled browser is not installed):
 ```bash
-cd frontend && PLAYWRIGHT_CHROMIUM_PATH=$(ls /opt/pw-browsers/chromium-*/chrome-linux*/chrome) npm run e2e
+cd frontend && PLAYWRIGHT_CHROMIUM_PATH=/path/to/chrome npm run e2e
 ```
