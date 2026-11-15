@@ -1,6 +1,6 @@
 /**
  * Motion rules for the interface, after Apple's "Designing Fluid Interfaces" (WWDC 2018);
- * see .claude/skills/apple-design. Everything that moves uses a spring, so motion starts
+ * see .agents/skills/apple-design. Everything that moves uses a spring, so motion starts
  * from the value on screen, keeps its velocity when redirected and can be interrupted.
  */
 

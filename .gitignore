@@ -40,8 +40,7 @@ cloudrun.env.yaml
 frontend/public/third-party-licenses.txt
 
 # Written by `next dev`; not part of the project
-frontend/AGENTS.md
-frontend/CLAUDE.md
+frontend/*.md
 
 # Raw research downloads (re-fetched by research/run_all.py)
 research/data/

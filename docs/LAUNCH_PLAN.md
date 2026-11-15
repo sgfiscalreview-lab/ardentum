@@ -10,19 +10,17 @@ steps for GitHub, Render, Cloudflare and Zenodo were checked against their docum
 | Week | Steps | Time |
 |---|---|---|
 | 1 (from 15 Nov) | 1 Two-factor sign-in, 2 WikiRate keys, 3 Domain and email | about 2 hours |
-| 2 | 4 Move the GitHub repository, 5 Repository security, 6 Rotate secrets, 7 Legal texts, 8 FRED key, 9 Ask Prof. French | about 3 hours, plus waiting for replies |
+| 2 | 4 Connect the services to the repository, 5 Repository security, 6 Rotate secrets, 7 Legal texts, 8 FRED key, 9 Ask Prof. French | about 3 hours, plus waiting for replies |
 | 3 onwards | 10 Outside review by a company | 2 to 6 weeks, mostly waiting |
 
-The domain comes before the repository move on purpose: if the website's project has to be
-recreated after the move (step 4.3), it gets a new `pages.dev` address, and with your own
-domain already in place nobody notices.
+Step 4 can be done before step 3: it keeps the site's `pages.dev` address.
 
 Today's addresses (replace them as you go):
 
 ```
 SITE_URL  = https://ardentum-frontend.pages.dev
 API_URL   = https://ardentum-api.onrender.com
-REPO      = https://github.com/sgfiscalreview-lab/ardentum
+REPO      = https://github.com/clumstantine/ardentum
 ```
 
 ---
@@ -80,61 +78,26 @@ record `api` pointing at `ardentum-api.onrender.com` with **Proxy status: DNS on
 `NEXT_PUBLIC_API_BASE` in Cloudflare Pages and the `API_URL` Actions variable to it, then
 redeploy the site.
 
-## 4. Move the GitHub repository
+## 4. Connect the services to the repository
 
-Decide the new owner first:
-
-- **An organisation** (recommended for a product or company): GitHub > your picture >
-  **Your organizations** > **New organization** > **Free**. Use the product or company
-  name. You become its owner.
-- **Another personal account**: it receives a confirmation email and must accept within
-  one day, or the transfer lapses.
-
-### 4.1 Before the move
-
-1. Note the Actions variables (repository > **Settings** > **Secrets and variables** >
-   **Actions** > **Variables**): `API_URL`, `SITE_URL`, `SUPABASE_URL`,
-   `SUPABASE_PUBLISHABLE_KEY`. Write down the names and values (none of them is secret).
-2. Merge or close every open pull request.
-
-### 4.2 The move
-
-Repository > **Settings** > bottom of the page, **Danger Zone** > **Transfer**. Choose
-**Select one of my organizations** (or **Specify an organization or username**), type the
-repository name to confirm, then **I understand, transfer this repository**.
-
-What GitHub does: issues, pull requests, releases, stars, secrets and settings move with
-the repository, and you stay on it as a collaborator. The old address (web and `git`)
-redirects to the new one, so nothing breaks at once. Never create a new repository called
-`ardentum` under the old account: that ends the redirect for good.
-
-### 4.3 Reconnect the services (same day)
-
-Each service reaches the code through a GitHub app installed on the *owner*, so the new
-owner needs those apps too. The live site and API keep running throughout; only new
-deployments wait until this is done.
+The code lives at https://github.com/clumstantine/ardentum. Each service reaches it
+through a GitHub app installed on that account. The API keeps running throughout; the
+website is offline for a few minutes while its project is recreated.
 
 | Service | What to do | How to check |
 |---|---|---|
-| **GitHub Actions** | **Settings** > **Secrets and variables** > **Actions**: the four variables from 4.1 should still be there; add any that are missing. **Actions** tab: if a banner says workflows are disabled, enable them. | **Actions** > **Live smoke test** > **Run workflow** passes. |
-| **Render** (API) | Open https://github.com/apps/render/installations/new, choose the new owner and give the Render app the `ardentum` repository. Then Render > **ardentum-api** > **Settings** > **Build** > **Source** > **Edit**: pick the repository under its new owner and confirm the same Docker settings. If deploys still fail to start, the same page has **Git Credentials**. | **Manual Deploy** > **Deploy latest commit** succeeds. |
-| **Cloudflare Pages** (site) | Cloudflare > **Workers & Pages** > **ardentum-frontend** > **Settings** > **Builds** > **Git Repository** > **Manage**: on GitHub, install **Cloudflare Workers and Pages** on the new owner (or use **Add GitHub account** when Cloudflare offers it) with access to `ardentum`. Push a small change to `main`. If no deployment appears: a Pages project cannot be pointed at another repository, so create a new one (**Create application** > **Pages** > **Connect to Git**, any free name, settings and every variable as in SETUP_GUIDE step 8). Then on the old project **Custom domains** > the three dots > **Remove domain**, add the domain to the new project, and put the new `pages.dev` address wherever the old one is listed (step 3.3, and `SITE_URL` if it is still the `pages.dev` one). Delete the old project last. | A push to `main` produces a deployment; your domain shows it. |
-| **Zenodo** (DOI), if set up | zenodo.org > your name > **GitHub** > **Sync now**, then switch the moved repository on and refresh. Existing DOIs stay valid. | The repository is listed as enabled. |
-| **Code assistant app**, if used | Install the GitHub app you use for code sessions on the new owner and grant it the repository. | A new session can open the repository. |
+| **GitHub Actions** | Repository > **Settings** > **Secrets and variables** > **Actions** > **Variables** > **New repository variable**: `API_URL` = `https://ardentum-api.onrender.com`. The other addresses have defaults in the workflows; add `SITE_URL` once you have your own domain. **Actions** tab: if a banner says workflows are disabled, enable them. | **Actions** > **Live smoke test** > **Run workflow** passes. |
+| **Render** (API) | Open https://github.com/apps/render/installations/new, choose the account and give the Render app the `ardentum` repository. Then Render > **ardentum-api** > **Settings** > **Build & Deploy** > **Repository** > **Edit**: pick `clumstantine/ardentum`, branch `main`, and keep the same Docker settings. If deploys fail to start, the same page has **Git Credentials**. | **Manual Deploy** > **Deploy latest commit** succeeds. |
+| **Cloudflare Pages** (site) | A Pages project cannot be pointed at another repository, so it is recreated under the same name, which keeps its address. First copy every entry under **ardentum-frontend** > **Settings** > **Variables and Secrets** into a note, with the build settings. Then **Settings** > **Delete project**, and create it again: **Create application** > **Pages** > **Connect to Git**, add the GitHub account, pick `ardentum`, name the project `ardentum-frontend`, and enter the settings and variables as in SETUP_GUIDE step 8. If you already use your own domain, add it again under **Custom domains**. | The site loads at its usual address and shows the latest commit; sign in once. |
+| **Zenodo** (DOI), if set up | zenodo.org > your name > **GitHub** > **Sync now**, then switch the repository on. | The repository is listed as enabled. |
 
-### 4.4 Update the links in the code (one pull request)
+Point a local copy at the address with
+`git remote set-url origin https://github.com/clumstantine/ardentum.git`.
 
-These files name the old address and should name the new one:
-`frontend/src/lib/legal.ts` (`SOURCE_URL`, shown in the site footer), `CITATION.cff`
-(`repository-code`), `README.md`, `CHANGELOG.md` (release link), `docs/SETUP_GUIDE.md`,
-`docs/RELEASING.md`, and this page. Search for `sgfiscalreview-lab` to find them all. Point
-your local copy at the new address:
-`git remote set-url origin https://github.com/<new-owner>/ardentum.git`.
+## 5. Repository security
 
-## 5. Repository security (on the new owner)
-
-Do these after the move, because an organisation applies its own defaults to a repository
-it receives: the GitHub items of the owner checklist in
+A new repository starts with these switched off. Turn on the GitHub items of the owner
+checklist in
 [SECURITY.md](../SECURITY.md#settings-outside-the-code-owner-checklist): private
 vulnerability reporting, Dependabot alerts and security updates, secret scanning, push
 protection, and protecting `main` (pull requests and passing CI before merging). For an
@@ -294,7 +257,7 @@ Each task has an answer the reviewer can check by hand, in a spreadsheet or in t
 - [ ] Two-factor sign-in on every account
 - [ ] WikiRate keys set; the live check's WikiRate line passes
 - [ ] Site on the custom domain; sign-in, saving and the live smoke test pass there
-- [ ] Repository under the new owner; Render, Cloudflare and Actions working from it
+- [ ] Render, Cloudflare and Actions working from the repository
 - [ ] Repository security settings on; `main` protected
 - [ ] Secrets rotated where needed
 - [ ] Legal details checked; lawyer's comments applied

@@ -15,7 +15,7 @@ export const LEGAL = {
 };
 
 /** Public source repository (MIT licence). */
-export const SOURCE_URL = "https://github.com/sgfiscalreview-lab/ardentum";
+export const SOURCE_URL = "https://github.com/clumstantine/ardentum";
 
 export const LEGAL_CONFIGURED = Boolean(LEGAL.operator && LEGAL.contactEmail && LEGAL.governingLaw);
 

@@ -1,4 +1,4 @@
-# CLAUDE.md — working agreement for Ardentum
+# Working agreement for Ardentum
 
 Read this first, then `ARCHITECTURE.md`, `DECISIONS.md`, `PROGRESS.md`, `TODO.md`.
 
@@ -25,9 +25,9 @@ Read this first, then `ARCHITECTURE.md`, `DECISIONS.md`, `PROGRESS.md`, `TODO.md
   (never pure white or black backgrounds), one navy accent, muted earth-tone chart series.
   No purple, neon, pastel or rainbow palettes; no gradients, orbs or dot-grid backdrops
   (the header's scroll edge uses a fading mask on a blur, which colours nothing).
-* New pages and restyles use `.claude/skills/frontend-design` for direction, hierarchy and
+* New pages and restyles use `.agents/skills/frontend-design` for direction, hierarchy and
   copy, within these rules.
-* Depth and motion follow `.claude/skills/apple-design` (DECISIONS D-041, D-042).
+* Depth and motion follow `.agents/skills/apple-design` (DECISIONS D-041, D-042).
   Translucent materials (`.material`, `.material-thick`) only for floating chrome:
   header, popovers, tooltips, sheets, notices; never one translucent layer on another.
   Elevation from `.elev-1` (cards), `.elev-2` (controls), `.elev-3` (floating layers);
@@ -112,4 +112,3 @@ Local PostgreSQL (dev container): `initdb` + `pg_ctl -o '-p 5433'` (see PROGRESS
   schema; `tests/api/test_db_lockdown.py` fails otherwise). Security overview: `SECURITY.md`.
 * Error messages are user-facing: state what is wrong and how to fix it.
 * Keep `DECISIONS.md` (why), `PROGRESS.md` (what's done), `TODO.md` (what's next) current.
-* Commit messages end with the session attribution lines.

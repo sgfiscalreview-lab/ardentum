@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /*
- * Design tokens (D-041; the principles are in .claude/skills/apple-design). Restrained
+ * Design tokens (D-041; the principles are in .agents/skills/apple-design). Restrained
  * palette: warm paper and charcoal (never pure white or black), one navy accent, muted
  * earth-tone chart series (never neon, pastel or rainbow). Text never uses series colours.
  * Depth comes from materials, not decoration: content sits on near-white surfaces with

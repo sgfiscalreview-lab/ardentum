@@ -14,7 +14,7 @@ authors:
   - name: "The Ardentum authors"
 version: "1.0.0"
 license: MIT
-repository-code: "https://github.com/sgfiscalreview-lab/ardentum"
+repository-code: "https://github.com/clumstantine/ardentum"
 url: "https://ardentum-frontend.pages.dev"
 keywords:
   - portfolio optimisation

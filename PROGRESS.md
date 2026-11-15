@@ -4,7 +4,7 @@ Status as of 2026-10-15.
 
 | Phase | Area | Status | Evidence |
 |---|---|---|---|
-| 1 | Architecture, tooling, project docs | ✅ | ARCHITECTURE.md, DECISIONS.md, CLAUDE.md |
+| 1 | Architecture, tooling, project docs | ✅ | ARCHITECTURE.md, DECISIONS.md, AGENTS.md |
 | 2 | Market-data layer | ✅ (live providers need keys/licence) | `backend/tests/data/*` |
 | 3 | Portfolio mathematics | ✅ | `tests/quant/test_returns.py`, `test_metrics.py`, `test_portfolio.py`, `test_estimation.py` |
 | 4 | Optimisation engine | ✅ | `tests/quant/test_optimisation.py` (closed form, SLSQP, PyPortfolioOpt, brute force, KKT) |
@@ -34,7 +34,7 @@ Status as of 2026-10-15.
 | Shared rate limiting (PostgreSQL), verified-user keys, forged-header protection | ✅ | `tests/api/test_ratelimit.py` (SQLite + PostgreSQL) |
 | Background jobs with long-polling and recovery of abandoned runs | ✅ | `tests/api/test_jobs.py` |
 | Open ESG data from WikiRate (CC BY 4.0): match by ISIN, score, save, apply; WikiRate's new API with account keys, answers under other licences left out (D-046). Not yet tried against WikiRate itself: needs the operator's keys | ✅ (live trial pending) | `tests/data/test_wikirate.py`, `tests/api/test_open_esg_api.py`, `e2e/open-esg.spec.ts` |
-| Plain visual design (founder's list of patterns to avoid), real screenshots on the landing page, skeleton loaders | ✅ (look superseded by D-041) | CLAUDE.md UI rules, D-027; axe checks on every page in both themes |
+| Plain visual design (founder's list of patterns to avoid), real screenshots on the landing page, skeleton loaders | ✅ (look superseded by D-041) | AGENTS.md UI rules, D-027; axe checks on every page in both themes |
 | Terms of Service, Privacy Policy, account export and deletion | ✅ | `tests/api/test_account.py`, E2E legal/account flow |
 | Founder setup guide (click by click) | ✅ | `docs/SETUP_GUIDE.md` |
 | Currency-hedged returns: rolling one-period forward by covered interest parity, BIS policy rates (free, keyless), hedging switch on the Universe page | ✅ | `tests/quant/test_currency_hedged.py` (closed forms, carry, no look-ahead), `tests/data/test_bis.py` (live-format fixtures), `tests/api/test_currency_hedged_api.py` (independent recomputation), E2E |

@@ -28,14 +28,14 @@ Avoid these default typographic treatments; they are the commonest tells of a ge
 
 Visual structure is information. Structural devices like outlines, borders, numbering, eyebrows, dividers, labels, etc., encode useful information about the content rather than decorate it. Many generic designs use numbered markers (01 / 02 / 03), but that's only appropriate if the content actually is a sequence — like a stepped process or a timeline. Before adding numbered markers, check the content really is a sequence.
 
-Use non-user-triggered motion sparingly and deliberately, only to draw attention. A single orchestrated moment — one page-load sequence or one reveal — lands better than scattered effects; fade-and-slide-up entrances on each section and hover transitions on every card are the generic default and read as AI-generated. Motion that answers a person's action (opening, expanding, confirming) is welcome when it shows what changed.
+Use non-user-triggered motion sparingly and deliberately, only to draw attention. A single orchestrated moment — one page-load sequence or one reveal — lands better than scattered effects; fade-and-slide-up entrances on each section and hover transitions on every card are the generic default and read as templated. Motion that answers a person's action (opening, expanding, confirming) is welcome when it shows what changed.
 
 Consider written content carefully. Often a design brief may not contain real content, and it's up to you to come up with copy and placeholder content. Copy can make a design feel as templated as the design itself. See the below section on writing for more guidance.
 
 ## Process: plan, review against the brief, build, critique
 
-For calibration, AI-generated design right now clusters around some traits:
-1. a warm cream background (near #F4F1EA) with a high-contrast serif display and a terracotta or warm-clay accent (often near #D97757 — Anthropic's own Claude-interaction accent, so on a user's brief it reads as a tell);
+For calibration, templated design right now clusters around some traits:
+1. a warm cream background (near #F4F1EA) with a high-contrast serif display and a terracotta or warm-clay accent (often near #D97757, common enough that on a client's brief it reads as a tell);
 2. a near-black background with a single bright acid-green or vermilion accent;
 3. a broadsheet-style layout with hairline rules, zero border-radius, and dense newspaper-like columns;
 4. the SaaS-card kit: content chopped into identical rounded cards, one border-radius on everything regardless of hierarchy, the same soft grey shadow (rgba(0,0,0,.1)) under each, and gradient washes as decoration;
@@ -71,4 +71,4 @@ Keep the tone conversational: plain verbs, sentence case, no filler, with tone m
 
 ## In this repository
 
-The UI rules in `CLAUDE.md` are the standing brief for Ardentum, so they win wherever they pin something down: the colour tokens in `frontend/src/app/globals.css` (warm paper, charcoal, one navy accent, earth-tone charts), operating-system fonts with the `.type-*` scale, the motion springs in `frontend/src/lib/motion.ts` and `.claude/skills/apple-design`, no em dashes, icons or arrow glyphs in user-facing text, and "n/a" for missing values. Use this skill for what those rules leave open: the hero and layout of a new page, hierarchy, which element carries the page, and the copy.
+The UI rules in `AGENTS.md` are the standing brief for Ardentum, so they win wherever they pin something down: the colour tokens in `frontend/src/app/globals.css` (warm paper, charcoal, one navy accent, earth-tone charts), operating-system fonts with the `.type-*` scale, the motion springs in `frontend/src/lib/motion.ts` and `.agents/skills/apple-design`, no em dashes, icons or arrow glyphs in user-facing text, and "n/a" for missing values. Use this skill for what those rules leave open: the hero and layout of a new page, hierarchy, which element carries the page, and the copy.
