@@ -1,7 +1,7 @@
 # Ardentum — Decision Log
 
-Each entry: context, decision, consequences. Decisions marked **(founder)** need
-founder confirmation because they involve licensing, cost or legal matters.
+Each entry: context, decision, consequences. Decisions marked **(owner)** need the
+project owner's confirmation because they involve licensing, cost or legal matters.
 
 ## D-001 Monorepo with separate backend and frontend
 Backend (`backend/`, Python/FastAPI) and frontend (`frontend/`, Next.js) live in one
@@ -18,13 +18,13 @@ problems we need (quadratic objective, SOC tracking-error/volatility constraints
 Every solution is independently verified against all constraints after solving;
 violations raise `SolverError` rather than returning a wrong portfolio.
 
-## D-004 Market data: pluggable providers; Tiingo adapter implemented **(founder)**
+## D-004 Market data: pluggable providers; Tiingo adapter implemented **(owner)**
 No market-data host is reachable from the development environment, and every
 provider has licensing terms. We implemented: a synthetic demo universe (always
 available), CSV upload (user-supplied data), and a Tiingo adapter (adjusted closes)
 tested against recorded response shapes. Tiingo's free tier is licensed for personal
 use; **commercial use requires a paid Tiingo plan or another licensed vendor** —
-founder decision required before public launch. FRED (public domain) is used for the
+an owner decision is required before public launch. FRED (public domain) is used for the
 risk-free rate when a key is configured.
 
 ## D-005 Synthetic demo data, clearly labelled
@@ -76,7 +76,7 @@ Constant-mix portfolio simulated at the data frequency. Parametric = lognormal m
 to the same annualised estimates the optimiser used; bootstrap = i.i.d. or stationary block
 (Politis–Romano). Seed is explicit and echoed in the response; same seed ⇒ identical output.
 
-## D-013 Authentication: Supabase Auth; backend verifies JWTs **(founder: Supabase project)**
+## D-013 Authentication: Supabase Auth; backend verifies JWTs **(owner: Supabase project)**
 The backend never stores passwords. A dev-only login mode makes local development and
 E2E tests self-contained; settings validation forbids it in production.
 
@@ -91,13 +91,13 @@ not generated text — so every statement is a checkable fact about the solution
 Comparing portfolios on the estimation window is in-sample; the response always carries an
 explicit warning and points to the walk-forward backtest for out-of-sample evaluation.
 
-## D-017 Free hosting stack (founder-approved)
+## D-017 Free hosting stack
 Frontend as a static export on Cloudflare Pages (Netlify fallback) calling the API directly
 with CORS; backend on Google Cloud Run (max 2 instances, budget alert; Render free as the
 no-card fallback); Supabase free tier for Postgres and OAuth sign-in (Google/GitHub), kept
 awake by a daily `/health/db` ping from GitHub Actions. See DEPLOYMENT.md.
 
-## D-018 Real market data: Kenneth French Data Library **(founder: confirm terms before commercial launch)**
+## D-018 Real market data: Kenneth French Data Library **(owner: confirm terms before commercial launch)**
 The library is free, needs no key and has daily value-weighted US industry returns since
 1926, which makes it the only free *real* dataset suitable for portfolio analysis. It has
 no explicit licence; it is published by Prof. French for public use with citation. We cite
@@ -162,8 +162,8 @@ queue is needed. Results (gzip JSON) expire after 24 h. Signed-in users' jobs ar
 private; anonymous jobs are addressed by an unguessable UUID. The synchronous endpoints
 remain for API clients.
 
-## D-026 Open ESG data from WikiRate (founder-approved)
-The founder asked for ESG values from open databases in addition to user-supplied scores.
+## D-026 Open ESG data from WikiRate
+ESG values from open databases are offered in addition to user-supplied scores.
 WikiRate is free, licensed CC BY 4.0 (commercial use allowed with attribution), has a JSON
 API and company ISINs. Scores are *derived* by Ardentum from one numeric metric chosen by
 the user (fixed linear scale or percentile rank, user-chosen direction); matching is by ISIN
@@ -173,18 +173,18 @@ the dataset's scores. Responses are cached for a day in `provider_cache`. A free
 API key can be set in `ARDENTUM_WIKIRATE_API_KEY` if WikiRate requires one.
 
 ## D-027 Visual design and legal pages (look superseded by D-041)
-The founder asked that the UI avoid a list of patterns typical of generated sites (see
-AGENTS.md "UI rules"). The design is deliberately plain: restrained warm neutrals, a navy
+The UI avoids a list of patterns typical of template sites (see CONTRIBUTING.md,
+"UI rules"). The design is deliberately plain: restrained warm neutrals, a navy
 accent, flat 2px surfaces, system fonts with a serif for titles, static skeletons, no
 decorative motion. The landing page shows real screenshots of the app (on the labelled
 synthetic data) instead of feature cards. Terms of Service and a Privacy Policy describe
 exactly what the system does; operator name, contact and governing law are build-time
-settings **(founder: fill in and have the texts reviewed)**. Users can export and delete
+settings **(owner: fill in and have the texts reviewed)**. Users can export and delete
 all their data (`GET /auth/me/export`, `DELETE /auth/me`); with
 `ARDENTUM_SUPABASE_SERVICE_KEY` set, deletion also removes the Supabase sign-in record.
 
 ## D-028 Render as the no-card host for the API
-The founder could not complete the Google Cloud setup. Render's free web service needs no
+Google Cloud asks for a card before its free allowance. Render's free web service needs no
 card and is set up entirely in the browser from `render.yaml` (a Blueprint), so it is now
 the recommended host; Cloud Run stays supported (faster CPU, needs billing). Measured on
 the demo data: about 200 MB after start-up and 243 MB at the largest allowed simulation,
@@ -219,7 +219,7 @@ pipeline (ISIN or user-confirmed matching, latest answer up to a year, linear or
 percentile transform with its own direction), then combined as a weighted average with
 positive user weights normalised to one (`quant.esg.composite_scores`). An asset gets a
 composite only with a score for every metric: renormalising over the available metrics
-is implicit imputation and compares companies on different measures, which AGENTS.md
+is implicit imputation and compares companies on different measures, which CONTRIBUTING.md
 rules out. Saved composites keep `kind: composite` in the overlay spec; `metric` and
 `transform` are null on those overlays and `components` lists the metrics and weights.
 Each asset's score provenance names every metric with its weight, year, part score and
@@ -313,7 +313,7 @@ the synthetic demo data with no sign-in.
 
 ## D-036 Research studies
 `research/` holds three studies built on the engine and rerun on public data by a GitHub
-workflow (the dev container cannot reach the data hosts). Choices:
+workflow (the data hosts are not reachable from every development machine). Choices:
 * **Walk-forward only.** Every portfolio uses data available at its formation date.
 * **Sharpe-ratio tests.** The Jobson-Korkie test with Memmel's correction is reported
   because DeMiguel, Garlappi and Uppal (2009) use it, next to a HAC version of Ledoit and
@@ -439,8 +439,8 @@ miss most.
   a local stand-in serving the generated fixtures, so they no longer depend on Dartmouth.
 
 ## D-041 Fluid interface, after Apple's design guidance
-The founder asked for a redesign following `.agents/skills/apple-design` (Apple's WWDC
-talks, chiefly *Designing Fluid Interfaces*, translated for the web). This replaces the
+A redesign following `docs/design/fluid-interfaces.md` (Apple's WWDC talks, chiefly
+*Designing Fluid Interfaces*, translated for the web). This replaces the
 visual parts of D-027 (flat 2px surfaces, no shadows, blur or motion); the palette, the
 system fonts, the plain copy and the other UI rules stay.
 * **Materials and depth.** The header is a translucent material that content scrolls
@@ -470,7 +470,7 @@ system fonts, the plain copy and the other UI rules stay.
   loaded lazily through `LazyMotion` so pages that do not animate pay little for it.
 
 ## D-042 Completing the fluid interface
-A review of D-041 against every section of the apple-design skill left gaps; this closes
+A review of D-041 against every section of the design notes left gaps; this closes
 them and records the two parts deliberately left out.
 * **Sheet.** The page behind is pushed back (scaled to 95% with rounded corners on a
   charcoal backdrop) in step with the sheet, so dragging the sheet also moves the page.
@@ -495,12 +495,12 @@ them and records the two parts deliberately left out.
 * **Forgiveness.** Starting from an example keeps the way back, like a shared link: the
   notice offers "Go back to my settings", and trying several examples still leads back
   to the settings from before the first. Disabled run buttons say why beside them.
-* **Left out.** Sound and haptics: the skill's own utility rule says to add them only
+* **Left out.** Sound and haptics: the notes' own utility rule says to add them only
   where they earn their place, and in an analysis tool they do not (iPhone Safari also
   has no vibration support). Motion blur for very fast movement: it would repaint every
-  frame, against the same skill's compositor-only rule, and the fastest motion here (a
+  frame, against the notes' compositor-only rule, and the fastest motion here (a
   flicked sheet) is short.
-* **Corners and screenshots (founder review).** The landing screenshots sat in a 16 px
+* **Corners and screenshots.** The landing screenshots sat in a 16 px
   frame with its own border and shadow around a picture that already held the card's
   12 px corners, border, shadow and a strip of page background, and cut off at the
   bottom mid-card: two edges, corners on different centres, content missing. Pictures
@@ -642,8 +642,7 @@ The landing page said that results show their working and then showed screenshot
 opens, under the headline, with one real result set out as an answer with its working:
 eight assets of the demo data, each weight beside the reason the engine gives for it, with
 the engine's own cautions and assumptions underneath
-(`frontend/src/components/worked-example.tsx`, designed with
-`.agents/skills/frontend-design` inside the UI rules).
+(`frontend/src/components/worked-example.tsx`).
 * **Real output, recorded.** The four results (a maximum weight of 20%, 30%, 40% or none)
   are recorded from the running app by `scripts/capture-example.mjs`, which
   `npm run screenshots` now runs first. Nothing in `src/lib/landing-example.json` is

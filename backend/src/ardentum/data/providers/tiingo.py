@@ -7,7 +7,7 @@ dividend-adjusted close), so returns are total returns.
 
 Licensing: Tiingo's free plan is licensed for personal use; commercial use or
 redistribution to end users requires a commercial plan. See DECISIONS.md D-004
-and TODO.md (founder decision required before production use).
+and TODO.md (an owner decision is required before production use).
 """
 
 from __future__ import annotations

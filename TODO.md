@@ -1,8 +1,8 @@
 # TODO
 
-Legend: **[F]** needs a founder decision/credential · **[E]** engineering
+Legend: **[F]** needs an owner decision/credential · **[E]** engineering
 
-## Founder decisions (blocking production launch)
+## Owner decisions (blocking production launch)
 - [x] **[F]** Market data: free Ken French industry data built in (D-018). Tiingo/other licensed vendors remain optional for individual securities (D-004).
 - [ ] **[F]** Confirm Ken French Data Library terms with Prof. French before commercial launch (D-018).
 - [x] **[F]** ESG data source: user-supplied plus open WikiRate data (CC BY 4.0, D-026). A licensed provider remains optional.

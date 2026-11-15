@@ -32,7 +32,7 @@ behind every result.
                                           └──────────────────┘
 ```
 
-## Layering rules (enforced by review, see AGENTS.md)
+## Layering rules (enforced by review, see CONTRIBUTING.md)
 
 | Layer | Path | May import | Must not |
 |---|---|---|---|

@@ -1,6 +1,6 @@
 # Launch plan (from 15 November 2026)
 
-Everything left before a public launch is an owner task: accounts, settings, legal and
+Everything left before a public launch is outside the code: accounts, settings, legal and
 people. Work through the steps in order; each one says what it needs from the step before.
 Detailed click paths for setup already live in [SETUP_GUIDE.md](SETUP_GUIDE.md) and
 [SECURITY.md](../SECURITY.md); this page links to them rather than repeating them. The
@@ -47,7 +47,7 @@ is unaffected.
 
 The new connection was written from WikiRate's documentation and tested against a stand-in;
 it could not be tried against WikiRate itself without an account. This check is its first
-real trial. If the line fails, its message says which request was refused; send it on.
+real trial. If the line fails, its message says which request was refused.
 
 ## 3. Domain and email
 
