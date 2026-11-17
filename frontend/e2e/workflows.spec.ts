@@ -11,7 +11,7 @@ test.beforeEach(async ({ page }) => {
 
 test("landing page leads to the workspace with synthetic data clearly labelled", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Portfolio analysis that shows its working." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Portfolio analysis you can check." })).toBeVisible();
   await page.getByRole("link", { name: "Open the workspace" }).first().click();
   await expect(page.getByRole("heading", { name: "Universe" })).toBeVisible();
   await expect(page.getByText("Synthetic demo data").first()).toBeVisible();
@@ -20,19 +20,25 @@ test("landing page leads to the workspace with synthetic data clearly labelled",
 
 test("the landing page's worked example follows its limit and opens in the workspace", async ({ page }) => {
   await page.goto("/");
-  const example = page.getByRole("region", { name: "One answer, with its working" });
+  const example = page.getByRole("region", { name: "Highest Sharpe ratio from eight assets" });
   await expect(example.getByText("Synthetic demo data")).toBeVisible();
-  await expect(example.getByText(/Held at its maximum weight of 30\.0%/).first()).toBeVisible();
+  await expect(example.getByText(/Held at its maximum weight of 30\.0%/)).toBeVisible();
+
+  // Picking an asset shows the engine's reason for its weight.
+  await example.getByRole("button", { name: /Arbor Regional Bank/ }).click();
+  await expect(example.getByRole("button", { name: /Arbor Regional Bank/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(example.getByText(/^Not held: its expected return/)).toBeVisible();
+  await example.getByRole("button", { name: /Northwind Semiconductors/ }).click();
 
   // Arrow keys move the choice, as in every segmented control.
   await example.getByRole("radio", { name: "30%" }).focus();
   await page.keyboard.press("ArrowLeft");
   await expect(example.getByRole("radio", { name: "20%" })).toBeChecked();
-  await expect(example.getByText(/Held at its maximum weight of 20\.0%/).first()).toBeVisible();
+  await expect(example.getByText(/Held at its maximum weight of 20\.0%/)).toBeVisible();
   await expect(example.getByText(/Held at its maximum weight of 30\.0%/)).toHaveCount(0);
 
   // The recorded answer is what the workspace computes from the same settings.
-  const answer = (await example.getByText(/^Expected Sharpe ratio \d\.\d\d$/).innerText()).replace("Expected ", "");
+  const answer = `Sharpe ratio ${await example.locator("dt", { hasText: "Sharpe ratio" }).locator("+ dd").innerText()}`;
   await example.getByRole("link", { name: "Open this result in the workspace" }).click();
   await expect(page.getByRole("heading", { name: "Optimise" })).toBeVisible();
   await expect(page.getByText("You opened a shared link")).toBeVisible();

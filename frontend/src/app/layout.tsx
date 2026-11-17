@@ -16,9 +16,9 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "Ardentum",
-    title: "Ardentum: portfolio analysis that shows its working",
+    title: "Ardentum: portfolio analysis you can check",
     description:
-      "Build, optimise, simulate and backtest investment portfolios. Every result arrives with the data, estimators, constraints and assumptions behind it.",
+      "Optimise, simulate and backtest investment portfolios. Each weight comes with its reason, and each number with its source.",
   },
 };
 

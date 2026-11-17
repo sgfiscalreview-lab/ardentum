@@ -1,10 +1,14 @@
 {
   "source": "Synthetic demo data",
+  "start": "2016-01-01",
+  "end": "2025-12-31",
   "cases": [
     {
       "limit": 0.2,
       "href": "/app/optimise#share=7VJNbxQxDP0vPmdXM4uKxNwoleAABW1REaqqKJt4Zs1mksXO7Ieq-e8omWlL-QGcent-eX52bD_AAZpawRDogCwIzQM4k4xg0uSgAYd9BAWJ7A5ZoLmD6x83y5uf16Dgy9WHGb1fX87o2_f1jD6ur2b0aX37yH29vXyCn6f3ewWSDCdoYFXVbxdVvahqUIDBFWp1sahXizeZahl_DxjsOTdmyJ9BgR2YM6W36Dp00LTGC44KUBL1JlEM-VM9mqBnKjI0sCVJkckan03iwTCZYPGFxqOLlPQx-hYUMMlOt4yo2SSEplpWq1FB3PxCm-hQZvdXAL05adka3mOucDCsbQwtOQy2ZL-7GHPlIIkNhSSlTQr6iNRtEzSVKhZP4XKlwEjezCYOwWX9qEDQpsjaU0_Z4u5eAZ6sHxw6XdT_klPCzOZ6KJ0WGxmhCYP3eXKdTuSnFuY8PYSieTYtc55a7DiKaDztowzPNomN3VHoNDLncWZ2VHCMnNlHVVmpTL-P-0Q9TVf4epGvF_mfLlKS2ZCndNaMYvq9RymFBPP2imgc_wA",
       "sharpe_ratio": 0.49533898278815025,
+      "expected_return": 0.08327779427324172,
+      "volatility": 0.12814333436029435,
       "sharpe_statement": "Expected Sharpe ratio 0.50: the expected return less the risk-free rate (8.33% less 1.98%), divided by the volatility (12.81%).",
       "holdings": [
         {
@@ -88,6 +92,8 @@
       "limit": 0.3,
       "href": "/app/optimise#share=7VJNbxQxDP0vPmdXM1sViblRKsEBCtqiIlRVUTbxzJrNJIud2Q9V899RMtMW-AGcent-eX52bD_CAZpawRDogCwIzSM4k4xg0uSgAYd9BAWJ7A5ZoLmHm--3y9sfN6Dg8_X7Gb1bX83o67f1jD6sr2f0cX33xH25u3qGn6b3BwWSDCdoYFXVbxZVvahqUIDBFWp1uahXi4tMtYy_Bgz2nBsz5M-gwA7MmdJbdB06aFrjBUcFKIl6kyiG_KkeTdAzFRka2JKkyGSNzybxYJhMsPiXxqOLlPQx-hYUMMlOt4yo2SSEplpWq1FB3PxEm-hQZvdHAL05adka3mOucDCsbQwtOQy2ZL-9HHPlIIkNhSSlTQr6iNRtEzSVKhbP4fJCgZG8mU0cgsv6UYGgTZG1p56yxf2DAjxZPzh0uqj_JaeEmc31UDotNjJCEwbv8-Q6nchPLcx5eghF82Ja5jy12HEU0XjaRxlebBIbu6PQaWTO48zsqOAYObNPqrJSmX4f94l6mq7w9SJfL_I_XaQksyFP6awZxfR7j1IKCebtFdE4_gY",
       "sharpe_ratio": 0.5857003816486136,
+      "expected_return": 0.11356709274063484,
+      "volatility": 0.16008814455025563,
       "sharpe_statement": "Expected Sharpe ratio 0.59: the expected return less the risk-free rate (11.36% less 1.98%), divided by the volatility (16.01%).",
       "holdings": [
         {
@@ -171,6 +177,8 @@
       "limit": 0.4,
       "href": "/app/optimise#share=7VJNbxQxDP0vPmdXMwtFYm6USnCAgraoCFVVlE08s2YzyWJn9kPV_HeUzLQFfgCn3p5fnp8d2w9wgKZWMAQ6IAtC8wDOJCOYNDlowGEfQUEiu0MWaO7g-vvN8ubHNSj4fPV-Ru_WlzP6-m09ow_rqxl9XN8-cl9uL5_gp-n9XoEkwwkaWFX1m0VVL6oaFGBwhVpdLOrV4lWmWsZfAwZ7zo0Z8mdQYAfmTOktug4dNK3xgqMClES9SRRD_lSPJuiZigwNbElSZLLGZ5N4MEwmWPxL49FFSvoYfQsKmGSnW0bUbBJCUy2r1aggbn6iTXQos_sjgN6ctGwN7zFXOBjWNoaWHAZbst9ejLlykMSGQpLSJgV9ROq2CZpKFYuncPlagZG8mU0cgsv6UYGgTZG1p56yxd29AjxZPzh0uqj_JaeEmc31UDotNjJCEwbv8-Q6nchPLcx5eghF82xa5jy12HEU0XjaRxmebRIbu6PQaWTO48zsqOAYObOPqrJSmX4f94l6mq7w5SJfLvI_XaQksyFP6awZxfR7j1IKCebtFdE4_gY",
       "sharpe_ratio": 0.610481985098685,
+      "expected_return": 0.13734486361555467,
+      "volatility": 0.19253878264142762,
       "sharpe_statement": "Expected Sharpe ratio 0.61: the expected return less the risk-free rate (13.73% less 1.98%), divided by the volatility (19.25%).",
       "holdings": [
         {
@@ -255,6 +263,8 @@
       "limit": 1,
       "href": "/app/optimise#share=7VJNbxQxDP0vPmerma2KxNwolegBCtqiIlRVUTbxzJrNJIud2Q9V899RMrMU-AGcent-eX52bD_DHppawRBojywIzTM4k4xg0uSgAYd9BAWJ7BZZoHmEu2_3F_ff70DBp5v3M3q3up7Rl6-rGX1Y3czodvVw5j4_XP-GH6f3JwWSDCdoYFnVbxZVvahqUIDBFWp5taiXi8tMtYw_Bwz2lBsz5E-gwA7MmdIbdB06aFrjBUcFKIl6kyiG_KkeTdAzFRka2JCkyGSNzyZxb5hMsPiXxqOLlPQh-hYUMMlWt4yo2SSEprqolqOCuP6BNtG-zO6PAHpz1LIxvMNcYW9Y2xhachhsyX57NebKQRIbCklKmxT0AanbJGgqVSzOYa3ASN7LOg7BZfWoQNCmyNpTT9ng8UkBHq0fHDpd1P-SU8LM5moonRYbGaEJg_d5bp1O5KcG5jw9hKJ5MS1TnhrsOIpoPO6iDC82iY3dUug0MudhZnZUcIic2bOqLFSmv8ddop6mG3y9x9d7_C_3KMmsyVM6aUYx_c6jlEKCeXdFNI6_AA",
       "sharpe_ratio": 0.638221655333616,
+      "expected_return": 0.20895321799586672,
+      "volatility": 0.29637009498974337,
       "sharpe_statement": "Expected Sharpe ratio 0.64: the expected return less the risk-free rate (20.90% less 1.98%), divided by the volatility (29.64%).",
       "holdings": [
         {
