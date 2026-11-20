@@ -676,3 +676,19 @@ the engine's own cautions and assumptions underneath
   fixed minimatch. 1,702 requests at the edges of every calculation endpoint's allowed
   ranges gave 811 results and 891 refusals with reasons: no server error, no NaN in a
   result, no hang, and nothing in the server's log.
+
+## D-048 A shorter landing page
+The landing page ran to about seven screens of prose. It now says what Ardentum does in
+one sentence, in the standard terms of the field, and shows it at once.
+* **The result beside the headline.** The recorded example (D-047) sits next to the
+  headline as one compact card: the limit, three figures (Sharpe ratio, expected return,
+  volatility) and the weights. The engine's reason appears for one asset at a time, the
+  one the reader picks, instead of eight sentences at once. The capture script also
+  records the expected return, the volatility and the period, so the card only formats
+  them; a unit test checks that they are the figures in the engine's Sharpe sentence.
+* **One screenshot at a time.** The four workspace pages are tabs over a single
+  screenshot with one sentence each. The other pages are one line of links.
+* **Plain wording.** Headings name the thing ("Efficient frontier", "Methodology") rather
+  than a slogan, and each description says what the page computes.
+* **Basis and limits in a few lines.** Data, methods and tests take one sentence each; the
+  limits are one short paragraph. The full detail stays in the methodology pages.
