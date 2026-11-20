@@ -56,6 +56,8 @@ for (const limit of LIMITS) {
     limit,
     href: "/app/optimise" + (await shareFragment(share)),
     sharpe_ratio: out.result.sharpe_ratio,
+    expected_return: out.result.expected_return,
+    volatility: out.result.volatility,
     // The engine's own sentence, which gives the ratio with the figures it comes from.
     sharpe_statement: out.explanation.statements.find((t) => t.startsWith("Expected Sharpe ratio")),
     holdings: out.result.holdings.map((h) => ({
@@ -72,5 +74,5 @@ for (const limit of LIMITS) {
   console.log(`limit ${limit}: Sharpe ratio ${out.result.sharpe_ratio.toFixed(2)}`);
 }
 
-writeFileSync(OUT, JSON.stringify({ source: "Synthetic demo data", cases }, null, 2) + "\n");
+writeFileSync(OUT, JSON.stringify({ source: "Synthetic demo data", start: universe.start, end: universe.end, cases }, null, 2) + "\n");
 console.log(`saved ${OUT}`);

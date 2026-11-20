@@ -16,9 +16,9 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "Ardentum",
-    title: "Ardentum: portfolio analysis that shows its working",
+    title: "Ardentum: build and test investment portfolios",
     description:
-      "Build, optimise, simulate and backtest investment portfolios. Every result arrives with the data, estimators, constraints and assumptions behind it.",
+      "Mean-variance and CVaR optimisation, Monte Carlo simulation and walk-forward backtests, with the assumptions behind every result listed alongside it.",
   },
 };
 

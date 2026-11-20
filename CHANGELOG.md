@@ -43,6 +43,8 @@ All notable changes to Ardentum are recorded here. Versions follow
 
 ### Changed
 - The repository's address is https://github.com/clumstantine/ardentum.
+- A shorter landing page: a live result card beside the headline, one screenshot at a
+  time and a few lines on data, methods, tests and limits.
 - The backend tests fail on any deprecation notice from a library, so an update shows what
   to change before the old call is removed (the first: pandas' `dayofweek`).
 - The landing page opens with a real result set out as an answer with its working: each
