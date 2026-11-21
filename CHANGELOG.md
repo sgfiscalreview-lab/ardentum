@@ -85,6 +85,11 @@ All notable changes to Ardentum are recorded here. Versions follow
 - Browser tests serve the Kenneth French files from a local stand-in.
 
 ### Fixed
+- The header showed a grey placeholder instead of "Sign in" until the API answered, which
+  takes up to a minute when the free host has put it to sleep. A Supabase build now reads
+  the session from Supabase at once.
+- WikiRate companies whose ISINs are listed as one comma-separated text, or under a key
+  spelled differently, are now found by ISIN.
 - The API stopped answering after the last deploy: its image ran a Python version the
   project does not support. It runs on the tested version again, and CI now starts the
   image the way the host does, also after a restart, before anything is merged.

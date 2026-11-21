@@ -46,10 +46,27 @@ def test_parse_companies() -> None:
     assert c.isins == ("DE000A1EWWW0",)
     assert c.headquarters == "Germany"
     assert c.url == "https://wikirate.org/Adidas_AG"
-    bare = {"id": 9, "name": "Puma", "headquarters": None, "company_identifiers": {"isin": "x1"}}
+    bare = {
+        "id": 9,
+        "name": "Puma",
+        "headquarters": None,
+        "company_identifiers": {"isin": "de0006969603"},
+    }
     [p] = wr.parse_companies(payload(bare))
-    assert p.isins == ("X1",)  # a single identifier given as text
+    assert p.isins == ("DE0006969603",)  # a single identifier given as text
     assert p.headquarters is None
+    # Several ISINs in one text, or under a key in capitals, are each found once; text
+    # that is not an ISIN is not taken for one.
+    many = {
+        "id": 3,
+        "name": "Adidas AG",
+        "company_identifiers": {
+            "ISIN": "DE000A1EWWW0, US00687A1079",
+            "isins": ["de000a1ewww0", "not an isin"],
+            "lei": "529900XEBLU6VSZTRP08",
+        },
+    }
+    assert wr.parse_companies(payload(many))[0].isins == ("DE000A1EWWW0", "US00687A1079")
     assert (
         wr.parse_companies(payload({"id": 1, "name": "A", "company_identifiers": None}))[0].isins
         == ()
