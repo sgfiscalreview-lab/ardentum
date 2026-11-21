@@ -184,10 +184,23 @@ def parse_metric(payload: bytes) -> OpenMetric:
     return metrics[0]
 
 
+_ISIN_IN_TEXT = re.compile(r"\b[A-Z]{2}[A-Z0-9]{9}[0-9]\b")
+
+
 def _isins(identifiers: Any) -> tuple[str, ...]:
-    v = identifiers.get("isin") if isinstance(identifiers, dict) else None
-    v = [v] if isinstance(v, str) else v if isinstance(v, list) else []
-    return tuple(i.strip().upper() for i in v if isinstance(i, str) and i.strip())
+    """Every ISIN the company's identifiers list, in order and once each. The identifiers
+    hold a list or a single string, possibly with several ISINs separated by commas, under
+    a key spelled "isin" in any case."""
+    if not isinstance(identifiers, dict):
+        return ()
+    found: list[str] = []
+    for key, value in identifiers.items():
+        if "isin" not in str(key).lower():
+            continue
+        for item in value if isinstance(value, list) else [value]:
+            if isinstance(item, str):
+                found += [i for i in _ISIN_IN_TEXT.findall(item.upper()) if i not in found]
+    return tuple(found)
 
 
 def parse_companies(payload: bytes) -> list[OpenCompany]:

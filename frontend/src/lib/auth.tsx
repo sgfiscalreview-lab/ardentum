@@ -44,6 +44,14 @@ function readDevSession(): DevSession | null {
   }
 }
 
+/**
+ * Whether this build signs in with Supabase. The site's build settings decide it, so the
+ * header can show "Sign in" at once, without waiting for an API that may be asleep.
+ */
+export const SUPABASE_CONFIGURED = Boolean(
+  process.env.NEXT_PUBLIC_SUPABASE_URL && (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
+);
+
 let supabaseSingleton: SupabaseClient | null = null;
 function supabaseClient(): SupabaseClient | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -58,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [meta, setMeta] = useState<MetaOut | null>(null);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [status, setStatus] = useState<AuthContextValue["status"]>("loading");
-  const mode = (meta?.auth_mode as "dev" | "supabase" | undefined) ?? null;
+  const mode = (meta?.auth_mode as "dev" | "supabase" | undefined) ?? (SUPABASE_CONFIGURED ? "supabase" : null);
 
   useEffect(() => {
     let cancelled = false;
@@ -68,32 +76,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(u);
       setStatus(u ? "signed_in" : "signed_out");
     };
+    const startSupabase = () => {
+      const sb = supabaseClient();
+      if (!sb) {
+        apply(null);
+        return;
+      }
+      setTokenProvider(async () => (await sb.auth.getSession()).data.session?.access_token ?? null);
+      void sb.auth.getSession().then(({ data }) => {
+        const u = data.session?.user;
+        apply(u ? { id: u.id, email: u.email ?? null } : null);
+      });
+      const { data: sub } = sb.auth.onAuthStateChange((_event, session) => {
+        const u = session?.user;
+        apply(u ? { id: u.id, email: u.email ?? null } : null);
+      });
+      unsubscribe = () => sub.subscription.unsubscribe();
+    };
+    // A Supabase build reads the session from Supabase straight away; the API (which can
+    // take a minute to wake on the free host) is asked only for its other settings.
+    if (SUPABASE_CONFIGURED) startSupabase();
     unwrap(api.GET("/api/v1/meta"))
       .then((m) => {
         if (cancelled) return;
         setMeta(m);
+        if (SUPABASE_CONFIGURED) return;
         if (m.auth_mode === "dev") {
           setTokenProvider(async () => readDevSession()?.token ?? null);
           apply(readDevSession()?.user ?? null);
           return;
         }
-        const sb = supabaseClient();
-        if (!sb) {
-          apply(null);
-          return;
-        }
-        setTokenProvider(async () => (await sb.auth.getSession()).data.session?.access_token ?? null);
-        void sb.auth.getSession().then(({ data }) => {
-          const u = data.session?.user;
-          apply(u ? { id: u.id, email: u.email ?? null } : null);
-        });
-        const { data: sub } = sb.auth.onAuthStateChange((_event, session) => {
-          const u = session?.user;
-          apply(u ? { id: u.id, email: u.email ?? null } : null);
-        });
-        unsubscribe = () => sub.subscription.unsubscribe();
+        startSupabase();
       })
-      .catch(() => apply(null));
+      .catch(() => {
+        if (!SUPABASE_CONFIGURED) apply(null);
+      });
     return () => {
       cancelled = true;
       unsubscribe?.();
