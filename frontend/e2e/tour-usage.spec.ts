@@ -44,6 +44,6 @@ test("the usage page shows anonymous counts, including a calculation just run", 
   await expect
     .poll(async () => Number((await page.getByRole("row").filter({ hasText: "Optimisations" }).getByRole("cell").nth(2).innerText()).replace(/,/g, "")))
     .toBeGreaterThan(before); // other tests may run calculations at the same time
-  await page.getByRole("navigation", { name: "Footer" }).getByRole("link", { name: "Usage" }).click();
-  await expect(page).toHaveURL(/\/usage$/);
+  // The page is no longer linked from the footer; it is still reached by its address.
+  await expect(page.getByRole("heading", { name: "How much Ardentum is used", level: 1 })).toBeVisible();
 });
