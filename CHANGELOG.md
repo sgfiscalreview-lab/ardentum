@@ -85,6 +85,8 @@ All notable changes to Ardentum are recorded here. Versions follow
 - Browser tests serve the Kenneth French files from a local stand-in.
 
 ### Fixed
+- The live check recognised the landing page by a phrase the new page no longer uses; it
+  now looks for the site's name and its link to the workspace.
 - The header showed a grey placeholder instead of "Sign in" until the API answered, which
   takes up to a minute when the free host has put it to sleep. A Supabase build now reads
   the session from Supabase at once.

@@ -500,7 +500,8 @@ def check_site(rep: Report, site: str, api: str, supabase: str | None, key: str 
 
     def pages() -> None:
         r = request("GET", base + "/")
-        if r.status != 200 or "shows its working" not in r.text:
+        # Markers that survive a rewording of the page: the name and the link to the app.
+        if r.status != 200 or not all(m in r.text for m in ("Ardentum", 'href="/app"')):
             # Tell apart "nothing deployed at this address" from a routing problem.
             index = request("GET", base + "/index.html")
             hint = (

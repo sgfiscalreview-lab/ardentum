@@ -44,7 +44,6 @@ export function SiteFooter() {
     { href: "/glossary", label: "Glossary" },
     { href: "/tour", label: "Guided tour" },
     { href: "/classroom", label: "Classroom" },
-    { href: "/usage", label: "Usage" },
   ];
   return (
     <footer className="mt-20 border-t border-line print:hidden">
