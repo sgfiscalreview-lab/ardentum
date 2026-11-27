@@ -108,6 +108,10 @@ def run(industries: pd.DataFrame, factors: pd.DataFrame, out: Path) -> dict:  # 
                 "mean_promised_sharpe": float(pr.mean()),
                 "delivered_sharpe": stats.sharpe(opt),
                 "delivered_sharpe_standard_error": stats.sharpe_standard_error(opt),
+                "delivered_sharpe_interval_95": [
+                    stats.sharpe(opt) - 1.96 * stats.sharpe_standard_error(opt),
+                    stats.sharpe(opt) + 1.96 * stats.sharpe_standard_error(opt),
+                ],
                 "promise_minus_delivered": float(pr.mean()) - stats.sharpe(opt),
                 # Treats the average promise as a fixed number; a rough scale for the gap.
                 "gap_in_standard_errors": (float(pr.mean()) - stats.sharpe(opt))
