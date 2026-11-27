@@ -1,4 +1,4 @@
-# Ardentum web — production image. Build context: repository root (needs docs/).
+# Ardentum web — production image. Build context: repository root (needs docs/ and research/results/).
 FROM node:26-slim AS deps
 WORKDIR /repo/frontend
 COPY frontend/package.json frontend/package-lock.json frontend/.npmrc ./
@@ -15,6 +15,7 @@ ENV API_URL=$API_URL NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL \
 COPY --from=deps /repo/frontend/node_modules ./node_modules
 COPY frontend ./
 COPY docs /repo/docs
+COPY research/results /repo/research/results
 RUN npm run build
 
 FROM node:26-slim AS run

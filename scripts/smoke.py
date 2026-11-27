@@ -583,6 +583,10 @@ def check_site(rep: Report, site: str, api: str, supabase: str | None, key: str 
             ("/app/crises", "Crisis replay"),
             ("/app/factors", "Factor exposure"),
             ("/app/trades", "Trade list"),
+            ("/research/studies", "Research studies"),
+            ("/research/studies/one-over-n", "Optimal versus naive diversification"),
+            ("/research/studies/currency-hedging", "hedge the dollar"),
+            ("/research/studies/promised-versus-realised", "optimiser"),
         ):
             r = request("GET", base + path)
             if r.status == 200 and heading in r.text:

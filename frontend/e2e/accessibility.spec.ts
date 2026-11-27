@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
-const PAGES = ["/", "/app", "/app/optimise", "/app/frontier", "/app/esg-data", "/research/optimisation", "/login", "/terms", "/privacy", "/cookies", "/licences", "/account", "/app/compare", "/tour", "/app/analytics?tour=2", "/usage", "/classroom", "/classroom/worksheet", "/glossary", "/app/crises", "/app/factors", "/app/trades", "/app/simulate", "/app/backtest"];
+const PAGES = ["/", "/app", "/app/optimise", "/app/frontier", "/app/esg-data", "/research/optimisation", "/login", "/terms", "/privacy", "/cookies", "/licences", "/account", "/app/compare", "/tour", "/app/analytics?tour=2", "/usage", "/classroom", "/classroom/worksheet", "/glossary", "/app/crises", "/app/factors", "/app/trades", "/app/simulate", "/app/backtest", "/research/studies", "/research/studies/one-over-n", "/research/studies/currency-hedging", "/research/studies/promised-versus-realised"];
 
 // WCAG 2.2 AA includes the minimum size of things to press (target-size).
 const TAGS = ["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"];

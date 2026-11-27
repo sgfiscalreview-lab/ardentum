@@ -108,6 +108,10 @@ def run(industries: pd.DataFrame, factors: pd.DataFrame, out: Path) -> dict:  # 
                 "mean_promised_sharpe": float(pr.mean()),
                 "delivered_sharpe": stats.sharpe(opt),
                 "delivered_sharpe_standard_error": stats.sharpe_standard_error(opt),
+                "delivered_sharpe_interval_95": [
+                    stats.sharpe(opt) - 1.96 * stats.sharpe_standard_error(opt),
+                    stats.sharpe(opt) + 1.96 * stats.sharpe_standard_error(opt),
+                ],
                 "promise_minus_delivered": float(pr.mean()) - stats.sharpe(opt),
                 # Treats the average promise as a fixed number; a rough scale for the gap.
                 "gap_in_standard_errors": (float(pr.mean()) - stats.sharpe(opt))
@@ -146,6 +150,7 @@ def run(industries: pd.DataFrame, factors: pd.DataFrame, out: Path) -> dict:  # 
     out.mkdir(parents=True, exist_ok=True)
     (out / "results.json").write_text(json.dumps(results, indent=2))
     pd.DataFrame(records).to_csv(out / "portfolios.csv", index=False)
+    (out / "portfolios.json").write_text(json.dumps(records))  # for the website's chart
 
     # Figure 1: average promise versus what was delivered, each setting, with 1/N.
     settings = [k for k in results if k != "illustration"]

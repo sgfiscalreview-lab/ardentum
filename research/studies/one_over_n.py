@@ -174,6 +174,18 @@ def run(industries: pd.DataFrame, factors: pd.DataFrame, out: Path) -> dict:  # 
                 rows.append({"setting": key, "strategy": name, "period": period, **row[period]})
     pd.DataFrame(rows).to_csv(out / "summary.csv", index=False)
 
+    # Growth of $1 in each strategy (the setting of Figure 1), for the website's chart.
+    first = next(iter(series.values()))
+    growth = {
+        "setting": "window 120m, costs 50bp",
+        "dates": [str(d.date()) for d in first.index],
+        "wealth": {
+            name: [round(float(v), 5) for v in np.cumprod(1 + net.to_numpy())]
+            for name, net in series.items()
+        },
+    }
+    (out / "growth.json").write_text(json.dumps(growth))
+
     # Figure 1: growth of $1 (120-month window, 50bp costs), log scale.
     fig, ax = plotting.figure()
     for i, (name, net) in enumerate(series.items()):
