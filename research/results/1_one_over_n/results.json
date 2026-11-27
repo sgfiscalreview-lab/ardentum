@@ -61,8 +61,8 @@
         "volatility_annual": 0.13012741893866298,
         "sharpe": 0.4876088294747058,
         "sharpe_minus_1n": 0.06172031226312924,
-        "p_value_vs_1n": 0.510104138629178,
-        "p_value_vs_1n_robust": 0.5100559958861641,
+        "p_value_vs_1n": 0.5101041386291789,
+        "p_value_vs_1n_robust": 0.5100559958861655,
         "certainty_equivalent": 0.05498470585142695,
         "max_drawdown": -0.3992676093940616
       },
@@ -104,8 +104,8 @@
         "volatility_annual": 0.12946173107726308,
         "sharpe": 0.5027030619822931,
         "sharpe_minus_1n": 0.07681454477071653,
-        "p_value_vs_1n": 0.3551553810428407,
-        "p_value_vs_1n_robust": 0.3472923784731876,
+        "p_value_vs_1n": 0.35515538104283895,
+        "p_value_vs_1n_robust": 0.3472923784731874,
         "certainty_equivalent": 0.05670063871530756,
         "max_drawdown": -0.39227174353488514
       },
@@ -148,7 +148,7 @@
         "sharpe": 0.3505245319497306,
         "sharpe_minus_1n": -0.07536398526184596,
         "p_value_vs_1n": 0.438019045915095,
-        "p_value_vs_1n_robust": 0.4037052146038844,
+        "p_value_vs_1n_robust": 0.403705214603884,
         "certainty_equivalent": 0.045299356806943795,
         "max_drawdown": -0.44501779299912225
       },
@@ -190,8 +190,8 @@
         "volatility_annual": 0.15775716020013375,
         "sharpe": 0.3644624239381261,
         "sharpe_minus_1n": -0.061426093273450444,
-        "p_value_vs_1n": 0.48678915300297176,
-        "p_value_vs_1n_robust": 0.4923454838723118,
+        "p_value_vs_1n": 0.486789153002972,
+        "p_value_vs_1n_robust": 0.49234548387231225,
         "certainty_equivalent": 0.045052896202930695,
         "max_drawdown": -0.4322369993767854
       },
@@ -234,7 +234,7 @@
         "sharpe": 0.43794349548254,
         "sharpe_minus_1n": 0.012054978270963468,
         "p_value_vs_1n": 0.9036653995922692,
-        "p_value_vs_1n_robust": 0.9053030542664742,
+        "p_value_vs_1n_robust": 0.9053030542664744,
         "certainty_equivalent": 0.049668810181167596,
         "max_drawdown": -0.41351439152027325
       },
@@ -321,8 +321,8 @@
         "volatility_annual": 0.13001688776153272,
         "sharpe": 0.4408968495100822,
         "sharpe_minus_1n": 0.02495904852321551,
-        "p_value_vs_1n": 0.7894369717462952,
-        "p_value_vs_1n_robust": 0.7907871408695686,
+        "p_value_vs_1n": 0.7894369717462948,
+        "p_value_vs_1n_robust": 0.7907871408695684,
         "certainty_equivalent": 0.04887184064556825,
         "max_drawdown": -0.4085198956445273
       },
@@ -364,8 +364,8 @@
         "volatility_annual": 0.12931235394748555,
         "sharpe": 0.45998045212396466,
         "sharpe_minus_1n": 0.04404265113709799,
-        "p_value_vs_1n": 0.5950540028863385,
-        "p_value_vs_1n_robust": 0.591101016998719,
+        "p_value_vs_1n": 0.595054002886338,
+        "p_value_vs_1n_robust": 0.5911010169987188,
         "certainty_equivalent": 0.051120312592258674,
         "max_drawdown": -0.3997280398047153
       },
@@ -408,7 +408,7 @@
         "sharpe": 0.2452219509240783,
         "sharpe_minus_1n": -0.17071585006278836,
         "p_value_vs_1n": 0.08024920388390289,
-        "p_value_vs_1n_robust": 0.06220931415790565,
+        "p_value_vs_1n_robust": 0.06220931415790498,
         "certainty_equivalent": 0.027367964473655294,
         "max_drawdown": -0.4562116567011011
       },
@@ -450,8 +450,8 @@
         "volatility_annual": 0.15824470983860414,
         "sharpe": 0.26616985762434275,
         "sharpe_minus_1n": -0.14976794336252391,
-        "p_value_vs_1n": 0.09233823142922626,
-        "p_value_vs_1n_robust": 0.09666138921512846,
+        "p_value_vs_1n": 0.09233823142922493,
+        "p_value_vs_1n_robust": 0.09666138921512735,
         "certainty_equivalent": 0.02959927779159469,
         "max_drawdown": -0.4472008105242967
       },
@@ -494,7 +494,7 @@
         "sharpe": 0.3814917027930844,
         "sharpe_minus_1n": -0.03444609819378225,
         "p_value_vs_1n": 0.7293498383088672,
-        "p_value_vs_1n_robust": 0.7359207193287067,
+        "p_value_vs_1n_robust": 0.7359207193287065,
         "certainty_equivalent": 0.042530027145856686,
         "max_drawdown": -0.42648610910276286
       },
@@ -582,7 +582,7 @@
         "sharpe": 0.4790973882528523,
         "sharpe_minus_1n": 0.05320887104127575,
         "p_value_vs_1n": 0.5846588518899156,
-        "p_value_vs_1n_robust": 0.5811241060858141,
+        "p_value_vs_1n_robust": 0.5811241060858143,
         "certainty_equivalent": 0.05386382851119306,
         "max_drawdown": -0.3641067789336323
       },
@@ -625,7 +625,7 @@
         "sharpe": 0.49131818293719887,
         "sharpe_minus_1n": 0.06542966572562231,
         "p_value_vs_1n": 0.4730028255044414,
-        "p_value_vs_1n_robust": 0.4665229858435467,
+        "p_value_vs_1n_robust": 0.4665229858435469,
         "certainty_equivalent": 0.05519437116447645,
         "max_drawdown": -0.36417866920787034
       },
@@ -667,8 +667,8 @@
         "volatility_annual": 0.17451662362838014,
         "sharpe": 0.34103003238279,
         "sharpe_minus_1n": -0.08485848482878655,
-        "p_value_vs_1n": 0.4058389883469553,
-        "p_value_vs_1n_robust": 0.39124906747443977,
+        "p_value_vs_1n": 0.4058389883469544,
+        "p_value_vs_1n_robust": 0.39124906747443955,
         "certainty_equivalent": 0.044287383845996814,
         "max_drawdown": -0.4733420888952069
       },
@@ -711,7 +711,7 @@
         "sharpe": 0.3510272576741944,
         "sharpe_minus_1n": -0.07486125953738215,
         "p_value_vs_1n": 0.3787782243617328,
-        "p_value_vs_1n_robust": 0.3592591374965688,
+        "p_value_vs_1n_robust": 0.35925913749656946,
         "certainty_equivalent": 0.04088757695739731,
         "max_drawdown": -0.4664631011941248
       },
@@ -753,8 +753,8 @@
         "volatility_annual": 0.13210328726456463,
         "sharpe": 0.3909040689989355,
         "sharpe_minus_1n": -0.03498444821264107,
-        "p_value_vs_1n": 0.7226183733718838,
-        "p_value_vs_1n_robust": 0.7263306928636171,
+        "p_value_vs_1n": 0.7226183733718843,
+        "p_value_vs_1n_robust": 0.7263306928636173,
         "certainty_equivalent": 0.042914073266801536,
         "max_drawdown": -0.3539259207366987
       },
@@ -841,7 +841,7 @@
         "volatility_annual": 0.12981337437464532,
         "sharpe": 0.4511590994471961,
         "sharpe_minus_1n": 0.03522129846032945,
-        "p_value_vs_1n": 0.716898893339105,
+        "p_value_vs_1n": 0.7168988933391054,
         "p_value_vs_1n_robust": 0.7145433608499796,
         "certainty_equivalent": 0.05014072899580081,
         "max_drawdown": -0.36921928130054016
@@ -885,7 +885,7 @@
         "sharpe": 0.4640543609543688,
         "sharpe_minus_1n": 0.04811655996750214,
         "p_value_vs_1n": 0.5969918774377851,
-        "p_value_vs_1n_robust": 0.5920246353880003,
+        "p_value_vs_1n_robust": 0.5920246353880001,
         "certainty_equivalent": 0.051573546686581234,
         "max_drawdown": -0.3686119849766637
       },
@@ -927,7 +927,7 @@
         "volatility_annual": 0.1749089274239448,
         "sharpe": 0.2819922583236786,
         "sharpe_minus_1n": -0.1339455426631881,
-        "p_value_vs_1n": 0.1895848091313712,
+        "p_value_vs_1n": 0.18958480913137077,
         "p_value_vs_1n_robust": 0.17999863385353398,
         "certainty_equivalent": 0.0340263969989532,
         "max_drawdown": -0.47617599309926795
@@ -970,8 +970,8 @@
         "volatility_annual": 0.14754240852553355,
         "sharpe": 0.2866531921050381,
         "sharpe_minus_1n": -0.12928460888182858,
-        "p_value_vs_1n": 0.12895231289691056,
-        "p_value_vs_1n_robust": 0.11663696972656079,
+        "p_value_vs_1n": 0.12895231289691145,
+        "p_value_vs_1n_robust": 0.11663696972656212,
         "certainty_equivalent": 0.03140912121795207,
         "max_drawdown": -0.47480618179152567
       },
@@ -1013,8 +1013,8 @@
         "volatility_annual": 0.13328924562336728,
         "sharpe": 0.35199688589005146,
         "sharpe_minus_1n": -0.06394091509681521,
-        "p_value_vs_1n": 0.5149781332949748,
-        "p_value_vs_1n_robust": 0.5227164230457988,
+        "p_value_vs_1n": 0.5149781332949752,
+        "p_value_vs_1n_robust": 0.5227164230457992,
         "certainty_equivalent": 0.0380343878826363,
         "max_drawdown": -0.3643423011469542
       },
