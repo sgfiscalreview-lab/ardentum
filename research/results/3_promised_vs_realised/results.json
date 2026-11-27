@@ -6,6 +6,10 @@
     "mean_promised_sharpe": 0.942016516726475,
     "delivered_sharpe": 0.3733201852961724,
     "delivered_sharpe_standard_error": 0.13401805571082612,
+    "delivered_sharpe_interval_95": [
+      0.11064479610295319,
+      0.6359955744893916
+    ],
     "promise_minus_delivered": 0.5686963314303026,
     "gap_in_standard_errors": 4.243430696065253,
     "equal_weight_sharpe_same_months": 0.4959453625284006,
@@ -20,6 +24,10 @@
     "mean_promised_sharpe": 0.79175845731346,
     "delivered_sharpe": 0.3586023852821334,
     "delivered_sharpe_standard_error": 0.13644685255840153,
+    "delivered_sharpe_interval_95": [
+      0.0911665542676664,
+      0.6260382162966004
+    ],
     "promise_minus_delivered": 0.43315607203132656,
     "gap_in_standard_errors": 3.174540591516602,
     "equal_weight_sharpe_same_months": 0.44717856252902455,
@@ -34,6 +42,10 @@
     "mean_promised_sharpe": 0.7702856783063153,
     "delivered_sharpe": 0.35166399982347146,
     "delivered_sharpe_standard_error": 0.13397446554191192,
+    "delivered_sharpe_interval_95": [
+      0.08907404736132413,
+      0.6142539522856187
+    ],
     "promise_minus_delivered": 0.4186216784828439,
     "gap_in_standard_errors": 3.124637794146559,
     "equal_weight_sharpe_same_months": 0.4959453625284006,
@@ -48,6 +60,10 @@
     "mean_promised_sharpe": 0.6323489659010083,
     "delivered_sharpe": 0.401168553510729,
     "delivered_sharpe_standard_error": 0.13529131365968045,
+    "delivered_sharpe_interval_95": [
+      0.1359975787377553,
+      0.6663395282837027
+    ],
     "promise_minus_delivered": 0.2311804123902793,
     "gap_in_standard_errors": 1.7087602014997343,
     "equal_weight_sharpe_same_months": 0.47195472225277413,
