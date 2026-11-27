@@ -146,6 +146,7 @@ def run(industries: pd.DataFrame, factors: pd.DataFrame, out: Path) -> dict:  # 
     out.mkdir(parents=True, exist_ok=True)
     (out / "results.json").write_text(json.dumps(results, indent=2))
     pd.DataFrame(records).to_csv(out / "portfolios.csv", index=False)
+    (out / "portfolios.json").write_text(json.dumps(records))  # for the website's chart
 
     # Figure 1: average promise versus what was delivered, each setting, with 1/N.
     settings = [k for k in results if k != "illustration"]
