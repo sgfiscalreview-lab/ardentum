@@ -14,7 +14,14 @@ export default function ResearchIndex() {
       <p className="mt-2 max-w-2xl text-ink-2">
         The definitions, models, assumptions and limitations behind every number in Ardentum, with references to the primary literature.
       </p>
-      <ol className="mt-8 divide-y divide-[var(--border)] rounded-lg border border-line bg-surface">
+      <Link href="/research/studies" className="mt-8 block rounded-lg border border-line bg-surface px-5 py-4 elev-1 hover:bg-surface-2">
+        <span className="block font-semibold text-ink">Research studies</span>
+        <span className="mt-0.5 block text-sm text-ink-2">
+          Three empirical studies run with Ardentum on public data: optimal versus naive diversification, hedging the dollar, and the optimiser&apos;s promise.
+        </span>
+      </Link>
+      <h2 className="type-title-2 mt-10 text-ink">Methodology chapters</h2>
+      <ol className="mt-4 divide-y divide-[var(--border)] rounded-lg border border-line bg-surface">
         {docs.map((d, i) => (
           <li key={d.slug}>
             <Link href={`/research/${d.slug}`} className="flex gap-4 px-5 py-4 hover:bg-surface-2">

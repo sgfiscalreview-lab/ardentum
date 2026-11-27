@@ -692,3 +692,24 @@ one sentence, in the standard terms of the field, and shows it at once.
   than a slogan, and each description says what the page computes.
 * **Basis and limits in a few lines.** Data, methods and tests take one sentence each; the
   limits are one short paragraph. The full detail stays in the methodology pages.
+
+## D-049 Research notes on the website
+The three studies (D-036) existed only as code and result files. They are now published as
+research notes at `/research/studies`, each set out as a paper: abstract, keywords and JEL
+codes, numbered sections, display equations, captioned tables and figures, author-year
+citations and a reference list.
+* **Numbers from the recorded output only.** The pages read `research/results/` at build
+  time, as the methodology pages read `docs/`. No figure is typed into the text. The study
+  code now also writes the data behind the website's figures (`growth.json`,
+  `portfolios.json`) and the 95% interval of the delivered Sharpe ratio, so the browser only
+  formats numbers.
+* **Conclusions are tested.** The studies rerun whenever their code changes, so the text's
+  qualitative claims (no difference significant at 5%, the dollar rose in every crisis, the
+  promise exceeds what is delivered) are checked by `frontend/src/lib/studies.test.ts`. A
+  rerun that overturns one fails the build instead of leaving a false sentence online.
+* **Citations are checked.** Each note lists the works it cites; the test fails if a
+  citation has no reference or a reference is never cited. References were limited to
+  publications whose details could be confirmed; no DOIs are given.
+* **Author.** The notes name the site's operator (`NEXT_PUBLIC_LEGAL_OPERATOR`) as author,
+  or "Ardentum Research" when it is not set.
+

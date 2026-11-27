@@ -22,8 +22,10 @@ pytest -q research/tests`.
 
 ## Results
 
-`results/<study>/results.json` holds every number, `summary.csv` or `portfolios.csv` the
-tables, and the PNG files the figures. `results/run_metadata.json` records the data
+The website publishes each study as a research note at `/research/studies`, with its tables
+and figures drawn from these files (D-049). `results/<study>/results.json` holds every number,
+`summary.csv` or `portfolios.csv` the tables, `growth.json` and `portfolios.json` the data
+behind the website's figures, and the PNG files static figures. `results/run_metadata.json` records the data
 samples and when the run happened.
 
 ## Data

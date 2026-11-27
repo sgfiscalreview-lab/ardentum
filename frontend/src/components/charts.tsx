@@ -133,7 +133,7 @@ interface TooltipRow {
   color?: string;
 }
 
-function TooltipBox({ title, rows }: { title?: string; rows: TooltipRow[] }) {
+export function TooltipBox({ title, rows }: { title?: string; rows: TooltipRow[] }) {
   return (
     <div className="material-thick min-w-40 rounded-lg border border-line px-3 py-2 text-xs elev-3">
       {title && <p className="mb-1 font-medium text-ink-2">{title}</p>}
