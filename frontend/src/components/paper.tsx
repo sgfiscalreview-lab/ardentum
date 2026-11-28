@@ -76,7 +76,7 @@ export function Paper({
               .sort((a, b) => REFERENCES[a].full.localeCompare(REFERENCES[b].full))
               .map((k) => (
                 <li key={k} id={`ref-${k}`} className="pl-6 -indent-6">
-                  {REFERENCES[k].full}
+                  {italics(REFERENCES[k].full)}
                 </li>
               ))}
           </ol>
@@ -87,7 +87,7 @@ export function Paper({
             Suggested citation
           </h2>
           <p className="!mb-0 text-subheadline">
-            {AUTHOR} ({PUBLISHED.split(" ")[1]}). {meta.title}. Ardentum Research Note No. {meta.number}. {url}
+            {AUTHOR}. ({PUBLISHED.split(" ")[1]}). <i>{meta.title}</i> (Ardentum Research Note No. {meta.number}). {url}
           </p>
         </section>
 
@@ -97,6 +97,11 @@ export function Paper({
       </article>
     </main>
   );
+}
+
+/** A reference with its *starred* parts (journal, volume, report title) set in italics. */
+function italics(text: string): ReactNode[] {
+  return text.split("*").map((part, i) => (i % 2 ? <i key={i}>{part}</i> : part));
 }
 
 export function Section({ n, title, children }: { n: string; title: string; children: ReactNode }) {

@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 
 import { Cite, Eq, M, Paper, PaperTable, Section, Sub } from "@/components/paper";
 import { PairedBarChart, YearLinesChart } from "@/components/study-charts";
-import { num, pct, signedPct } from "@/lib/format";
+import { num, pct, signedPct } from "@/lib/typeset";
 import type { RefKey } from "@/lib/study-references";
 import { currencyHedging, getStudy, INDUSTRY, monthYear } from "@/lib/studies";
 
@@ -41,6 +41,9 @@ export default function CurrencyHedgingPage() {
   const lower = (inv: (typeof INVESTORS)[number]) => Object.values(h[inv].assets).filter((a) => a.risk_change_from_hedging < 0).length;
   const crises = Object.keys(eu.crises_us_market);
   const years = Object.keys(eu.rolling_5y_hedge_ratio_us_market);
+  const dotcom = crises[0]!; // the one episode before 2007, listed first
+  const recent = crises.slice(1);
+  const maxChange = Math.max(...INVESTORS.flatMap((inv) => Object.values(h[inv].assets).map((a) => Math.abs(a.risk_change_from_hedging))));
   const negativeYears = years.filter((y) => (eu.rolling_5y_hedge_ratio_us_market[y] ?? 0) < 0 && (gb.rolling_5y_hedge_ratio_us_market[y] ?? 0) < 0);
 
   return (
@@ -54,8 +57,9 @@ export default function CurrencyHedgingPage() {
           it therefore reduces risk. We measure the effect for investments in the US market and 12 US industry portfolios over {months} months, from {start} to {end}, with a
           one-month forward hedge priced by covered interest parity from central-bank policy rates. Full hedging changes the volatility of the US market by{" "}
           {signedPct(m.euro.risk_change_from_hedging, 1)} for a euro investor and {signedPct(m.sterling.risk_change_from_hedging, 1)} for a sterling investor, because the
-          dollar tends to rise when US shares fall: the correlation between the two is negative for every portfolio and both investors. In each of three crises since 2007 the
-          dollar appreciated and the unhedged investor lost less than the hedged one. The risk-minimising hedge ratio for the US market is {num(m.euro.min_variance_hedge_ratio, 2)}{" "}
+          dollar tends to rise when US shares fall: the correlation between the two is negative for every portfolio and both investors. This protection was not dependable in
+          crises. In the three crises since 2007 the dollar appreciated and the unhedged investor lost less than the hedged one, but in the 2000 to 2002 bear market the dollar
+          fell and hedging reduced the loss. The risk-minimising hedge ratio for the US market is {num(m.euro.min_variance_hedge_ratio, 2)}{" "}
           for the euro investor and {num(m.sterling.min_variance_hedge_ratio, 2)} for the sterling investor, and it has varied widely over time, turning negative in recent
           years.
         </p>
@@ -121,7 +125,7 @@ export default function CurrencyHedgingPage() {
       </Section>
 
       <Section n="4" title="Results">
-        <Sub n="4.1" title="Hedging barely changes risk">
+        <Sub n="4.1" title="Hedging and volatility">
           <p>
             Table 1 gives the results for the US market. For a euro investor, full hedging leaves volatility essentially unchanged, at {pct(m.euro.volatility_unhedged, 1)}{" "}
             unhedged and {pct(m.euro.volatility_hedged, 1)} hedged. For a sterling investor it raises volatility from {pct(m.sterling.volatility_unhedged, 1)} to{" "}
@@ -150,7 +154,7 @@ export default function CurrencyHedgingPage() {
           />
           <p>
             The same holds across industries (Figure 1 and Table 2). Hedging lowered volatility for {lower("euro")} of the {assets.length} portfolios for a euro investor and{" "}
-            {lower("sterling")} for a sterling investor, and in every case the change is a few percent at most. The correlation between US shares and the dollar is negative
+            {lower("sterling")} for a sterling investor, and in no case did it change volatility by more than {pct(maxChange, 1)} in either direction. The correlation between US shares and the dollar is negative
             for all {assets.length} portfolios and both investors.
           </p>
           <PairedBarChart
@@ -180,14 +184,23 @@ export default function CurrencyHedgingPage() {
 
         <Sub n="4.2" title="The dollar in crises">
           <p>
-            The negative correlation matters most when it is most needed. Table 3 shows that in each of the three crises the dollar rose against both currencies, so the
-            unhedged investor lost less than the hedged one. In the 2008 financial crisis US shares fell by {pct(-eu.crises_us_market[crises[0]!]!.local_usd, 1)} in dollars; a
-            sterling investor who left the dollar unhedged lost {pct(-gb.crises_us_market[crises[0]!]!.unhedged, 1)}, against {pct(-gb.crises_us_market[crises[0]!]!.hedged, 1)}{" "}
-            hedged, as sterling fell sharply.
+            Table 3 reports cumulative returns over four episodes of US market stress. In the three since 2007 the dollar rose against both currencies, so the unhedged
+            investor lost less than the hedged one. In the 2008 financial crisis US shares fell by {pct(-eu.crises_us_market[recent[0]!]!.local_usd, 1)} in dollars; a sterling
+            investor who left the dollar unhedged lost {pct(-gb.crises_us_market[recent[0]!]!.unhedged, 1)}, against {pct(-gb.crises_us_market[recent[0]!]!.hedged, 1)} hedged,
+            as sterling fell sharply.
+          </p>
+          <p>
+            The 2000 to 2002 bear market went the other way. While US shares lost {pct(-eu.crises_us_market[dotcom]!.local_usd, 1)} in dollars, the price of a dollar fell by{" "}
+            {pct(-eu.crises_us_market[dotcom]!.currency, 1)} in euro and {pct(-gb.crises_us_market[dotcom]!.currency, 1)} in sterling, so the unhedged investors lost more:{" "}
+            {pct(-eu.crises_us_market[dotcom]!.unhedged, 1)} in euro and {pct(-gb.crises_us_market[dotcom]!.unhedged, 1)} in sterling, against{" "}
+            {pct(-eu.crises_us_market[dotcom]!.hedged, 1)} and {pct(-gb.crises_us_market[dotcom]!.hedged, 1)} hedged. Over the whole sample the euro investor&apos;s maximum
+            drawdown was deeper unhedged, at {pct(-m.euro.max_drawdown_unhedged, 1)}, than hedged, at {pct(-m.euro.max_drawdown_hedged, 1)}; for the sterling investor the two
+            were similar, at {pct(-m.sterling.max_drawdown_unhedged, 1)} and {pct(-m.sterling.max_drawdown_hedged, 1)} (Table 1). The dollar&apos;s gains in recent crises are
+            therefore a regularity of those episodes rather than a rule.
           </p>
           <PaperTable
             n={3}
-            caption="The US market in three crises: cumulative returns."
+            caption="The US market in four crises: cumulative returns."
             head={["Crisis", "US shares (USD)", "Dollar vs euro", "Euro, unhedged", "Euro, hedged", "Dollar vs sterling", "Sterling, unhedged", "Sterling, hedged"]}
             rows={crises.map((c) => [
               c,
@@ -199,7 +212,7 @@ export default function CurrencyHedgingPage() {
               pct(gb.crises_us_market[c]!.unhedged, 1),
               pct(gb.crises_us_market[c]!.hedged, 1),
             ])}
-            note="Dollar vs euro and dollar vs sterling are the changes in the investor's price of one dollar; a positive value means the dollar rose. The 2008 financial crisis runs from November 2007 to March 2009, the Covid crash from February to March 2020, and the 2022 rate shock from January to September 2022."
+            note="Dollar vs euro and dollar vs sterling are the changes in the investor's price of one dollar; a positive value means the dollar rose. The dot-com crash runs from September 2000 to September 2002, the 2008 financial crisis from November 2007 to March 2009, the Covid crash from February to March 2020, and the 2022 rate shock from January to September 2022."
           />
         </Sub>
 
@@ -226,10 +239,11 @@ export default function CurrencyHedgingPage() {
 
       <Section n="5" title="Discussion">
         <p>
-          The results support <Cite k="campbell2010" /> rather than the free-lunch view. For a European investor in US shares, the dollar has acted as a partial hedge against
-          falls in those shares, so removing it has not reduced risk, and in crises it has added to losses. The risk-minimising hedge ratio is well below one over the full
-          sample, closer to the partial hedge of <Cite k="black1989" /> than to full hedging. Its instability, though, means that any fixed hedge ratio is a judgement about
-          how currencies will behave in the next crisis, not a measured certainty.
+          The results support <Cite k="campbell2010" /> rather than the free-lunch view, with a qualification. Over the full sample the dollar has acted as a partial hedge
+          against falls in US shares, so removing it has not reduced volatility, and in the three crises since 2007 hedging added to losses. The 2000 to 2002 bear market shows
+          that this protection is not guaranteed: the dollar weakened over that episode, and hedging reduced losses. The risk-minimising hedge ratio is well below one over the
+          full sample, closer to the partial hedge of <Cite k="black1989" /> than to full hedging. Its instability means that any fixed hedge ratio is a judgement about how
+          currencies will behave in the next crisis, not a measured certainty.
         </p>
       </Section>
 
@@ -237,16 +251,18 @@ export default function CurrencyHedgingPage() {
         <p>
           Forwards are priced from policy rates by covered interest parity. Since 2008 traded forwards have deviated from parity <Cite k="du2018" p />, and interbank rates
           differ from policy rates, so the cost of hedging in practice differs somewhat from that shown. We ignore transaction costs on the forwards and the residual currency
-          exposure from monthly rebalancing of the hedge. The study covers US equities only, at a monthly frequency, and describes the past; it does not predict how
+          exposure from monthly rebalancing of the hedge. The crises are fixed calendar windows around each episode, and other windows would give somewhat different
+          numbers. The study covers US equities only, at a monthly frequency, and describes the past; it does not predict how
           currencies will behave.
         </p>
       </Section>
 
       <Section n="7" title="Conclusion">
         <p>
-          For euro and sterling investors in US shares from {start} to {end}, hedging the dollar did not reduce risk in any meaningful way, cost return, and deepened losses
-          in the three crises studied. The dollar&apos;s tendency to rise when shares fall has made it a natural hedge. Whether to hedge is therefore less a matter of
-          reducing risk than of a view on currencies, and a partial hedge, or none, has been the lower-risk choice for most of the period.
+          For euro and sterling investors in US shares from {start} to {end}, hedging the dollar did not reduce volatility in any meaningful way and lowered the average
+          return. It deepened losses in the three crises since 2007 and reduced them in the 2000 to 2002 bear market. The dollar&apos;s tendency to rise when shares fall
+          has made it a natural, though unreliable, hedge. Over the full period a partial hedge minimised risk for both investors; hedging more or less than that amounts in
+          practice to a view on currencies.
         </p>
       </Section>
     </Paper>

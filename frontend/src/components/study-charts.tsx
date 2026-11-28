@@ -18,7 +18,7 @@ import {
   ZAxis,
 } from "recharts";
 
-import { num, pct, signedNum, signedPct } from "@/lib/format";
+import { num, pct, signedNum, signedPct } from "@/lib/typeset";
 
 import { ChartFrame, DataTable, niceAxis, seriesColor, TooltipBox } from "./charts";
 

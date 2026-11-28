@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 
 import { Cite, Eq, M, Paper, PaperTable, Section, Sub } from "@/components/paper";
 import { FrontierPairChart, PromiseChart, PromiseScatterChart } from "@/components/study-charts";
-import { num } from "@/lib/format";
+import { num } from "@/lib/typeset";
 import type { RefKey } from "@/lib/study-references";
 import { getStudy, monthYear, PROMISE_SETTINGS, promisedVersusRealised, promiseRecords, runMetadata, settingLabel } from "@/lib/studies";
 
@@ -32,6 +32,7 @@ const REFS: RefKey[] = [
 ];
 
 const p = (x: number) => num(x, 2);
+const times = (k: number) => (k === 0 ? "never" : k === 1 ? "once" : k === 2 ? "twice" : `${k} times`);
 
 export default function PromisedVersusRealisedPage() {
   const r = promisedVersusRealised();
@@ -69,8 +70,8 @@ export default function PromisedVersusRealisedPage() {
           An investor who optimises a portfolio with mean-variance analysis <Cite k="markowitz1952" p /> receives two things: a set of weights, and a forecast of the
           portfolio&apos;s expected return, risk and Sharpe ratio. The forecast is computed from the same estimated inputs that chose the weights, and it is biased upwards.
           The optimiser favours the assets whose expected returns are most overestimated and whose risks are most underestimated, so the portfolio it reports as best is,
-          on average, the one whose estimates are most flattering. <Cite k="michaud1989" /> called this the Markowitz optimisation enigma; <Cite k="jobsonKorkie1980" />{" "}
-          documented the sampling error of estimated efficient portfolios; and <Cite k="kanZhou2007" /> quantify the loss from using estimated parameters as if they were
+          on average, the one whose estimates are most flattering. <Cite k="michaud1989" /> argues that this error maximisation explains why practitioners distrust
+          optimised portfolios; <Cite k="jobsonKorkie1980" /> documented the sampling error of estimated efficient portfolios; and <Cite k="kanZhou2007" /> quantify the loss from using estimated parameters as if they were
           true.
         </p>
         <p>
@@ -99,8 +100,8 @@ export default function PromisedVersusRealisedPage() {
             exactly, through the transformation of <Cite k="charnesCooper1962" />, where <M tex="r_f" /> is the average Treasury bill rate over the window. The value of the
             objective at <M tex="\hat w" /> is the promised Sharpe ratio. We use two sets of estimates: the sample mean and covariance, and shrinkage estimates that combine
             Bayes-Stein means <Cite k="jorion1986" p /> with the Ledoit-Wolf covariance matrix <Cite k="ledoitWolf2004" p />. When no long-only portfolio has an expected
-            return above <M tex="r_f" />, no maximum-Sharpe portfolio exists and the year is skipped; this happened {k60.skipped_no_portfolio_beats_tbill} times with
-            shrinkage and a 60-month window, {k120.skipped_no_portfolio_beats_tbill} with shrinkage and a 120-month window, and never with sample estimates.
+            return above <M tex="r_f" />, no maximum-Sharpe portfolio exists and the year is skipped; this happened {times(k60.skipped_no_portfolio_beats_tbill)} with
+            shrinkage and a 60-month window, {times(k120.skipped_no_portfolio_beats_tbill)} with shrinkage and a 120-month window, and never with sample estimates.
           </p>
         </Sub>
 
@@ -112,7 +113,7 @@ export default function PromisedVersusRealisedPage() {
           <Eq tex="\operatorname{SE}(\widehat{SR}) = \sqrt{12}\,\sqrt{\frac{1 + \tfrac12\,\widehat{sr}^{\,2}}{T}}," label="2" />
           <p>
             where <M tex="\widehat{sr}" /> is the monthly Sharpe ratio and <M tex="T" /> the number of months. We pool rather than average the 12-month Sharpe ratios,
-            because averaging noisy short-period ratios overstates performance and gives calm years undue weight. We compare the delivered performance with an equally
+            because a Sharpe ratio estimated from 12 months is very noisy and takes extreme values in calm years, when its denominator is small. We compare the delivered performance with an equally
             weighted portfolio over exactly the same months, using the test of <Cite k="jobsonKorkie1981" /> with the correction of <Cite k="memmel2003" />{" "}
             and the robust test of <Cite k="ledoitWolf2008" />.
           </p>
@@ -162,9 +163,9 @@ export default function PromisedVersusRealisedPage() {
 
         <Sub n="4.2" title="Shrinkage helps, but does not close the gap">
           <p>
-            Shrinkage estimators temper the promise most: with a 120-month window the average promise falls from {p(s120.mean_promised_sharpe)} to{" "}
+            Shrinkage acts mainly on the promise: with a 120-month window the average promise falls from {p(s120.mean_promised_sharpe)} to{" "}
             {p(k120.mean_promised_sharpe)} and the gap from {p(s120.promise_minus_delivered)} to {p(k120.promise_minus_delivered)}; with a 60-month window the gap falls from{" "}
-            {p(s60.promise_minus_delivered)} to {p(k60.promise_minus_delivered)}. The promises become more honest, but the delivered Sharpe ratio changes little, from{" "}
+            {p(s60.promise_minus_delivered)} to {p(k60.promise_minus_delivered)}. The promises become more realistic, but the delivered Sharpe ratio changes little, from{" "}
             {p(s120.delivered_sharpe)} to {p(k120.delivered_sharpe)} with the longer window. In every setting the delivered ratio is below that of equal weights over the same
             months, though never significantly so at the 5% level.
           </p>
@@ -192,7 +193,7 @@ export default function PromisedVersusRealisedPage() {
             Figure 3 shows the same effect for a whole efficient frontier. Estimated from sample statistics over {il.estimated_on[0]!.slice(0, 4)} to{" "}
             {il.estimated_on[1]!.slice(0, 4)}, the frontier promised a combination of risk and return that no portfolio on it achieved over{" "}
             {il.realised_on[0]!.slice(0, 4)} to {il.realised_on[1]!.slice(0, 4)}: every one of its {il.promised.length} portfolios turned out both riskier and less
-            rewarding than promised. The second period contains the 2008 crisis, which makes the illustration vivid; the systematic evidence is in Table 1.
+            rewarding than promised. The second period contains the 2008 crisis, which makes this shortfall unusually large; the systematic evidence is in Table 1.
           </p>
           <FrontierPairChart
             title={`Figure 3. The efficient frontier estimated on ${il.estimated_on[0]!.slice(0, 4)} to ${il.estimated_on[1]!.slice(0, 4)}, and what its portfolios did next`}
@@ -207,16 +208,16 @@ export default function PromisedVersusRealisedPage() {
 
       <Section n="5" title="Discussion">
         <p>
-          The results put a number on a familiar warning. The Sharpe ratio an optimiser reports is not a forecast but the most flattering reading of noisy estimates, with
-          sample estimates on this data it has overstated what was delivered by a factor of two or more. Errors in expected returns drive the effect, as{" "}
+          The results quantify a familiar warning. The Sharpe ratio an optimiser reports is not a forecast but the most flattering reading of noisy estimates. With sample
+          estimates on these data it overstated what was delivered by a factor of two or more. Errors in expected returns drive the effect, as{" "}
           <Cite k="bestGrauer1991" /> and <Cite k="chopraZiemba1993" /> show, which is why longer windows and shrinkage, both of which reduce the noise in the estimated means, narrow the gap. That the
           delivered performance never beats equal weighting is consistent with <Cite k="demiguel2009" />: removing estimation error from the promise does not create
           information that was not in the data.
         </p>
         <p>
           The practical lesson concerns how results are reported. An optimiser&apos;s promised Sharpe ratio should be read alongside an estimate of its uncertainty and,
-          where possible, an out-of-sample test. Ardentum reports a confidence interval for every Sharpe ratio and lets any optimised portfolio be tested walk-forward against
-          equal weights for this reason.
+          where possible, an out-of-sample test. For this reason Ardentum reports a 95% interval alongside its Sharpe ratios and lets any optimised portfolio be tested walk-forward
+          against equal weights.
         </p>
       </Section>
 
