@@ -23,7 +23,9 @@ from ardentum.quant.currency import hedged_returns
 from research import plotting, stats
 
 INVESTORS = {"EUR": "euro", "GBP": "sterling"}
+# Episodes of US market stress, as (last month before, last month of) the episode.
 CRISES = {
+    "2000–02 dot-com crash": ("2000-08-31", "2002-09-30"),
     "2008 financial crisis": ("2007-10-31", "2009-03-31"),
     "2020 Covid crash": ("2020-01-31", "2020-03-31"),
     "2022 rate shock": ("2021-12-31", "2022-09-30"),
