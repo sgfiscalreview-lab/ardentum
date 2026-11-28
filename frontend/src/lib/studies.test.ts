@@ -48,6 +48,16 @@ describe("note 1: optimal versus naive diversification", () => {
       }
   });
 
+  it("trading costs account for much of the maximum-Sharpe shortfall (main specification)", () => {
+    const free = r["window 120m, costs 0bp"]!;
+    for (const n of ["Maximum Sharpe (sample)", "Maximum Sharpe (shrinkage)"]) {
+      const withCosts = main[n]!.full.sharpe_minus_1n;
+      const without = free[n]!.full.sharpe_minus_1n;
+      expect(without, n).toBeGreaterThan(withCosts);
+      expect(Math.abs(without), n).toBeLessThan(0.6 * Math.abs(withCosts));
+    }
+  });
+
   it("since 2005 the maximum-Sharpe gap has all but closed and minimum variance keeps a small lead (main specification)", () => {
     for (const n of ["Maximum Sharpe (sample)", "Maximum Sharpe (shrinkage)"]) expect(Math.abs(main[n]!["2005-latest"].sharpe_minus_1n)).toBeLessThan(0.05);
     for (const n of ["Minimum variance (sample)", "Minimum variance (shrinkage)"]) expect(main[n]!["2005-latest"].sharpe_minus_1n).toBeGreaterThan(0);
@@ -112,12 +122,30 @@ describe("note 2: hedging the dollar", () => {
     }
   });
 
-  it("in each crisis the dollar rose and the unhedged investor lost less than the hedged one", () => {
-    for (const inv of investors)
-      for (const [c, v] of Object.entries(h[inv].crises_us_market)) {
+  it("lists the 2000-02 bear market first, then the three crises since 2007", () => {
+    const crises = Object.keys(h.euro.crises_us_market);
+    expect(crises).toHaveLength(4);
+    expect(crises[0]).toMatch(/^2000/);
+    for (const c of crises.slice(1)) expect(Number(c.slice(0, 4))).toBeGreaterThanOrEqual(2007);
+  });
+
+  it("in the crises since 2007 the dollar rose and the unhedged investor lost less; in 2000-02 the reverse", () => {
+    for (const inv of investors) {
+      const [dotcom, ...recent] = Object.entries(h[inv].crises_us_market);
+      for (const [c, v] of recent) {
         expect(v.currency, `${inv} ${c}`).toBeGreaterThan(0);
         expect(v.unhedged, `${inv} ${c}`).toBeGreaterThan(v.hedged);
       }
+      expect(dotcom![1].currency, inv).toBeLessThan(0);
+      expect(dotcom![1].unhedged, inv).toBeLessThan(dotcom![1].hedged);
+    }
+  });
+
+  it("the euro investor's maximum drawdown was deeper unhedged; the sterling investor's two were similar", () => {
+    const eu = h.euro.assets["US market"]!;
+    const gb = h.sterling.assets["US market"]!;
+    expect(eu.max_drawdown_unhedged).toBeLessThan(eu.max_drawdown_hedged);
+    expect(Math.abs(gb.max_drawdown_unhedged - gb.max_drawdown_hedged)).toBeLessThan(0.03);
   });
 
   it("the rolling hedge ratio was near or above one in the mid-2000s and negative for both investors in one run of recent years", () => {
@@ -197,5 +225,13 @@ describe("the notes' citations", () => {
   it("uses no em dashes", () => {
     for (const s of STUDIES) expect(fs.readFileSync(path.join(dir, s.slug, "page.tsx"), "utf8")).not.toContain("—");
     for (const ref of Object.values(REFERENCES)) expect(ref.full).not.toContain("—");
+  });
+
+  it("marks italics in every reference in matched pairs", () => {
+    for (const [k, ref] of Object.entries(REFERENCES)) {
+      const stars = ref.full.split("*").length - 1;
+      expect(stars, k).toBeGreaterThan(0);
+      expect(stars % 2, k).toBe(0);
+    }
   });
 });

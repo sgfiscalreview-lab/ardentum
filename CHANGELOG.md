@@ -11,6 +11,10 @@ All notable changes to Ardentum are recorded here. Versions follow
   references. Every number comes from the recorded study output; a test fails if a rerun
   on new data overturns a conclusion the text states. The studies were rerun on data
   through September 2026.
+- The hedging note now includes the 2000 to 2002 bear market, in which the dollar fell
+  and hedging reduced losses, and its conclusions say so; the notes also correct a few
+  statements (turnover definition, the age of the original 1/N study, a quotation) and set
+  references in APA style with italics and true minus signs.
 - Backtests with ESG constraints or a tilt use only the ESG scores known at each
   rebalance: dated uploads and WikiRate overlays keep a score per year, each counted from
   30 June of the next year. When some score was not yet known at the start, the backtest

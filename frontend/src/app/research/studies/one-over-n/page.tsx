@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 
 import { Cite, Eq, M, Paper, PaperTable, Section, Sub } from "@/components/paper";
 import { GrowthChart, PairedBarChart } from "@/components/study-charts";
-import { num, pct, signedNum } from "@/lib/format";
+import { num, pct, signedNum } from "@/lib/typeset";
 import type { RefKey } from "@/lib/study-references";
 import { getStudy, monthYear, oneOverN, oneOverNGrowth, runMetadata } from "@/lib/studies";
 
@@ -52,6 +52,7 @@ function settingName(s: string): string {
 }
 
 const p = (x: number) => num(x, 2);
+const monthCount = (k: number) => (k === 0 ? "no months" : k === 1 ? "one month" : `${k} months`);
 
 export default function OneOverNPage() {
   const r = oneOverN();
@@ -66,6 +67,8 @@ export default function OneOverNPage() {
   const mv = main["Minimum variance (shrinkage)"]!;
   const ms = main["Maximum Sharpe (sample)"]!;
   const mss = main["Maximum Sharpe (shrinkage)"]!;
+  const free = r["window 120m, costs 0bp"]!;
+  const maxGap = Math.max(...SETTINGS.flatMap((s) => optimised.map((n) => Math.abs(r[s]![n]!.full.sharpe_minus_1n))));
 
   return (
     <Paper
@@ -79,8 +82,8 @@ export default function OneOverNPage() {
           January 1970 to {end}, with estimation windows of 60 and 120 months and proportional trading costs of 0 and 50 basis points. No optimised strategy has a Sharpe
           ratio significantly different from that of 1/N at the 5% level in any of the four specifications, under either the Jobson-Korkie test with Memmel&apos;s correction
           or a heteroskedasticity- and autocorrelation-robust test; the smallest p-value is {p(minP)}. Minimum-variance portfolios earn modestly higher Sharpe ratios than
-          1/N and suffer markedly smaller drawdowns, while maximum-Sharpe portfolios trail 1/N before 2005 and roughly match it afterwards. The original result has survived
-          two further decades of data.
+          1/N and suffer markedly smaller drawdowns, while maximum-Sharpe portfolios trail 1/N before 2005 and, in the main specification, roughly match it afterwards. The
+          original result has survived two further decades of data.
         </p>
       }
     >
@@ -89,7 +92,7 @@ export default function OneOverNPage() {
           Mean-variance analysis <Cite k="markowitz1952" p /> gives the portfolio with the best trade-off between expected return and risk, provided the expected returns
           and covariances are known. In practice they must be estimated, and the optimal weights are highly sensitive to errors in the estimated means{" "}
           <Cite k="bestGrauer1991" p />. <Cite k="chopraZiemba1993" /> show that errors in means matter roughly an order of magnitude more than errors in variances, and{" "}
-          <Cite k="michaud1989" /> calls mean-variance optimisers &quot;estimation-error maximisers&quot;, because they concentrate in the assets whose estimated returns
+          <Cite k="michaud1989" /> calls mean-variance optimisers &quot;estimation-error maximizers&quot;, because they concentrate in the assets whose estimated returns
           are most overstated.
         </p>
         <p>
@@ -148,8 +151,8 @@ export default function OneOverNPage() {
           </ol>
           <p>
             When no long-only portfolio has an expected return above the risk-free rate, the maximum-Sharpe problem has no solution; the strategy then holds the
-            minimum-variance portfolio for that month. In the main specification this happened in {ms.tangency_fallbacks} months for the sample version and{" "}
-            {mss.tangency_fallbacks} for the shrinkage version; the count is reported rather than hidden.
+            minimum-variance portfolio for that month. In the main specification this fallback was used in {monthCount(ms.tangency_fallbacks)} for the sample version and{" "}
+            {monthCount(mss.tangency_fallbacks)} for the shrinkage version.
           </p>
         </Sub>
 
@@ -162,8 +165,8 @@ export default function OneOverNPage() {
           <Eq tex="r^{\text{net}}_{t+1} = (1 - c\,\tau_t)\,(1 + w_t^\top R_{t+1}) - 1, \qquad \tau_t = \textstyle\sum_i \lvert w_{i,t} - w_{i,t}^{-} \rvert," label="1" />
           <p>
             where <M tex="w_t^{-}" /> are the weights drifted by the previous month&apos;s returns and <M tex="c" /> is 0 or 50 basis points. No information after month{" "}
-            <M tex="t" /> enters the weights chosen at <M tex="t" />; Ardentum&apos;s test suite checks this by replacing every later return with an implausible value and
-            confirming that no earlier weight changes.
+            <M tex="t" /> enters the weights chosen at <M tex="t" />. A unit test of the backtesting engine checks this by altering the returns after a cut-off date and
+            confirming that no weight chosen up to that date changes.
           </p>
         </Sub>
 
@@ -202,8 +205,10 @@ export default function OneOverNPage() {
             portfolio earns a Sharpe ratio of {p(base.full.sharpe)}. The minimum-variance portfolios do somewhat better, at {p(main["Minimum variance (sample)"]!.full.sharpe)}{" "}
             and {p(mv.full.sharpe)}, but the difference from 1/N is not statistically significant (robust p-values of{" "}
             {p(main["Minimum variance (sample)"]!.full.p_value_vs_1n_robust)} and {p(mv.full.p_value_vs_1n_robust)}). The maximum-Sharpe portfolios do worse, at{" "}
-            {p(ms.full.sharpe)} and {p(mss.full.sharpe)}, again without statistical significance. Their turnover, around {num(ms.annual_turnover, 1)} times the portfolio
-            each year against {num(base.annual_turnover, 2)} for 1/N, shows where much of the shortfall comes from: chasing estimated means trades heavily and pays for it.
+            {p(ms.full.sharpe)} and {p(mss.full.sharpe)}, again without statistical significance. Much of their shortfall is the cost of trading. Their annual turnover is{" "}
+            {num(ms.annual_turnover, 2)} and {num(mss.annual_turnover, 2)} times portfolio value, against {num(base.annual_turnover, 2)} for 1/N, and without trading costs
+            their gap to 1/N narrows from {signedNum(ms.full.sharpe_minus_1n, 2)} to {signedNum(free["Maximum Sharpe (sample)"]!.full.sharpe_minus_1n, 2)} (sample) and from{" "}
+            {signedNum(mss.full.sharpe_minus_1n, 2)} to {signedNum(free["Maximum Sharpe (shrinkage)"]!.full.sharpe_minus_1n, 2)} (shrinkage).
           </p>
           <PaperTable
             n={1}
@@ -228,8 +233,8 @@ export default function OneOverNPage() {
             })}
             note={
               <>
-                Excess return and volatility are annualised; versus 1/N is the difference in Sharpe ratio; CE is the certainty-equivalent excess return with risk aversion of 1 (equation 2); turnover is the average
-                one-way turnover per year as a multiple of portfolio value. p (JKM) is the two-sided p-value of the Jobson-Korkie test with Memmel&apos;s correction; p (robust)
+                Excess return and volatility are annualised; versus 1/N is the difference in Sharpe ratio; CE is the certainty-equivalent excess return with risk aversion of 1 (equation 2); turnover is the sum of
+                absolute changes in portfolio weights at rebalancing (purchases plus sales) per year, as a multiple of portfolio value. p (JKM) is the two-sided p-value of the Jobson-Korkie test with Memmel&apos;s correction; p (robust)
                 is that of the HAC test after Ledoit and Wolf (2008). Returns are net of costs.
               </>
             }
@@ -242,14 +247,14 @@ export default function OneOverNPage() {
           />
           <p>
             The clearest difference between the strategies is in risk rather than reward. The minimum-variance portfolios&apos; deepest losses were{" "}
-            {pct(main["Minimum variance (sample)"]!.full.max_drawdown, 1)} and {pct(mv.full.max_drawdown, 1)}, against {pct(base.full.max_drawdown, 1)} for 1/N. By construction they
+            {pct(-main["Minimum variance (sample)"]!.full.max_drawdown, 1)} and {pct(-mv.full.max_drawdown, 1)}, against {pct(-base.full.max_drawdown, 1)} for 1/N. By construction they
             hold more of the least volatile industries, and that protection shows most when markets fall.
           </p>
         </Sub>
 
         <Sub n="4.2" title="The original period and the two decades since">
           <p>
-            Figure 2 and Table 2 split the evaluation at January 2005. Before 2005 the maximum-Sharpe portfolios trail 1/N clearly, by{" "}
+            Figure 2 and Table 2 split the evaluation at January 2005. Before 2005 the maximum-Sharpe portfolios trail 1/N by{" "}
             {p(Math.abs(ms["1970-2004"].sharpe_minus_1n))} and {p(Math.abs(mss["1970-2004"].sharpe_minus_1n))} in Sharpe ratio, as the original study found. Since 2005 the
             gap has all but closed, at {signedNum(ms["2005-latest"].sharpe_minus_1n, 2)} and {signedNum(mss["2005-latest"].sharpe_minus_1n, 2)}, while the minimum-variance portfolios keep a
             small, insignificant lead. No difference in either period is significant at the 5% level.
@@ -314,8 +319,8 @@ export default function OneOverNPage() {
           estimates.
         </p>
         <p>
-          The absence of statistical significance is itself informative. Over more than half a century of monthly data, Sharpe-ratio differences of a few hundredths cannot
-          be told apart from chance; an investor who cannot distinguish two strategies statistically should prefer the one with fewer assumptions, lower turnover and lower
+          The absence of statistical significance is itself informative. Over more than half a century of monthly data, differences in annualised Sharpe ratio of the size measured here, none larger than{" "}
+          {p(maxGap)} in absolute value, cannot be told apart from chance; an investor who cannot distinguish two strategies statistically should prefer the one with fewer assumptions, lower turnover and lower
           cost, which is 1/N. The narrowing of the gap after 2005 is suggestive but should not be over-read, since the subperiod estimates are noisier still.
         </p>
       </Section>
@@ -331,9 +336,9 @@ export default function OneOverNPage() {
 
       <Section n="7" title="Conclusion">
         <p>
-          Twenty years after its publication, the 1/N puzzle stands. On US industry portfolios from 1970 to {end}, no optimised strategy beats equal weights with statistical
-          significance, after costs or before. Minimising risk is the only optimisation that consistently helps, and mainly by limiting losses in crises; estimating
-          expected returns does not pay. For most investors, equal weighting remains a demanding benchmark for any optimised portfolio.
+          More than two decades after the end of the original samples, the 1/N puzzle stands. On US industry portfolios from 1970 to {end}, no optimised strategy beats equal weights with statistical
+          significance, after costs or before. Minimising risk is the only optimisation that is ahead of 1/N in every specification, and its clearest advantage
+          is smaller losses in falling markets; estimating expected returns does not pay. For most investors, equal weighting remains a demanding benchmark for any optimised portfolio.
         </p>
       </Section>
     </Paper>

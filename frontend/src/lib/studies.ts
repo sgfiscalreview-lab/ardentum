@@ -43,7 +43,7 @@ export const STUDIES: StudyMeta[] = [
     title: "Should a European investor hedge the dollar? Currency risk in US equities, 1999 to present",
     short: "Should a European investor hedge the dollar?",
     summary:
-      "For euro and sterling investors in US shares, full currency hedging barely lowers risk, because the dollar tends to rise when shares fall. Evidence from 13 US equity portfolios and three crises.",
+      "For euro and sterling investors in US shares, full currency hedging barely lowers risk, because the dollar tends to rise when shares fall. Evidence from 13 US equity portfolios and four crises, including one in which the dollar fell.",
     keywords: ["currency hedging", "international diversification", "safe-haven currency", "hedge ratio"],
     jel: ["G11", "G15", "F31"],
   },
